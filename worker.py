@@ -17,18 +17,18 @@ HASH_SEED = int(os.environ.get("HASH_SEED"), 16)
 MONGODB_URI = os.environ.get("MONGODB_URI")
 comics = MongoClient(MONGODB_URI)['discord_rss']['comics']
 
-def get_new_entries(comic, rss):
-    if comic['hash'] == rss.hash:
+def get_new_entries(comic, feed):
+    if comic['hash'] == feed.hash:
         return ([], True)
     last_link = comic['last_update']
     i = 0
-    num_entries = len(rss.entries)
+    num_entries = len(feed.entries)
     while(i < 20 and i < num_entries):
-        if rss.entries[i].link == last_link:
-            return (rss.entries[:i], True)
+        if feed.entries[i].link == last_link:
+            return (feed.entries[:i], True)
         i += 1
     else:
-        return ([rss.entries[0]], False)
+        return ([feed.entries[0]], False)
         
 
 def make_body(comic, entry):
@@ -76,9 +76,9 @@ feeds = asyncio.get_event_loop().run_until_complete(get_feeds(comic_list))
 comics_and_feeds = zip(comic_list, feeds)
 
 counter = 1
-for comic, rss in comics_and_feeds:
+for comic, feed in comics_and_feeds:
     print(f"Checking {comic['name']}")
-    entries, found = get_new_entries(comic, rss)
+    entries, found = get_new_entries(comic, feed)
     if not found:
         print(f"Couldn't find last entry for {comic['name']}, defaulting to most recent entry")
     for entry in entries:
@@ -93,7 +93,7 @@ for comic, rss in comics_and_feeds:
         counter = (counter + 1) % 30
         sleep(0.2) if counter != 0 else sleep(45)
 
-    comics.update_one({"name": comic['name']}, {"$set": {"last_update": rss.entries[0].link, "hash": rss.hash}})
+    comics.update_one({"name": comic['name']}, {"$set": {"last_update": feed.entries[0].link, "hash": feed.hash}})
 
 time_taken = (datetime.now() - start).seconds
 print(f"All feeds checked in {time_taken//60} minutes and {time_taken % 60} seconds")
