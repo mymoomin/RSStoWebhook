@@ -678,5 +678,15 @@
             "name": "Christy & Dani",
             "url": "https://i.imgur.com/yAYhpad.png"
         }
-    }
+    },
+    {
+        "name": "Kiwi Blitz",
+        "url": "http://www.kiwiblitz.com/comic/rss",
+        "role_id": 581537683680133100,
+        "color": 4696375,
+        "author": {
+          "name": "Kiwiflea",
+          "url": "https://i.imgur.com/ookNqQj.png"
+        }
+      }
 ]
