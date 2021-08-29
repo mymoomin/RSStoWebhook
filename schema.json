@@ -1,0 +1,53 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "array",
+    "title": "comics",
+    "items": { "$ref": "#/$defs/comic" },
+    "$defs": {
+        "comic": {
+            "type": "object",
+            "required": ["name", "url", "role_id", "author", "color"],
+            "defaultSnippets": [
+                {
+                    "label": "template",
+                    "body": {
+                        "name": "$1",
+                        "url": "$2",
+                        "role_id": "^$3",
+                        "color": "^$4",
+                        "author": {
+                            "name": "$5",
+                            "url": "$6"
+                        }
+                    }
+                }
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "integer"
+                },
+                "color" : {
+                    "type": "integer"
+                },
+                "author": {
+                    "type": "object",
+                    "required": ["name", "url"],
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "url": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "json.schemas": [
+    {
+        "fileMatch": [
+            "/comics.json"
+        ],
+        "url": "./schema.json"
+    }
+    ]
+}
