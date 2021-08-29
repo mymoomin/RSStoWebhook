@@ -8,7 +8,7 @@ import mmh3
 
 load_dotenv()
 HASH_SEED = int(os.environ.get("HASH_SEED"), 16)
-MONGODB_URI = int(os.environ.get("MONGODB_URI"))
+MONGODB_URI = os.environ.get("MONGODB_URI")
 client = MongoClient(MONGODB_URI)
 db = client["discord_rss"]
 comics = db["comics"]
