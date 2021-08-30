@@ -67,7 +67,7 @@ async def get_feed(
         return feed
     except Exception as e:
         print(f"Problem connecting to {comic['name']}")
-        return str(e)
+        return e
 
 
 async def get_feeds(comic_list, **kwargs):
@@ -86,8 +86,8 @@ comics_and_feeds = zip(comic_list, feeds)
 counter = 1
 for comic, feed in comics_and_feeds:
     print(f"Checking {comic['name']}")
-    if isinstance(feed, str):
-        print(feed)
+    if isinstance(feed, Exception):
+        print(f"{type(feed).__name__}: {str(feed)}")
     else:
         entries, found = get_new_entries(comic, feed)
         if not found:
