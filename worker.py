@@ -39,7 +39,7 @@ def make_body(comic, entry):
         "embeds": [
             {
                 "color": comic['color'],
-                "title": f"**{entry.title}**",
+                "title": f"**{entry.get('title', comic['name'])}**",
                 "url": entry.link,
                 "description": f"New {comic['name']}!",
             },
