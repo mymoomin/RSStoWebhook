@@ -2,7 +2,8 @@ name: Check Feeds
 
 on:
   schedule:
-    - cron: '*/6 * * * *'
+    - cron: '*/5 * * * *'
+  workflow_dispatch: 
 
 jobs:
   run-script:
