@@ -84,7 +84,7 @@ for comic, feed in comics_and_feeds:
     for entry in entries:
         body = make_body(comic, entry)
         r = requests.post(WEBHOOK_URL, None, body)
-        print(f"{entry.title}: {r.status_code}: {r.reason}")
+        print(f"{entry.get('title', entry.link)}: {r.status_code}: {r.reason}")
         h = r.headers
         print(f"{h['x-ratelimit-remaining']} of {h['x-ratelimit-limit']} requests left in the next {h['x-ratelimit-reset-after']} seconds")
         if r.status_code == 429:
