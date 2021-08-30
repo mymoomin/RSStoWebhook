@@ -3,7 +3,7 @@ function scrape() {
     body = document.querySelector("textarea[name='fields[body]']").innerHTML;
     title = document.querySelectorAll("input[type=text]")[8].value;
     name = title.match(/^.+?(?= web)/);
-    role_id = parseInt(body.match(/amp;(.+?)&/)[1]);
+    role_id = BigInt(body.match(/amp;(.+?)&/)[1]);
     color = parseInt(body.match(/: (\d+)/)[1]);
     let author = {};
     author.name = body.match(/"name": "(.+?)"/)[1];

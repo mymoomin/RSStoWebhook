@@ -52,7 +52,7 @@
     {
         "name": "Lore Olympus",
         "url": "https://www.webtoons.com/en/romance/lore-olympus/rss?title_no=1320",
-        "role_id": 834395313258889200,
+        "role_id": 834395313258889256,
         "color": 8723389,
         "author": {
             "name": "Artemis",
@@ -62,7 +62,7 @@
     {
         "name": "Order of the Stick",
         "url": "https://www.giantitp.com/comics/oots.rss",
-        "role_id": 834389340372205600,
+        "role_id": 834389340372205579,
         "color": 11107480,
         "author": {
             "name": "Vaarsuvius",
@@ -72,7 +72,7 @@
     {
         "name": "Brainchild",
         "url": "https://brainchild.suzannegeary.com/feed/",
-        "role_id": 836796255417139200,
+        "role_id": 836796255417139220,
         "color": 11337571,
         "author": {
             "name": "Nosilla",
@@ -82,7 +82,7 @@
     {
         "name": "unOrdinary",
         "url": "https://www.webtoons.com/en/super-hero/unordinary/rss?title_no=679",
-        "role_id": 834394019203121200,
+        "role_id": 834394019203121183,
         "color": 7506394,
         "author": {
             "name": "Updater",
@@ -92,7 +92,7 @@
     {
         "name": "Unsounded",
         "url": "https://unsoundedupdates.tumblr.com/rss",
-        "role_id": 834396277759672300,
+        "role_id": 834396277759672330,
         "color": 7506394,
         "author": {
             "name": "Sette",
@@ -102,7 +102,7 @@
     {
         "name": "Phantomarine",
         "url": "https://www.phantomarine.com/comic/rss",
-        "role_id": 853501271864770600,
+        "role_id": 853501271864770560,
         "color": 4248319,
         "author": {
             "name": "Jeff",
@@ -112,7 +112,7 @@
     {
         "name": "Engelbaum",
         "url": "http://www.spectramisarts.com/?feed=rss2",
-        "role_id": 849341458372755500,
+        "role_id": 849341458372755516,
         "color": 14753851,
         "author": {
             "name": "Rodela",
@@ -122,7 +122,7 @@
     {
         "name": "Pepsiaphobia",
         "url": "https://gastrophobia.com/comic/rss",
-        "role_id": 849335640839159800,
+        "role_id": 849335640839159818,
         "color": 8695682,
         "author": {
             "name": "Phobia",
@@ -132,7 +132,7 @@
     {
         "name": "Devil's Candy",
         "url": "http://www.devilscandycomic.com/rss.php",
-        "role_id": 854100599649730600,
+        "role_id": 854100599649730590,
         "color": 13861475,
         "author": {
             "name": "Hitomi",
@@ -142,7 +142,7 @@
     {
         "name": "Shattered Starlight",
         "url": "http://www.shatteredstarlight.com/feed/",
-        "role_id": 854100362729881600,
+        "role_id": 854100362729881621,
         "color": 16288179,
         "author": {
             "name": "Farah",
@@ -152,7 +152,7 @@
     {
         "name": "Dead Winter",
         "url": "http://deadwinter.cc/dwrss.xml",
-        "role_id": 854099889847402600,
+        "role_id": 854099889847402566,
         "color": 12472885,
         "author": {
             "name": "Lizzie",
@@ -162,7 +162,7 @@
     {
         "name": "Scandinavia and the World",
         "url": "http://feeds.feedburner.com/satwcomic",
-        "role_id": 854100766536237200,
+        "role_id": 854100766536237139,
         "color": 13172736,
         "author": {
             "name": "Denmark",
@@ -172,7 +172,7 @@
     {
         "name": "Star Impact",
         "url": "https://www.starimpactcomic.com/comic/rss",
-        "role_id": 854100682993696800,
+        "role_id": 854100682993696821,
         "color": 6514585,
         "author": {
             "name": "Aster",
@@ -182,7 +182,7 @@
     {
         "name": "Wilde Life",
         "url": "https://www.wildelifecomic.com/comic/rss",
-        "role_id": 854100296027078700,
+        "role_id": 854100296027078707,
         "color": 4433115,
         "author": {
             "name": "The White Faced Bear",
@@ -192,7 +192,7 @@
     {
         "name": "Blades of Furry",
         "url": "https://www.webtoons.com/en/romance/blades-of-furry/rss?title_no=2383",
-        "role_id": 854100893045751800,
+        "role_id": 854100893045751818,
         "color": 14528192,
         "author": {
             "name": "Emile",
@@ -202,7 +202,7 @@
     {
         "name": "The Four of Them",
         "url": "https://www.webtoons.com/en/drama/the-four-of-them/rss?title_no=1524",
-        "role_id": 854100962461089800,
+        "role_id": 854100962461089853,
         "color": 13085564,
         "author": {
             "name": "Johnny",
@@ -212,7 +212,7 @@
     {
         "name": "Missing Monday",
         "url": "https://www.missingmondaycomic.com/comic/rss",
-        "role_id": 854100835642376200,
+        "role_id": 854100835642376242,
         "color": 10773003,
         "author": {
             "name": "Foyle",
@@ -222,7 +222,7 @@
     {
         "name": "Clown Corps",
         "url": "http://clowncorps.net/feed/",
-        "role_id": 854134416947281900,
+        "role_id": 854134416947281960,
         "color": 8759535,
         "author": {
             "name": "McBell",
@@ -232,7 +232,7 @@
     {
         "name": "Swords",
         "url": "https://swordscomic.com/comic/feed/",
-        "role_id": 854101332692435000,
+        "role_id": 854101332692434954,
         "color": 4663923,
         "author": {
             "name": "Sword of Sacred Oaths",
@@ -242,7 +242,7 @@
     {
         "name": "Stand Still, Stay Silent",
         "url": "http://sssscomic.com/ssss-feed.xml",
-        "role_id": 854101232993828900,
+        "role_id": 854101232993828914,
         "color": 13650225,
         "author": {
             "name": "Turi",
@@ -252,7 +252,7 @@
     {
         "name": "Shallowskin",
         "url": "https://merrilandbrowne.com/feed/",
-        "role_id": 854152347117682700,
+        "role_id": 854152347117682738,
         "color": 16772976,
         "author": {
             "name": "Browne",
@@ -262,7 +262,7 @@
     {
         "name": "Boyfriends",
         "url": "https://www.webtoons.com/en/slice-of-life/boyfriends/rss?title_no=2616",
-        "role_id": 854143166353899500,
+        "role_id": 854143166353899542,
         "color": 16766707,
         "author": {
             "name": "Prep",
@@ -272,7 +272,7 @@
     {
         "name": "Awkward Zombie",
         "url": "https://www.awkwardzombie.com/awkward-zombie/rss",
-        "role_id": 854134471917961200,
+        "role_id": 854134471917961236,
         "color": 11879723,
         "author": {
             "name": "Katie",
@@ -282,7 +282,7 @@
     {
         "name": "Sink Your Hookteeth",
         "url": "https://hookteethcomic.com/feed/",
-        "role_id": 857445665582743600,
+        "role_id": 857445665582743612,
         "color": 5335387,
         "author": {
             "name": "Nenmye",
@@ -292,7 +292,7 @@
     {
         "name": "The Glass Scientists",
         "url": "https://www.theglassscientists.com/comic/rss",
-        "role_id": 856710734300840000,
+        "role_id": 856710734300839966,
         "color": 5844777,
         "author": {
             "name": "Mr. Hyde",
@@ -302,7 +302,7 @@
     {
         "name": "Cursed Princess Club",
         "url": "https://www.webtoons.com/en/comedy/cursed-princess-club/rss?title_no=1537",
-        "role_id": 854155337279602700,
+        "role_id": 854155337279602689,
         "color": 12043422,
         "author": {
             "name": "Gwendolyn",
@@ -310,19 +310,9 @@
         }
     },
     {
-        "name": "Monsterpulse",
-        "url": "http://www.monster-pulse.com/comic/rss",
-        "role_id": 582748985303760900,
-        "color": 4154543,
-        "author": {
-            "name": "Violet",
-            "url": "https://i.imgur.com/AF6QExm.png"
-        }
-    },
-    {
         "name": "Monsterkind",
         "url": "http://monsterkind.enenkay.com/comic/rss",
-        "role_id": 582745388180701200,
+        "role_id": 582745388180701218,
         "color": 15573070,
         "author": {
             "name": "Case File",
@@ -332,7 +322,7 @@
     {
         "name": "How to Be a Werewolf",
         "url": "http://howtobeawerewolf.com/comic/rss",
-        "role_id": 582734636359352300,
+        "role_id": 582734636359352330,
         "color": 9063264,
         "author": {
             "name": "Elias",
@@ -342,7 +332,7 @@
     {
         "name": "Not Drunk Enough",
         "url": "http://www.ndecomic.com/comic/rss",
-        "role_id": 584227361587855400,
+        "role_id": 584227361587855381,
         "color": 14687536,
         "author": {
             "name": "Eyeflowers",
@@ -352,7 +342,7 @@
     {
         "name": "Godslave",
         "url": "http://www.godslavecomic.com/comic/rss",
-        "role_id": 584222863033106400,
+        "role_id": 584222863033106452,
         "color": 11562165,
         "author": {
             "name": "Djehuty",
@@ -372,7 +362,7 @@
     {
         "name": "Lilith's Word",
         "url": "http://www.lilithword.com/comic/rss",
-        "role_id": 584588493708197900,
+        "role_id": 584588493708197919,
         "color": 4241893,
         "author": {
             "name": "Brother",
@@ -382,7 +372,7 @@
     {
         "name": "BACK",
         "url": "http://backcomic.com/rss.xml",
-        "role_id": 584254169112772600,
+        "role_id": 584254169112772639,
         "color": 7690275,
         "author": {
             "name": "Cool Witches",
@@ -392,7 +382,7 @@
     {
         "name": "Star Hammer",
         "url": "https://www.starhammercomic.com/comic/rss",
-        "role_id": 584238871844356100,
+        "role_id": 584238871844356147,
         "color": 11158465,
         "author": {
             "name": "ZARI",
@@ -402,7 +392,7 @@
     {
         "name": "Making of Neon",
         "url": "http://makingofneon.com/feed/",
-        "role_id": 584655035514748900,
+        "role_id": 584655035514748938,
         "color": 4044535,
         "author": {
             "name": "Glowball",
@@ -412,7 +402,7 @@
     {
         "name": "The Property of Hate",
         "url": "http://tpoh.smackjeeves.com/rss/",
-        "role_id": 584626314406002700,
+        "role_id": 584626314406002708,
         "color": 1776412,
         "author": {
             "name": "Dial",
@@ -422,7 +412,7 @@
     {
         "name": "Alice and the Nightmare",
         "url": "http://www.aliceandthenightmare.com/rss.php",
-        "role_id": 584596519789920300,
+        "role_id": 584596519789920256,
         "color": 8634850,
         "author": {
             "name": "Owl",
@@ -432,7 +422,7 @@
     {
         "name": "Oddity Woods",
         "url": "https://www.webtoons.com/en/challenge/oddity-woods/rss?title_no=328043",
-        "role_id": 582758411175854100,
+        "role_id": 582758411175854091,
         "color": 10174777,
         "author": {
             "name": "The Storyteller",
@@ -442,7 +432,7 @@
     {
         "name": "Trying Human",
         "url": "http://www.tryinghuman.com/comic/rss",
-        "role_id": 584930825062318100,
+        "role_id": 584930825062318086,
         "color": 12983835,
         "author": {
             "name": "Hue",
@@ -452,7 +442,7 @@
     {
         "name": "Tiger, Tiger",
         "url": "http://tigertigercomic.com/tiger-tiger/rss",
-        "role_id": 584738289638965200,
+        "role_id": 584738289638965268,
         "color": 10066329,
         "author": {
             "name": "Ludovica",
@@ -462,7 +452,7 @@
     {
         "name": "Rain",
         "url": "http://rain.thecomicseries.com/rss/",
-        "role_id": 589752532667072500,
+        "role_id": 589752532667072524,
         "color": 10054042,
         "author": {
             "name": "Rain",
@@ -472,7 +462,7 @@
     {
         "name": "Weave",
         "url": "https://weavecomic.com/comic/rss",
-        "role_id": 582724989942497300,
+        "role_id": 582724989942497305,
         "color": 16114109,
         "author": {
             "name": "Tatiana",
@@ -482,7 +472,7 @@
     {
         "name": "Kill Six Billion Demons",
         "url": "https://killsixbilliondemons.com/feed/",
-        "role_id": 582721448972517400,
+        "role_id": 582721448972517386,
         "color": 11240119,
         "author": {
             "name": "Gog-Agog",
@@ -492,7 +482,7 @@
     {
         "name": "Tove",
         "url": "http://www.tovecomic.com/comic/rss",
-        "role_id": 596918902525657100,
+        "role_id": 596918902525657115,
         "color": 3188707,
         "author": {
             "name": "Weird Alien Technology",
@@ -502,7 +492,7 @@
     {
         "name": "[un]Divine",
         "url": "http://www.undivinecomic.com/comic/rss",
-        "role_id": 593470442199580700,
+        "role_id": 593470442199580672,
         "color": 15655099,
         "author": {
             "name": "La Divinidad",
@@ -512,7 +502,7 @@
     {
         "name": "Vainglorious",
         "url": "http://vaingloriouscomic.com/comic/rss",
-        "role_id": 591005132833947600,
+        "role_id": 591005132833947652,
         "color": 8865358,
         "author": {
             "name": "Rain",
@@ -522,7 +512,7 @@
     {
         "name": "Dumbing of Age",
         "url": "http://www.dumbingofage.com/feed/",
-        "role_id": 649060367565193200,
+        "role_id": 649060367565193247,
         "color": 3002879,
         "author": {
             "name": "Joyce",
@@ -532,7 +522,7 @@
     {
         "name": "Aerial Magic",
         "url": "https://www.webtoons.com/en/fantasy/aerial-magic/rss?title_no=1358",
-        "role_id": 649060287458181100,
+        "role_id": 649060287458181130,
         "color": 8924997,
         "author": {
             "name": "Wisteria",
@@ -542,7 +532,7 @@
     {
         "name": "Ava's Demon",
         "url": "https://www.webtoons.com/en/challenge/avas-demon-/rss?title_no=349705",
-        "role_id": 649044541999153200,
+        "role_id": 649044541999153152,
         "color": 4862304,
         "author": {
             "name": "Odin",
@@ -552,7 +542,7 @@
     {
         "name": "Monster Pulse",
         "url": "https://www.monster-pulse.com/comic/rss",
-        "role_id": 582748985303760900,
+        "role_id": 582748985303760907,
         "color": 4817315,
         "author": {
             "name": "Violet",
@@ -562,7 +552,7 @@
     {
         "name": "SpectraSpell",
         "url": "https://spectraspell.luckyqueen.se/comic/feed/",
-        "role_id": 649067979023188000,
+        "role_id": 649067979023187968,
         "color": 15720469,
         "author": {
             "name": "Vera",
@@ -572,7 +562,7 @@
     {
         "name": "El Goonish Shive",
         "url": "http://egscomics.com/comic/rss",
-        "role_id": 649060456257945600,
+        "role_id": 649060456257945610,
         "color": 8339600,
         "author": {
             "name": "Tedd",
@@ -582,7 +572,7 @@
     {
         "name": "Runaway Drakaina",
         "url": "http://runawaydrakaina.thecomicseries.com/rss/",
-        "role_id": 775235850643439600,
+        "role_id": 775235850643439657,
         "color": 3927471,
         "author": {
             "name": "Ellie",
@@ -592,7 +582,7 @@
     {
         "name": "Pale",
         "url": "https://palewebserial.wordpress.com/feed/",
-        "role_id": 708085868786876400,
+        "role_id": 708085868786876477,
         "color": 825722,
         "author": {
             "name": "The Astrologer",
@@ -602,7 +592,7 @@
     {
         "name": "Cucumber Quest",
         "url": "http://cucumber.gigidigi.com/rss",
-        "role_id": 581604595214712800,
+        "role_id": 581604595214712853,
         "color": 6907541,
         "author": {
             "name": "Cosmo",
@@ -612,7 +602,7 @@
     {
         "name": "xkcd",
         "url": "https://xkcd.com/rss.xml",
-        "role_id": 582689289637199900,
+        "role_id": 582689289637199886,
         "color": 16777215,
         "author": {
             "name": "Black Hat",
@@ -622,7 +612,7 @@
     {
         "name": "Ward",
         "url": "https://www.parahumans.net/feed/",
-        "role_id": 582728519566622700,
+        "role_id": 582728519566622760,
         "color": 15713564,
         "author": {
             "name": "Update Camera",
@@ -632,7 +622,7 @@
     {
         "name": "Peritale",
         "url": "https://www.peritale.com/comic/rss",
-        "role_id": 582722755460595700,
+        "role_id": 582722755460595735,
         "color": 11679498,
         "author": {
             "name": "Fairytale to the face",
@@ -642,7 +632,7 @@
     {
         "name": "Gunnerkrigg Court",
         "url": "https://www.gunnerkrigg.com/rss.xml",
-        "role_id": 581537989012881400,
+        "role_id": 581537989012881419,
         "color": 1959488,
         "author": {
             "name": "Robot",
@@ -652,7 +642,7 @@
     {
         "name": "Never Satisfied",
         "url": "http://www.neversatisfiedcomic.com/comic/rss",
-        "role_id": 581537828832542700,
+        "role_id": 581537828832542739,
         "color": 9347283,
         "author": {
             "name": "Ivy",
@@ -662,7 +652,7 @@
     {
         "name": "CRISIS02",
         "url": "http://crisis02.webcomic.ws/rss/",
-        "role_id": 582686299878588400,
+        "role_id": 582686299878588427,
         "color": 9539985,
         "author": {
             "name": "Nilla",
@@ -682,11 +672,21 @@
     {
         "name": "Kiwi Blitz",
         "url": "http://www.kiwiblitz.com/comic/rss",
-        "role_id": 581537683680133100,
+        "role_id": 581537683680133171,
         "color": 4696375,
         "author": {
           "name": "Kiwiflea",
           "url": "https://i.imgur.com/ookNqQj.png"
+        }
+      },
+      {
+        "name": "Clover and Cutlass",
+        "url": "https://cloverandcutlass.com/feed/",
+        "role_id": 810742053733662740,
+        "color": 2848906,
+        "author": {
+          "name": "Jolene",
+          "url": "https://i.imgur.com/bfqf2w2.png"
         }
       }
 ]
