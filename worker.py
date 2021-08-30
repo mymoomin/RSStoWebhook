@@ -91,7 +91,7 @@ for comic, feed in comics_and_feeds:
             print(r.json())
             raise Exception("Ratelimit reached")
         counter = (counter + 1) % 30
-        sleep(0.3) if counter != 0 else sleep(45)
+        sleep(0.25) if counter != 0 else sleep(50)
 
     comics.update_one({"name": comic['name']}, {"$set": {"last_update": feed.entries[0].link, "hash": feed.hash}})
 
