@@ -1,4 +1,5 @@
 import os
+from aiohttp.client_exceptions import ClientConnectorError
 from dotenv import load_dotenv
 from pymongo import MongoClient
 import feedparser
@@ -16,6 +17,8 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 HASH_SEED = int(os.environ.get("HASH_SEED"), 16)
 MONGODB_URI = os.environ.get("MONGODB_URI")
 comics = MongoClient(MONGODB_URI)['discord_rss']['comics']
+
+timeout = aiohttp.ClientTimeout(sock_connect=5, sock_read=10)
 
 def get_new_entries(comic, feed):
     if comic['hash'] == feed.hash:
@@ -54,13 +57,17 @@ async def get_feed(
 ) -> dict:
     url = comic['url']
     print(f"Requesting {url}")
-    resp = await session.request('GET', url=url, **kwargs)
-    data = await resp.text()
-    print(f"Received data for {comic['name']}")
-    feed = feedparser.parse(data)
-    setattr(feed, "hash", mmh3.hash_bytes(data, HASH_SEED))
-    print(f"Parsed feed")
-    return feed
+    try:
+        resp = await session.request('GET', url=url, **kwargs)
+        data = await resp.text()
+        print(f"Received data for {comic['name']}")
+        feed = feedparser.parse(data)
+        setattr(feed, "hash", mmh3.hash_bytes(data, HASH_SEED))
+        print(f"Parsed feed")
+        return feed
+    except Exception as e:
+        print(f"Problem connecting to {comic['name']}")
+        return str(e)
 
 
 async def get_feeds(comic_list, **kwargs):
@@ -68,32 +75,36 @@ async def get_feeds(comic_list, **kwargs):
         tasks = []
         for comic in comic_list:
             tasks.append(get_feed(session=session, comic=comic, **kwargs))
-        feeds = await asyncio.gather(*tasks, return_exceptions=True)
+        feeds = await asyncio.gather(*tasks, return_exceptions=False)
         return feeds
 
 comic_list = list(comics.find())
-feeds = asyncio.get_event_loop().run_until_complete(get_feeds(comic_list))
+feeds = asyncio.get_event_loop().run_until_complete(get_feeds(comic_list, timeout=timeout))
+print("done")
 comics_and_feeds = zip(comic_list, feeds)
 
 counter = 1
 for comic, feed in comics_and_feeds:
     print(f"Checking {comic['name']}")
-    entries, found = get_new_entries(comic, feed)
-    if not found:
-        print(f"Couldn't find last entry for {comic['name']}, defaulting to most recent entry")
-    for entry in entries:
-        sleep(0.4) if counter != 0 else sleep(50)
-        body = make_body(comic, entry)
-        r = requests.post(WEBHOOK_URL, None, body)
-        print(f"{entry.get('title', entry.link)}: {r.status_code}: {r.reason}")
-        h = r.headers
-        print(f"{h['x-ratelimit-remaining']} of {h['x-ratelimit-limit']} requests left in the next {h['x-ratelimit-reset-after']} seconds")
-        if r.status_code == 429:
-            print(r.json())
-            raise Exception("Ratelimit reached")
-        counter = (counter + 1) % 30
+    if isinstance(feed, str):
+        print(feed)
+    else:
+        entries, found = get_new_entries(comic, feed)
+        if not found:
+            print(f"Couldn't find last entry for {comic['name']}, defaulting to most recent entry")
+        for entry in entries:
+            sleep(0.4) if counter != 0 else sleep(50)
+            body = make_body(comic, entry)
+            r = requests.post(WEBHOOK_URL, None, body)
+            print(f"{entry.get('title', entry.link)}: {r.status_code}: {r.reason}")
+            h = r.headers
+            print(f"{h['x-ratelimit-remaining']} of {h['x-ratelimit-limit']} requests left in the next {h['x-ratelimit-reset-after']} seconds")
+            if r.status_code == 429:
+                print(r.json())
+                raise Exception("Ratelimit reached")
+            counter = (counter + 1) % 30
 
-    comics.update_one({"name": comic['name']}, {"$set": {"last_update": feed.entries[0].link, "hash": feed.hash}})
+        comics.update_one({"name": comic['name']}, {"$set": {"last_update": feed.entries[0].link, "hash": feed.hash}})
 
 time_taken = (datetime.now() - start).seconds
 print(f"All feeds checked in {time_taken//60} minutes and {time_taken % 60} seconds")
