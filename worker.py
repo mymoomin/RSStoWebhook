@@ -77,12 +77,12 @@ comics_and_feeds = zip(comic_list, feeds)
 
 counter = 1
 for comic, feed in comics_and_feeds:
-    sleep(0.4) if counter != 0 else sleep(50)
     print(f"Checking {comic['name']}")
     entries, found = get_new_entries(comic, feed)
     if not found:
         print(f"Couldn't find last entry for {comic['name']}, defaulting to most recent entry")
     for entry in entries:
+        sleep(0.4) if counter != 0 else sleep(50)
         body = make_body(comic, entry)
         r = requests.post(WEBHOOK_URL, None, body)
         print(f"{entry.get('title', entry.link)}: {r.status_code}: {r.reason}")
