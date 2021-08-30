@@ -77,6 +77,7 @@ comics_and_feeds = zip(comic_list, feeds)
 
 counter = 1
 for comic, feed in comics_and_feeds:
+    sleep(0.4) if counter != 0 else sleep(50)
     print(f"Checking {comic['name']}")
     entries, found = get_new_entries(comic, feed)
     if not found:
@@ -91,7 +92,6 @@ for comic, feed in comics_and_feeds:
             print(r.json())
             raise Exception("Ratelimit reached")
         counter = (counter + 1) % 30
-        sleep(0.4) if counter != 0 else sleep(50)
 
     comics.update_one({"name": comic['name']}, {"$set": {"last_update": feed.entries[0].link, "hash": feed.hash}})
 
