@@ -20,19 +20,20 @@ comics = MongoClient(MONGODB_URI)['discord_rss']['comics']
 
 timeout = aiohttp.ClientTimeout(sock_connect=5, sock_read=10)
 
+
 def get_new_entries(comic, feed):
     if comic['hash'] == feed.hash:
         return ([], True)
-    last_link = comic['last_update']
+    last_entries = comic['last_entries']
     i = 0
     num_entries = len(feed.entries)
     while(i < 20 and i < num_entries):
-        if feed.entries[i].link == last_link:
+        if feed.entries[i].link in last_entries:
             return (feed.entries[:i], True)
         i += 1
     else:
         return ([feed.entries[0]], False)
-        
+
 
 def make_body(comic, entry):
     return {
@@ -104,7 +105,15 @@ for comic, feed in comics_and_feeds:
                 raise Exception("Ratelimit reached")
             counter = (counter + 1) % 30
 
-        comics.update_one({"name": comic['name']}, {"$set": {"last_update": feed.entries[0].link, "hash": feed.hash}})
+        comics.update_one(
+            {"name": comic['name']},
+            {
+                "$set": {"hash": feed.hash},
+                "$push":
+                    {"last_entries":
+                        {"$each": [feed.entries[0].link], "$slice": -3}
+                    }
+            })
 
 time_taken = (datetime.now() - start).seconds
 print(f"All feeds checked in {time_taken//60} minutes and {time_taken % 60} seconds")
