@@ -21,7 +21,6 @@ def get_new_entries(comic: Comic, feed: FeedParserDict):
     num_entries = len(feed.entries)
     while(i < 20 and i < num_entries):
         if feed.entries[i].link in last_entries:
-            print(feed.entries[:i])
             return (reversed(feed.entries[:i]), True)
         i += 1
     else:
@@ -120,7 +119,7 @@ def main(comics: Collection, hash_seed: int, webhook_url: str):
                     "$push": {
                         "last_entries": {
                             "$each": [entry.link for entry in entries],
-                            "$slice": -5
+                            "$slice": -10
                         }
                     }
                 })
