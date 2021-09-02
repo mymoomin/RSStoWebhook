@@ -111,7 +111,7 @@ for comic, feed in comics_and_feeds:
                 "$set": {"hash": feed.hash},
                 "$push":
                     {"last_entries":
-                        {"$each": [feed.entries[0].link], "$slice": -3}
+                        {"$each": [entry.link for entry in entries], "$slice": -3}
                     }
             })
 
