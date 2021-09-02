@@ -14,17 +14,17 @@ from db_types import Comic
 
 
 def get_new_entries(comic: Comic, feed: FeedParserDict):
-    if comic['hash'] == feed.hash:
+    if comic['hash'] == feed['hash']:
         return ([], True)
     last_entries = comic['last_entries']
     i = 0
-    num_entries = len(feed.entries)
+    num_entries = len(feed['entries'])
     while(i < 20 and i < num_entries):
-        if feed.entries[i].link in last_entries:
-            return (reversed(feed.entries[:i]), True)
+        if feed['entries'][i]['link'] in last_entries:
+            return (reversed(feed['entries'][:i]), True)
         i += 1
     else:
-        return (reversed(feed.entries[:5]), False)
+        return (reversed(feed['entries[:5]']), False)
 
 
 def make_body(comic: Comic, entry: FeedParserDict) -> dict:
@@ -36,7 +36,7 @@ def make_body(comic: Comic, entry: FeedParserDict) -> dict:
             {
                 "color": comic['color'],
                 "title": f"**{entry.get('title', comic['name'])}**",
-                "url": entry.link,
+                "url": entry['link'],
                 "description": f"New {comic['name']}!",
             },
         ],
@@ -56,7 +56,7 @@ async def get_feed(
         data = await resp.text()
         print(f"Received data for {comic['name']}")
         feed = feedparser.parse(data)
-        setattr(feed, "hash", mmh3.hash_bytes(data, hash_seed))
+        feed["hash"] = mmh3.hash_bytes(data, hash_seed)
         print("Parsed feed")
         return feed
     except Exception as e:
@@ -115,10 +115,10 @@ def main(comics: Collection, hash_seed: int, webhook_url: str):
             comics.update_one(
                 {"name": comic['name']},
                 {
-                    "$set": {"hash": feed.hash},
+                    "$set": {"hash": feed['hash']},
                     "$push": {
                         "last_entries": {
-                            "$each": [entry.link for entry in entries],
+                            "$each": [entry['link'] for entry in entries],
                             "$slice": -10
                         }
                     }
