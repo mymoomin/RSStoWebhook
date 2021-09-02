@@ -32,7 +32,7 @@ def get_new_entries(comic, feed):
             return (feed.entries[i:0:-1], True)
         i += 1
     else:
-        return ([feed.entries[0]], False)
+        return ([feed.entries[5:0:-1]], False)
 
 
 def make_body(comic, entry):
@@ -111,7 +111,7 @@ for comic, feed in comics_and_feeds:
                 "$set": {"hash": feed.hash},
                 "$push":
                     {"last_entries":
-                        {"$each": [entry.link for entry in entries], "$slice": -3}
+                        {"$each": [entry.link for entry in entries], "$slice": -5}
                     }
             })
 
