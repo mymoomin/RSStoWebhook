@@ -29,10 +29,10 @@ def get_new_entries(comic, feed):
     num_entries = len(feed.entries)
     while(i < 20 and i < num_entries):
         if feed.entries[i].link in last_entries:
-            return (feed.entries[i::-1], True)
+            return (feed.entries[:i].reverse(), True)
         i += 1
     else:
-        return ([feed.entries[5::-1]], False)
+        return (feed.entries[5].reverse(), False)
 
 
 def make_body(comic, entry):
