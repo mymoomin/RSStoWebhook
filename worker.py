@@ -29,7 +29,7 @@ def get_new_entries(comic, feed):
     num_entries = len(feed.entries)
     while(i < 20 and i < num_entries):
         if feed.entries[i].link in last_entries:
-            return (feed.entries[:i], True)
+            return (feed.entries[i:0:-1], True)
         i += 1
     else:
         return ([feed.entries[0]], False)
