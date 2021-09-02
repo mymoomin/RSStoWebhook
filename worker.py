@@ -29,10 +29,11 @@ def get_new_entries(comic, feed):
     num_entries = len(feed.entries)
     while(i < 20 and i < num_entries):
         if feed.entries[i].link in last_entries:
-            return (feed.entries[:i].reverse(), True)
+            print(feed.entries[:i])
+            return (feed.entries[:i], True)
         i += 1
     else:
-        return (feed.entries[5].reverse(), False)
+        return (feed.entries[5], False)
 
 
 def make_body(comic, entry):
@@ -91,6 +92,7 @@ for comic, feed in comics_and_feeds:
         print(f"{type(feed).__name__}: {str(feed)}")
     else:
         entries, found = get_new_entries(comic, feed)
+        entries.reverse()
         if not found:
             print(f"Couldn't find last entry for {comic['name']}, defaulting to most recent entry")
         for entry in entries:
