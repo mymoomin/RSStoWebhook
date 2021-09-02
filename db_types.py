@@ -1,8 +1,10 @@
-from typing import Union, Any, TypedDict
+from typing import TypedDict
+
 
 class Author(TypedDict):
     name: str
     url: str
+
 
 class Comic(TypedDict):
     name: str
