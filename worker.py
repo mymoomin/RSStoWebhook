@@ -13,14 +13,16 @@ from datetime import datetime
 from db_types import Comic
 
 
-def get_new_entries(comic: Comic, feed: FeedParserDict):
-    if comic['hash'] == feed['hash']:
+def get_new_entries(comic: Comic, feed: FeedParserDict, hash: int):
+    if comic['hash'] == hash:
+        print("no changes")
         return ([], True)
     last_entries = comic['last_entries']
     i = 0
     num_entries = len(feed['entries'])
     while(i < 20 and i < num_entries):
         if feed['entries'][i]['link'] in last_entries:
+            print(f"{i} new entries")
             return (reversed(feed['entries'][:i]), True)
         i += 1
     else:
@@ -56,12 +58,12 @@ async def get_feed(
         data = await resp.text()
         print(f"Received data for {comic['name']}")
         feed = feedparser.parse(data)
-        feed["hash"] = mmh3.hash_bytes(data, hash_seed)
+        hash = mmh3.hash_bytes(data, hash_seed)
         print("Parsed feed")
-        return feed
+        return (feed, hash)
     except Exception as e:
         print(f"Problem connecting to {comic['name']}")
-        return e
+        return (e, None)
 
 
 async def get_feeds(
@@ -80,19 +82,19 @@ async def get_feeds(
 def main(comics: Collection, hash_seed: int, webhook_url: str):
     start = datetime.now()
     comic_list: list[Comic] = list(comics.find())
-    feeds = asyncio.get_event_loop().run_until_complete(
+    feeds_and_hashes = asyncio.get_event_loop().run_until_complete(
         get_feeds(comic_list, hash_seed, timeout=timeout)
     )
     print("done")
-    comics_and_feeds = zip(comic_list, feeds)
+    comics_feeds_and_hashes = zip(comic_list, *zip(*feeds_and_hashes))
 
     counter = 1
-    for comic, feed in comics_and_feeds:
+    for comic, feed, hash in comics_feeds_and_hashes:
         print(f"Checking {comic['name']}")
         if isinstance(feed, Exception):
             print(f"{type(feed).__name__}: {str(feed)}")
         else:
-            entries, found = get_new_entries(comic, feed)
+            entries, found = get_new_entries(comic, feed, hash)
             if not found:
                 print(f"Couldn't find last entry for {comic['name']}, "
                       "defaulting to most recent entry")
@@ -115,7 +117,7 @@ def main(comics: Collection, hash_seed: int, webhook_url: str):
             comics.update_one(
                 {"name": comic['name']},
                 {
-                    "$set": {"hash": feed['hash']},
+                    "$set": {"hash": hash},
                     "$push": {
                         "last_entries": {
                             "$each": [entry['link'] for entry in entries],
