@@ -100,7 +100,7 @@ def main(comics: Collection, hash_seed: int, webhook_url: str):
                 sleep(0.4) if counter != 0 else sleep(50)
                 body = make_body(comic, entry)
                 r = requests.post(webhook_url, None, body)
-                print(f"{body['title']}: {r.status_code}: {r.reason}")
+                print(f"{body['embeds'][0]['title']}: {r.status_code}: {r.reason}")
                 h = r.headers
                 print(
                     f"{h['x-ratelimit-remaining']} of {h['x-ratelimit-limit']} "
