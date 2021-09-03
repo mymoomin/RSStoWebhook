@@ -24,7 +24,7 @@ def get_new_entries(comic: Comic, feed: FeedParserDict):
             return (reversed(feed['entries'][:i]), True)
         i += 1
     else:
-        return (reversed(feed['entries[:5]']), False)
+        return (reversed(feed['entries'][:5]), False)
 
 
 def make_body(comic: Comic, entry: FeedParserDict) -> dict:
