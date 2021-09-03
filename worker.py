@@ -23,10 +23,10 @@ def get_new_entries(comic: Comic, feed: FeedParserDict, hash: int):
     while(i < 20 and i < num_entries):
         if feed['entries'][i]['link'] in last_entries:
             print(f"{i} new entries")
-            return (reversed(feed['entries'][:i]), True)
+            return (list(reversed(feed['entries'][:i])), True)
         i += 1
     else:
-        return (reversed(feed['entries'][:5]), False)
+        return (list(reversed(feed['entries'][:5])), False)
 
 
 def make_body(comic: Comic, entry: FeedParserDict) -> dict:
