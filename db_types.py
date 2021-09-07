@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import Optional, TypedDict
 
 
 class Author(TypedDict):
@@ -14,3 +14,8 @@ class Comic(TypedDict):
     author: Author
     last_entries: list[str]
     hash: bytes
+
+
+class Entry:
+    link: str
+    title: Optional[str]

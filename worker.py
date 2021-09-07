@@ -13,10 +13,10 @@ from feedparser.util import FeedParserDict
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
-from db_types import Comic
+from db_types import Comic, Entry
 
 
-def get_new_entries(comic: Comic, feed: FeedParserDict, hash: int):
+def get_new_entries(comic: Comic, feed: FeedParserDict, hash: int) -> list[Entry]:
     if comic["hash"] == hash:
         print("no changes")
         return ([], True)
@@ -32,7 +32,7 @@ def get_new_entries(comic: Comic, feed: FeedParserDict, hash: int):
         return (list(reversed(feed["entries"][:5])), False)
 
 
-def make_body(comic: Comic, entry: FeedParserDict) -> dict:
+def make_body(comic: Comic, entry: Entry) -> dict:
     return {
         "username": comic["author"]["name"],
         "avatar_url": comic["author"]["url"],
