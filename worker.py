@@ -1,15 +1,18 @@
+import asyncio
 import os
+import sys
+from datetime import datetime
+from time import sleep
+
+import aiohttp
+import feedparser
+import mmh3
+import requests
 from dotenv import load_dotenv
 from feedparser.util import FeedParserDict
 from pymongo import MongoClient
-import feedparser
 from pymongo.collection import Collection
-import requests
-from time import sleep
-import asyncio
-import aiohttp
-import mmh3
-from datetime import datetime
+
 from db_types import Comic
 
 
