@@ -97,8 +97,8 @@ def main(comics: Collection, hash_seed: int, webhook_url: str):
             entries, found = get_new_entries(comic, feed, hash)
             if not found:
                 print(
-                    f"Couldn't find last entry for {comic['name']}, defaulting to most"
-                    " recent entry"
+                    f"Couldn't find last entry for {comic['name']}, defaulting to 5"
+                    " most recent entries"
                 )
             for entry in entries:
                 sleep(0.4) if counter != 0 else sleep(50)
