@@ -2,7 +2,9 @@ import asyncio
 import os
 import sys
 from datetime import datetime
+from logging import error
 from time import sleep
+from typing import Union
 
 import aiohttp
 import feedparser
@@ -16,7 +18,9 @@ from pymongo.collection import Collection
 from db_types import Comic, Entry
 
 
-def get_new_entries(comic: Comic, feed: FeedParserDict, hash: int) -> list[Entry]:
+def get_new_entries(
+    comic: Comic, feed: FeedParserDict, hash: int
+) -> tuple[list[Entry], bool]:
     if comic["hash"] == hash:
         print("no changes")
         return ([], True)
@@ -26,10 +30,10 @@ def get_new_entries(comic: Comic, feed: FeedParserDict, hash: int) -> list[Entry
     while i < 20 and i < num_entries:
         if feed["entries"][i]["link"] in last_entries:
             print(f"{i} new entries")
-            return (list(reversed(feed["entries"][:i])), True)
+            return list(reversed(feed["entries"][:i])), True
         i += 1
     else:
-        return (list(reversed(feed["entries"][:5])), False)
+        return list(reversed(feed["entries"][:5])), False
 
 
 def make_body(comic: Comic, entry: Entry) -> dict:
@@ -50,7 +54,7 @@ def make_body(comic: Comic, entry: Entry) -> dict:
 
 async def get_feed(
     session: aiohttp.ClientSession, comic: Comic, hash_seed: int, **kwargs
-) -> FeedParserDict:
+) -> tuple[Union[FeedParserDict, Exception], bytes]:
     url = comic["url"]
     print(f"Requesting {url}")
     try:
@@ -60,15 +64,15 @@ async def get_feed(
         feed = feedparser.parse(data)
         hash = mmh3.hash_bytes(data, hash_seed)
         print("Parsed feed")
-        return (feed, hash)
+        return feed, hash
     except Exception as e:
         print(f"Problem connecting to {comic['name']}")
-        return (e, None)
+        return e, None
 
 
 async def get_feeds(
     comic_list: list[Comic], hash_seed: int, **kwargs
-) -> list[FeedParserDict]:
+) -> list[tuple[Union[FeedParserDict, Exception], bytes]]:
     async with aiohttp.ClientSession() as session:
         tasks = [get_feed(session, comic, hash_seed, **kwargs) for comic in comic_list]
         feeds = await asyncio.gather(*tasks, return_exceptions=False)
