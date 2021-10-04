@@ -32,7 +32,7 @@ def get_new_entries(
             return list(reversed(feed["entries"][:i])), True
         i += 1
     else:
-        return list(reversed(feed["entries"][:5])), False
+        return list(reversed(feed["entries"][:15])), False
 
 
 def make_body(comic: Comic, entry: Entry) -> dict:
