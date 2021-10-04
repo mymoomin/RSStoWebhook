@@ -2,7 +2,6 @@ import asyncio
 import os
 import sys
 from datetime import datetime
-from logging import error
 from time import sleep
 from typing import Union
 
@@ -92,7 +91,7 @@ def main(comics: Collection, hash_seed: int, webhook_url: str):
     for comic, feed, hash in comics_feeds_and_hashes:
         print(f"Checking {comic['name']}")
         if isinstance(feed, Exception):
-            print(f"{type(feed).__name__}: {str(feed)}")
+            print(f"{type(feed).__name__}: {feed}")
         else:
             entries, found = get_new_entries(comic, feed, hash)
             if not found:
