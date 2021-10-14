@@ -26,13 +26,13 @@ def get_new_entries(
     last_entries = comic["last_entries"]
     i = 0
     num_entries = len(feed["entries"])
-    while i < 20 and i < num_entries:
+    while i < 30 and i < num_entries:
         if feed["entries"][i]["link"] in last_entries:
             print(f"{i} new entries")
             return list(reversed(feed["entries"][:i])), True
         i += 1
     else:
-        return list(reversed(feed["entries"][:15])), False
+        return list(reversed(feed["entries"][:20])), False
 
 
 def make_body(comic: Comic, entry: Entry) -> dict:
