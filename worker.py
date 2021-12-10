@@ -57,7 +57,7 @@ async def get_feed(
     url = comic["url"]
     print(f"Requesting {url}")
     try:
-        resp = await session.request("GET", url=url, **kwargs)
+        resp = await session.request("GET", url=url, ssl=False, **kwargs)
         data = await resp.text()
         print(f"Received data for {comic['name']}")
         feed = feedparser.parse(data)
