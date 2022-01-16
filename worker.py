@@ -36,9 +36,11 @@ def get_new_entries(
 
 
 def make_body(comic: Comic, entry: Entry) -> dict:
+    decoration = {}
+    if author := comic.get("author"):
+        decoration["username"] = author["name"]
+        decoration["avatar_url"] = author["url"]
     return {
-        "username": comic["author"]["name"],
-        "avatar_url": comic["author"]["url"],
         "content": f"<@&{comic['role_id']}>",
         "embeds": [
             {
@@ -48,7 +50,7 @@ def make_body(comic: Comic, entry: Entry) -> dict:
                 "description": f"New {comic['name']}!",
             },
         ],
-    }
+    } | decoration
 
 
 async def get_feed(
