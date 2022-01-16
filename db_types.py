@@ -16,6 +16,6 @@ class Comic(TypedDict):
     hash: bytes
 
 
-class Entry:
+class Entry(TypedDict):
     link: str
     title: Optional[str]
