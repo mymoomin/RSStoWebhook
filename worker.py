@@ -44,7 +44,7 @@ def make_body(comic: Comic, entry: Entry) -> dict:
         "content": f"<@&{comic['role_id']}>",
         "embeds": [
             {
-                "color": comic["color"],
+                "color": comic.get("color")],
                 "title": f"**{entry.get('title', comic['name'])}**",
                 "url": entry["link"],
                 "description": f"New {comic['name']}!",
