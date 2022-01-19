@@ -14,7 +14,7 @@ from feedparser.util import FeedParserDict
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
-from db_types import Comic, Entry
+from db_types import Comic, Entry, Extras
 
 
 def get_new_entries(
@@ -36,12 +36,15 @@ def get_new_entries(
 
 
 def make_body(comic: Comic, entry: Entry) -> dict:
-    decoration = {}
+    extras: Extras = {}
     if author := comic.get("author"):
-        decoration["username"] = author["name"]
-        decoration["avatar_url"] = author["url"]
+        extras["username"] = author["name"]
+        extras["avatar_url"] = author["url"]
+    if thread_id := comic.get("thread_id"):
+        extras["thread_id"] = thread_id
+    if role_id := comic.get("role_id"):
+        extras["content"] = f"<@&{role_id}>"
     return {
-        "content": f"<@&{comic['role_id']}>",
         "embeds": [
             {
                 "color": comic.get("color", 0x5C64F4),
@@ -50,7 +53,7 @@ def make_body(comic: Comic, entry: Entry) -> dict:
                 "description": f"New {comic['name']}!",
             },
         ],
-    } | decoration
+    } | extras
 
 
 async def get_feed(
@@ -104,7 +107,11 @@ def main(comics: Collection, hash_seed: int, webhook_url: str):
             for entry in entries:
                 sleep(0.4) if counter != 0 else sleep(50)
                 body = make_body(comic, entry)
-                r = requests.post(webhook_url, None, body)
+                if thread_id := comic.get("thread_id"):
+                    url = f"{webhook_url}?thread_id={thread_id}"
+                else:
+                    url = webhook_url
+                r = requests.post(url, None, body)
                 print(f"{body['embeds'][0]['title']}: {r.status_code}: {r.reason}")
                 h = r.headers
                 print(
@@ -148,6 +155,9 @@ if __name__ == "__main__":
     else:
         WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
         comics = MongoClient(MONGODB_URI)["discord_rss"]["comics"]
-
     timeout = aiohttp.ClientTimeout(sock_connect=5, sock_read=10)
+    main(comics=comics, hash_seed=HASH_SEED, webhook_url=WEBHOOK_URL)
+
+    WEBHOOK_URL = os.environ.get("SD_WEBHOOK_URL")
+    comics = MongoClient(MONGODB_URI)["discord_rss"]["server_comics"]
     main(comics=comics, hash_seed=HASH_SEED, webhook_url=WEBHOOK_URL)
