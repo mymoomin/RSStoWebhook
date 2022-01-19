@@ -53,7 +53,9 @@ def make_body(comic: Comic, entry: Entry) -> dict:
                 "description": f"New {comic['name']}!",
             },
         ],
-    } | extras
+    } | extras  # type: ignore[operator]
+    # This is fine, because TypedDicts are just dicts so | is a supported operator.
+    # However, mypy doesn't know this yet, so we need to silence the error.
 
 
 async def get_feed(
