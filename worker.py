@@ -144,20 +144,20 @@ def main(comics: Collection, hash_seed: int, webhook_url: str):
 
 if __name__ == "__main__":
     load_dotenv()
-    HASH_SEED = int(os.environ.get("HASH_SEED"), 16)
-    MONGODB_URI = os.environ.get("MONGODB_URI")
+    HASH_SEED = int(os.environ["HASH_SEED"], 16)
+    MONGODB_URI = os.environ["MONGODB_URI"]
     opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
     args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
     if "--daily" in opts:
         print("Running daily checks")
-        WEBHOOK_URL = os.environ.get("DAILY_WEBHOOK_URL")
+        WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
         comics = MongoClient(MONGODB_URI)["discord_rss"]["daily_comics"]
     else:
-        WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
+        WEBHOOK_URL = os.environ["WEBHOOK_URL"]
         comics = MongoClient(MONGODB_URI)["discord_rss"]["comics"]
     timeout = aiohttp.ClientTimeout(sock_connect=5, sock_read=10)
     main(comics=comics, hash_seed=HASH_SEED, webhook_url=WEBHOOK_URL)
 
-    WEBHOOK_URL = os.environ.get("SD_WEBHOOK_URL")
+    WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
     comics = MongoClient(MONGODB_URI)["discord_rss"]["server_comics"]
     main(comics=comics, hash_seed=HASH_SEED, webhook_url=WEBHOOK_URL)
