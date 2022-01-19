@@ -3,7 +3,7 @@ import os
 import sys
 from datetime import datetime
 from time import sleep
-from typing import Union
+from typing import Union, Optional
 
 import aiohttp
 import feedparser
@@ -58,7 +58,7 @@ def make_body(comic: Comic, entry: Entry) -> dict:
 
 async def get_feed(
     session: aiohttp.ClientSession, comic: Comic, hash_seed: int, **kwargs
-) -> tuple[Union[FeedParserDict, Exception], bytes]:
+) -> tuple[Union[FeedParserDict, Exception], Optional[bytes]]:
     url = comic["url"]
     print(f"Requesting {url}")
     try:
