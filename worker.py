@@ -157,7 +157,7 @@ if __name__ == "__main__":
     else:
         WEBHOOK_URL = os.environ["WEBHOOK_URL"]
         comics = MongoClient(MONGODB_URI)["discord_rss"]["comics"]
-    timeout = aiohttp.ClientTimeout(sock_connect=5, sock_read=10)
+    timeout = aiohttp.ClientTimeout(sock_connect=15, sock_read=10)
     main(comics=comics, hash_seed=HASH_SEED, webhook_url=WEBHOOK_URL)
 
     WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
