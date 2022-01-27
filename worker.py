@@ -67,6 +67,8 @@ async def get_feed(
         resp = await session.request("GET", url=url, ssl=False, **kwargs)
         data = await resp.text()
         print(f"Received data for {comic['name']}")
+        if resp.status != 200:
+            print(f"HTTP {resp.status}")
         feed = feedparser.parse(data)
         hash = mmh3.hash_bytes(data, hash_seed)
         print("Parsed feed")
