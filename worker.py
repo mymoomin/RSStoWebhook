@@ -75,6 +75,7 @@ async def get_feed(
         print(f"Received data for {comic['name']}")
         if resp.status != 200:
             print(f"HTTP {resp.status}: {resp.reason}")
+            resp.raise_for_status()
         feed = feedparser.parse(data)
         hash = mmh3.hash_bytes(data, hash_seed)
         print("Parsed feed")
