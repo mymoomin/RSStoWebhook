@@ -68,7 +68,12 @@ async def get_feed(
             "GET",
             url=url,
             ssl=False,
-            headers={"User-Agent": ""},
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101"
+                    " Firefox/96.0"
+                )
+            },
             **kwargs,
         )
         data = await resp.text()
