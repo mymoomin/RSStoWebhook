@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 from time import sleep
 from typing import Union, Optional
+from urllib.parse import urlparse
 
 import aiohttp
 import feedparser
@@ -27,8 +28,10 @@ def get_new_entries(
     last_entries = comic["last_entries"]
     i = 0
     num_entries = len(feed["entries"])
+    last_paths = [urlparse(url).path.rstrip("/") for url in last_entries]
     while i < 60 and i < num_entries:
-        if feed["entries"][i]["link"] in last_entries:
+        entry_path = urlparse(feed["entries"][i]["link"]).path.rstrip("/")
+        if entry_path in last_paths:
             print(f"{i} new entries")
             return list(reversed(feed["entries"][:i])), True
         i += 1
