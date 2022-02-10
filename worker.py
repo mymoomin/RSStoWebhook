@@ -8,6 +8,7 @@ from typing import Union, Optional
 import aiohttp
 import feedparser
 import mmh3
+from multidict import CIMultiDictProxy
 import requests
 from dotenv import load_dotenv
 from feedparser.util import FeedParserDict
@@ -58,10 +59,32 @@ def make_body(comic: Comic, entry: Entry) -> dict:
     # However, mypy doesn't know this yet, so we need to silence the error.
 
 
+def get_headers(comic: Comic) -> dict:
+    caching_headers = {}
+    if "etag" in comic:
+        caching_headers["If-None-Match"] = comic["etag"]
+    if "last_modified" in comic:
+        caching_headers["If-Modified-Since"] = comic["last_modified"]
+    return caching_headers
+
+
+def set_headers(comic: Comic, headers: CIMultiDictProxy):
+    new_headers = {}
+    if "ETag" in headers:
+        new_headers["etag"] = headers["ETag"]
+    if "Last-Modified" in headers:
+        new_headers["last_modified"] = headers["Last-Modified"]
+    if new_headers:
+        result = comics.update_one({"name": comic["name"]}, {"$set": new_headers})
+        if result.modified_count != 0:
+            print(f"Updated caching headers for {comic['name']}")
+
+
 async def get_feed(
     session: aiohttp.ClientSession, comic: Comic, hash_seed: int, **kwargs
 ) -> tuple[Union[FeedParserDict, Exception], Optional[bytes]]:
     url = comic["url"]
+    caching_headers = get_headers(comic)
     print(f"Requesting {url}")
     try:
         resp = await session.request(
@@ -72,17 +95,22 @@ async def get_feed(
                 "User-Agent": (
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101"
                     " Firefox/96.0"
-                )
-            },
+                ),
+                "Cache-Control": "no-cache",
+            }
+            | caching_headers,
             **kwargs,
         )
         data = await resp.text()
         print(f"Received data for {comic['name']}")
+        if resp.status == 304:
+            return [], None
         if resp.status != 200:
             print(f"HTTP {resp.status}: {resp.reason}")
             resp.raise_for_status()
         feed = feedparser.parse(data)
         hash = mmh3.hash_bytes(data, hash_seed)
+        set_headers(comic, resp.headers)
         print("Parsed feed")
         return feed, hash
     except Exception as e:
@@ -113,6 +141,8 @@ def main(comics: Collection, hash_seed: int, webhook_url: str):
         print(f"Checking {comic['name']}")
         if isinstance(feed, Exception):
             print(f"{type(feed).__name__}: {feed}")
+        elif not feed:
+            print("Cached response. No changes")
         else:
             entries, found = get_new_entries(comic, feed, hash)
             if not found:
@@ -169,11 +199,11 @@ if __name__ == "__main__":
         WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
         comics = MongoClient(MONGODB_URI)["discord_rss"]["daily_comics"]
     else:
-        WEBHOOK_URL = os.environ["WEBHOOK_URL"]
-        comics = MongoClient(MONGODB_URI)["discord_rss"]["comics"]
+        WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
+        comics = MongoClient(MONGODB_URI)["discord_rss"]["test_comics"]
     timeout = aiohttp.ClientTimeout(sock_connect=15, sock_read=10)
     main(comics=comics, hash_seed=HASH_SEED, webhook_url=WEBHOOK_URL)
 
-    WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
-    comics = MongoClient(MONGODB_URI)["discord_rss"]["server_comics"]
-    main(comics=comics, hash_seed=HASH_SEED, webhook_url=WEBHOOK_URL)
+    # WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
+    # comics = MongoClient(MONGODB_URI)["discord_rss"]["server_comics"]
+    # main(comics=comics, hash_seed=HASH_SEED, webhook_url=WEBHOOK_URL)

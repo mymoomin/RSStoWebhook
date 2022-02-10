@@ -15,6 +15,8 @@ class Comic(TypedDict):
     last_entries: list[str]
     hash: bytes
     thread_id: Optional[int]
+    etag: Optional[str]
+    last_modified: Optional[str]
 
 
 class Extras(TypedDict, total=False):
