@@ -35,7 +35,6 @@ def get_new_entries(
     while i < 60 and i < num_entries:
         entry_parts = urlsplit(feed["entries"][i]["link"])
         entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
-        print(entry_path)
         if entry_path in last_paths:
             print(f"{i} new entries")
             return list(reversed(feed["entries"][:i])), True
