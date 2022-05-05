@@ -182,8 +182,9 @@ def main(
                 print(f"{body['embeds'][0]['title']}: {r.status_code}: {r.reason}")
                 h = r.headers
                 print(
-                    f"{h['x-ratelimit-remaining']} of {h['x-ratelimit-limit']} requests"
-                    f" left in the next {h['x-ratelimit-reset-after']} seconds"
+                    f"{h.get('x-ratelimit-remaining')} of"
+                    f" {h.get('x-ratelimit-limit')} requests left in the next"
+                    f" {h.get('x-ratelimit-reset-after')} seconds"
                 )
                 if r.status_code == 429:
                     print(r.json())
