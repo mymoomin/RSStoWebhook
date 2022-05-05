@@ -75,7 +75,7 @@ def get_headers(comic: Comic) -> dict:
     return caching_headers
 
 
-def set_headers(comic: Comic, headers: CIMultiDictProxy):
+def set_headers(comic: Comic, headers: CIMultiDictProxy, comics: Collection):
     new_headers = {}
     if "ETag" in headers:
         new_headers["etag"] = headers["ETag"]
@@ -88,7 +88,11 @@ def set_headers(comic: Comic, headers: CIMultiDictProxy):
 
 
 async def get_feed(
-    session: aiohttp.ClientSession, comic: Comic, hash_seed: int, **kwargs
+    session: aiohttp.ClientSession,
+    comic: Comic,
+    hash_seed: int,
+    comics: Collection,
+    **kwargs,
 ) -> tuple[Union[FeedParserDict, Exception], Optional[bytes]]:
     url = comic["url"]
     caching_headers = get_headers(comic)
@@ -117,7 +121,7 @@ async def get_feed(
             resp.raise_for_status()
         feed = feedparser.parse(data)
         hash = mmh3.hash_bytes(data, hash_seed)
-        set_headers(comic, resp.headers)
+        set_headers(comic, resp.headers, comics)
         print("Parsed feed")
         return feed, hash
     except Exception as e:
@@ -126,10 +130,13 @@ async def get_feed(
 
 
 async def get_feeds(
-    comic_list: list[Comic], hash_seed: int, **kwargs
+    comic_list: list[Comic], hash_seed: int, comics: Collection, **kwargs
 ) -> list[tuple[Union[FeedParserDict, Exception], bytes]]:
     async with aiohttp.ClientSession() as session:
-        tasks = [get_feed(session, comic, hash_seed, **kwargs) for comic in comic_list]
+        tasks = [
+            get_feed(session, comic, hash_seed, comics, **kwargs)
+            for comic in comic_list
+        ]
         feeds = await asyncio.gather(*tasks, return_exceptions=False)
         return feeds
 
@@ -145,7 +152,7 @@ def main(
     start = datetime.now()
     comic_list: list[Comic] = list(comics.find())
     feeds_and_hashes = asyncio.get_event_loop().run_until_complete(
-        get_feeds(comic_list, hash_seed, timeout=timeout)
+        get_feeds(comic_list, hash_seed, comics, timeout=timeout)
     )
     print("done")
     comics_feeds_and_hashes = zip(comic_list, *zip(*feeds_and_hashes))
