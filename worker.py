@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 from time import sleep
 from typing import Union, Optional
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 import aiohttp
 import feedparser
@@ -52,12 +52,15 @@ def make_body(comic: Comic, entry: Entry) -> dict:
         extras["thread_id"] = thread_id
     if role_id := comic.get("role_id"):
         extras["content"] = f"<@&{role_id}>"
+    if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
+        parts = urlsplit(link)
+        link = urlunsplit(parts._replace(scheme="https"))
     return {
         "embeds": [
             {
                 "color": comic.get("color", 0x5C64F4),
                 "title": f"**{entry.get('title', comic['name'])}**",
-                "url": entry["link"],
+                "url": link,
                 "description": f"New {comic['name']}!",
             },
         ],
