@@ -32,7 +32,7 @@ def get_new_entries(
         urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
         for url in last_entries
     ]
-    while i < 60 and i < num_entries:
+    while i < 100 and i < num_entries:
         entry_parts = urlsplit(feed["entries"][i]["link"])
         entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
         if entry_path in last_paths:
