@@ -12,6 +12,9 @@ __pycache__/
 # Scripts
 scripts
 
+# Design docs (temporary)
+design-drafts
+
 # Distribution / packaging
 .Python
 build/
