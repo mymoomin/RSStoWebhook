@@ -3,16 +3,16 @@ import os
 import sys
 from datetime import datetime
 from time import sleep
-from typing import Union, Optional
+from typing import Optional, Union
 from urllib.parse import urlsplit, urlunsplit
 
 import aiohttp
 import feedparser
 import mmh3
-from multidict import CIMultiDictProxy
 import requests
 from dotenv import load_dotenv
 from feedparser.util import FeedParserDict
+from multidict import CIMultiDictProxy
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
