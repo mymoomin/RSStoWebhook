@@ -13,7 +13,6 @@ This is a list of bugs that have happened in the past and are now fixed, but wou
 - [f661a90](https://github.com/mymoomin/RSStoWebhook/commit/f661a902a2ce2be570a9b039e0dde596f52ea624) Spurious errors for failed SSL checks
 - [b0939df](https://github.com/mymoomin/RSStoWebhook/commit/b0939df99bd28ed17d69e814cf51bb725fc97883) Crash when expected response headers are missing
 - [13a7171](https://github.com/mymoomin/RSStoWebhook/commit/13a7171be8f19164902a36e1f5abd587f852a303) Crash on bad URL scheme
-- [4c7ac64](https://github.com/mymoomin/RSStoWebhook/commit/4c7ac648a3f31109337a6ec5c1ae36992d521eaf) Possible error on optional api value given as `None` (check)
 - [192de2b](https://github.com/mymoomin/RSStoWebhook/commit/192de2b456810174aa09b6feac6a7b05f695a001) Blocked by Tumblr because of user agent presumably marked as malicious
 - [c45d8b7](https://github.com/mymoomin/RSStoWebhook/commit/c45d8b7a8cdb3507f0a407f2e453e1ebde284e14) Blocked by other sites because of missing user agent
 - [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2) Spurious notifications when a feed's URL structure changes in a semantically-equivalent way
