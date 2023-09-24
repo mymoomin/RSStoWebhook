@@ -17,6 +17,7 @@ People can add a comic by asking me to do so.
 - People need to use 42 to add roles, and look up roles in a 118-line alphabetical list.
 - The Property of Hate can't be checked due to weird RSS feed layout (not reverse chronological).
 - Not following Discord's API rules will break the service, but not all API rules are documented so I don't know what they are, and things will just crash at random.
+- When an RSS feed breaks, I often don't notice for a long time.
 
 ### Architectural
 
@@ -34,6 +35,7 @@ People can add a comic by asking me to do so.
 - Let people add comics easily, and let people other than me approve them.
 - (tentative) Let people add roles through a website that is automatically synced with the available comics.
 - Check RSS feeds for new items by recency and not by order.
+- Detect broken RSS feeds.
 
 ### Architectural
 
