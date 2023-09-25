@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 import os
 import sys
 from datetime import datetime
 from time import sleep
-from typing import Optional, Union
+from typing import TYPE_CHECKING
 from urllib.parse import urlsplit, urlunsplit
 
 import aiohttp
@@ -16,31 +18,34 @@ from multidict import CIMultiDictProxy
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
-from db_types import Comic, Entry, Extras
+from db_types import Comic, Extras
+
+if TYPE_CHECKING:
+    from feedparser.util import Entry
 
 
 def get_new_entries(
-    comic: Comic, feed: FeedParserDict, hash: int
+    comic: Comic, feed: FeedParserDict, hash: bytes | None
 ) -> tuple[list[Entry], bool]:
     if comic["hash"] == hash:
         print("no changes")
         return ([], True)
     last_entries = comic["last_entries"]
     i = 0
-    num_entries = len(feed["entries"])
+    num_entries = len(feed.entries)
     last_paths = [
         urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
         for url in last_entries
     ]
     while i < 100 and i < num_entries:
-        entry_parts = urlsplit(feed["entries"][i]["link"])
+        entry_parts = urlsplit(feed.entries[i]["link"])
         entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
         if entry_path in last_paths:
             print(f"{i} new entries")
-            return list(reversed(feed["entries"][:i])), True
+            return list(reversed(feed.entries[:i])), True
         i += 1
     else:
-        return list(reversed(feed["entries"][:30])), False
+        return list(reversed(feed.entries[:30])), False
 
 
 def make_body(comic: Comic, entry: Entry) -> dict:
@@ -96,7 +101,7 @@ async def get_feed(
     hash_seed: int,
     comics: Collection,
     **kwargs,
-) -> tuple[Union[FeedParserDict, Exception], Optional[bytes]]:
+) -> tuple[FeedParserDict | Exception | None, bytes | None]:
     url = comic["url"]
     caching_headers = get_headers(comic)
     print(f"Requesting {url}")
@@ -118,7 +123,7 @@ async def get_feed(
         data = await resp.text()
         print(f"Received data for {comic['name']}")
         if resp.status == 304:
-            return [], None
+            return None, None
         if resp.status != 200:
             print(f"HTTP {resp.status}: {resp.reason}")
             resp.raise_for_status()
@@ -134,7 +139,7 @@ async def get_feed(
 
 async def get_feeds(
     comic_list: list[Comic], hash_seed: int, comics: Collection, **kwargs
-) -> list[tuple[Union[FeedParserDict, Exception], bytes]]:
+) -> list[tuple[FeedParserDict | Exception | None, bytes | None]]:
     async with aiohttp.ClientSession() as session:
         tasks = [
             get_feed(session, comic, hash_seed, comics, **kwargs)
@@ -158,7 +163,11 @@ def main(
         get_feeds(comic_list, hash_seed, comics, timeout=timeout)
     )
     print("done")
-    comics_feeds_and_hashes = zip(comic_list, *zip(*feeds_and_hashes))
+    comics_feeds_and_hashes: zip[
+        tuple[Comic, FeedParserDict | Exception | None, bytes | None]
+    ] = zip(
+        comic_list, *zip(*feeds_and_hashes)
+    )  # type: ignore
 
     counter = 1
     for comic, feed, hash in comics_feeds_and_hashes:
@@ -222,10 +231,10 @@ if __name__ == "__main__":
     if "--daily" in opts:
         print("Running daily checks")
         WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
-        comics = MongoClient(MONGODB_URI)["discord_rss"]["daily_comics"]
+        comics: Collection = MongoClient(MONGODB_URI)["discord_rss"]["daily_comics"]
     else:
-        WEBHOOK_URL = os.environ["WEBHOOK_URL"]
-        comics = MongoClient(MONGODB_URI)["discord_rss"]["comics"]
+        WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
+        comics = MongoClient(MONGODB_URI)["discord_rss"]["test_comics"]
     timeout = aiohttp.ClientTimeout(sock_connect=15, sock_read=10)
     main(
         comics=comics,

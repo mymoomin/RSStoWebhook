@@ -25,8 +25,3 @@ class Extras(TypedDict, total=False):
     username: str
     avatar_url: str
     thread_id: int
-
-
-class Entry(TypedDict):
-    link: str
-    title: Optional[str]
