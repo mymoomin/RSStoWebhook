@@ -1,0 +1,11 @@
+# Mypy
+cffi==1.15.1
+cryptography==41.0.4
+mypy==1.5.1
+mypy-extensions==1.0.0
+pycparser==2.21
+types-pyOpenSSL==23.2.0.2
+types-pywin32==306.0.0.4
+types-requests==2.31.0.5
+types-urllib3==1.26.25.14
+typing_extensions==4.8.0
