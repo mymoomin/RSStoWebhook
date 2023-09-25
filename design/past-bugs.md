@@ -17,3 +17,4 @@ This is a list of bugs that have happened in the past and are now fixed, but wou
 - [c45d8b7](https://github.com/mymoomin/RSStoWebhook/commit/c45d8b7a8cdb3507f0a407f2e453e1ebde284e14) Blocked by other sites because of missing user agent
 - [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2) Spurious notifications when a feed's URL structure changes in a semantically-equivalent way
 - [e22f170](https://github.com/mymoomin/RSStoWebhook/commit/e22f17071a57331d26e5b62ea7e5a3f1949660a9) Updates missed by overly-aggressively fuzzy-matching URLs
+- [No Commit] When new pages for a comic couldn't be posted due to a webhook error, their caching headers would still be updated, so after the error was fixed the script thought that the feed was already up-to-date based on the caching headers, and no updates were posted.
