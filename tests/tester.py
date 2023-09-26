@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -21,12 +21,12 @@ HASH_SEED = int(os.environ["HASH_SEED"], 16)
 
 
 class TestCollection:
-    def __init__(self, collection_name: str = "test_comics"):
+    def __init__(self: Self, collection_name: str = "test_comics") -> None:
         self.collection: Collection = MongoClient(MONGODB_URI)["discord_rss"][
             collection_name
         ]
 
-    def pop_last_update(self) -> int:
+    def pop_last_update(self: Self) -> int:
         result = self.collection.update_many(
             {},
             {
@@ -37,7 +37,7 @@ class TestCollection:
         )
         return result.modified_count
 
-    def reset(self, field: str) -> int:
+    def reset(self: Self, field: str) -> int:
         result = self.collection.update_many(
             {field: {"$exists": True}},
             {
@@ -48,13 +48,13 @@ class TestCollection:
         )
         return result.modified_count
 
-    def reset_caching(self):
+    def reset_caching(self: Self) -> None:
         modified_count = self.reset("hash")
         self.reset("last_modified")
         self.reset("etag")
         return modified_count
 
-    def reset_last_modified(self):
+    def reset_last_modified(self: Self) -> None:
         result = self.collection.update_many(
             {"last_modified": {"$exists": True}},
             {
@@ -67,7 +67,7 @@ class TestCollection:
         )
         return result.modified_count
 
-    def end_to_end_test(self):
+    def end_to_end_test(self: Self) -> None:
         self.reset_caching()
         self.pop_last_update()
         main(self.collection, HASH_SEED, WEBHOOK_URL)

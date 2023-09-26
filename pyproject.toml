@@ -50,7 +50,7 @@ select = [
     "N",            # naming # no new errors
 
     # Some extra flake-8 plugins
-    # "ANN",        # flake8-annotations # found a bunch of missing typechecks, re-enable later
+    "ANN",        # flake8-annotations # checks everything has type annotations
     # "D",          # pydocstyle # a million errors because I don't have any docstrings
     "S",            # flake8-bandit # found missing timeouts (probably good?)
     "A",            # flake8-builtins # caught shadowing `hash()` with a variable called `hash`
