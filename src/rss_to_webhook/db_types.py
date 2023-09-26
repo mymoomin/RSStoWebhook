@@ -17,11 +17,3 @@ class Comic(TypedDict):
     thread_id: NotRequired[int]
     etag: NotRequired[str]
     last_modified: NotRequired[str]
-
-
-class Extras(TypedDict, total=False):
-    content: str
-    color: int
-    username: str
-    avatar_url: str
-    thread_id: int

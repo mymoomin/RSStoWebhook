@@ -19,7 +19,9 @@ if TYPE_CHECKING:
     from feedparser.util import Entry, FeedParserDict
     from multidict import CIMultiDictProxy
     from pymongo.collection import Collection
-    from src.rss_to_webhook.db_types import Comic, Extras
+
+    from rss_to_webhook.db_types import Comic
+    from rss_to_webhook.discord_types import Extras, Message
 
 
 def get_new_entries(
@@ -46,7 +48,7 @@ def get_new_entries(
         return list(reversed(feed.entries[:30])), False
 
 
-def make_body(comic: Comic, entry: Entry) -> dict:
+def make_body(comic: Comic, entry: Entry) -> Message:
     extras: Extras = {}
     if author := comic.get("author"):
         extras["username"] = author["name"]
@@ -65,7 +67,8 @@ def make_body(comic: Comic, entry: Entry) -> dict:
                 "description": f"New {comic['name']}!",
             },
         ],
-    } | extras
+    } | extras  # type: ignore[return-value]
+    # mypy can't understand this assignment, but it is valid
 
 
 def get_headers(comic: Comic) -> dict[str, str]:
