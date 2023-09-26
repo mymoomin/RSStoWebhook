@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
+from rss_to_webhook.worker import main
+
 if TYPE_CHECKING:
     from pymongo.collection import Collection
 
-# sys.path.insert(1, os.path.join(sys.path[0], ".."))
-from rss_to_webhook.worker import main  # noqa: E402
 
 start = time.time()
 
