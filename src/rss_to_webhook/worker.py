@@ -51,8 +51,6 @@ def make_body(comic: Comic, entry: Entry) -> dict:
     if author := comic.get("author"):
         extras["username"] = author["name"]
         extras["avatar_url"] = author["url"]
-    if thread_id := comic.get("thread_id"):
-        extras["thread_id"] = thread_id
     if role_id := comic.get("role_id"):
         extras["content"] = f"<@&{role_id}>"
     if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
