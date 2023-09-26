@@ -25,6 +25,7 @@ test = [
     "mypy>=1.5.1",
     "ruff>=0.0.291",
     "black>=23.9.1",
+    "pytest>=7.3.2",
 ]
 
 [project.urls]
