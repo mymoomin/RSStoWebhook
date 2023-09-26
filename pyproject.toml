@@ -37,6 +37,12 @@ test = [
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.pytest.ini_options]
+addopts = "--cov=slapping"
+testpaths = [
+    "tests",
+]
+
 [tool.mypy]
 mypy_path="$MYPY_CONFIG_FILE_DIR/typings"
 check_untyped_defs = true
