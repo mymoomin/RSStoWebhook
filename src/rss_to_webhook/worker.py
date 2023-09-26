@@ -153,7 +153,7 @@ async def get_feeds(
 
 
 def main(
-    comics: Collection,
+    comics: Collection[Comic],
     hash_seed: int,
     webhook_url: str,
     timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(
@@ -231,15 +231,16 @@ if __name__ == "__main__":
     load_dotenv()
     HASH_SEED = int(os.environ["HASH_SEED"], 16)
     MONGODB_URI = os.environ["MONGODB_URI"]
+    client: MongoClient[Comic] = MongoClient(MONGODB_URI)
     opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
     args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
     if "--daily" in opts:
         print("Running daily checks")
         WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
-        comics: Collection = MongoClient(MONGODB_URI)["discord_rss"]["daily_comics"]
+        comics = client["discord_rss"]["daily_comics"]
     else:
         WEBHOOK_URL = os.environ["WEBHOOK_URL"]
-        comics = MongoClient(MONGODB_URI)["discord_rss"]["comics"]
+        comics = client["discord_rss"]["comics"]
     timeout = aiohttp.ClientTimeout(sock_connect=15, sock_read=10)
     main(
         comics=comics,
@@ -248,5 +249,5 @@ if __name__ == "__main__":
     )
 
     WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
-    comics = MongoClient(MONGODB_URI)["discord_rss"]["server_comics"]
+    comics = client["discord_rss"]["server_comics"]
     main(comics=comics, hash_seed=HASH_SEED, webhook_url=WEBHOOK_URL)
