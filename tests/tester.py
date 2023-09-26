@@ -11,6 +11,8 @@ from rss_to_webhook.worker import main
 if TYPE_CHECKING:
     from pymongo.collection import Collection
 
+    from rss_to_webhook.db_types import Comic
+
 
 start = time.time()
 
@@ -18,13 +20,12 @@ load_dotenv()
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 MONGODB_URI = os.environ["MONGODB_URI"]
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
+client: MongoClient[Comic] = MongoClient(MONGODB_URI)
 
 
 class TestCollection:
     def __init__(self: Self, collection_name: str = "test_comics") -> None:
-        self.collection: Collection = MongoClient(MONGODB_URI)["discord_rss"][
-            collection_name
-        ]
+        self.collection: Collection[Comic] = client["discord_rss"][collection_name]
 
     def pop_last_update(self: Self) -> int:
         result = self.collection.update_many(
