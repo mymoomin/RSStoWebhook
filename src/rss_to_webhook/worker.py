@@ -70,7 +70,7 @@ def make_body(comic: Comic, entry: Entry) -> dict:
     } | extras
 
 
-def get_headers(comic: Comic) -> dict:
+def get_headers(comic: Comic) -> dict[str, str]:
     caching_headers = {}
     if "etag" in comic:
         caching_headers["If-None-Match"] = comic["etag"]
@@ -79,7 +79,9 @@ def get_headers(comic: Comic) -> dict:
     return caching_headers
 
 
-def set_headers(comic: Comic, headers: CIMultiDictProxy, comics: Collection) -> None:
+def set_headers(
+    comic: Comic, headers: CIMultiDictProxy, comics: Collection[Comic]
+) -> None:
     new_headers = {}
     if "ETag" in headers:
         new_headers["etag"] = headers["ETag"]
@@ -95,8 +97,8 @@ async def get_feed(
     session: aiohttp.ClientSession,
     comic: Comic,
     hash_seed: int,
-    comics: Collection,
-    **kwargs: Any,  # noqa: ANN401, RUF100
+    comics: Collection[Comic],
+    **kwargs: Any,  # noqa: ANN401
 ) -> tuple[FeedParserDict | Exception | None, bytes | None]:
     url = comic["url"]
     caching_headers = get_headers(comic)
@@ -137,8 +139,8 @@ async def get_feed(
 async def get_feeds(
     comic_list: list[Comic],
     hash_seed: int,
-    comics: Collection,
-    **kwargs: Any,  # noqa: ANN401, RUF100
+    comics: Collection[Comic],
+    **kwargs: Any,  # noqa: ANN401
 ) -> list[tuple[FeedParserDict | Exception | None, bytes | None]]:
     async with aiohttp.ClientSession() as session:
         tasks = [
