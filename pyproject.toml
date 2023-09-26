@@ -1,5 +1,5 @@
 [project]
-name = "RSStoWebhooks"
+name = "rss_to_webhook"
 requires_python = ">=3.11"
 
 [tool.mypy]
