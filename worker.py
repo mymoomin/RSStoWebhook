@@ -114,6 +114,7 @@ async def get_feed(
                     " Firefox/96.0"
                 ),
                 "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
             }
             | caching_headers,
             **kwargs,
