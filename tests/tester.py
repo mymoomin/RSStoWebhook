@@ -48,13 +48,13 @@ class TestCollection:
         )
         return result.modified_count
 
-    def reset_caching(self: Self) -> None:
+    def reset_caching(self: Self) -> int:
         modified_count = self.reset("hash")
         self.reset("last_modified")
         self.reset("etag")
         return modified_count
 
-    def reset_last_modified(self: Self) -> None:
+    def reset_last_modified(self: Self) -> int:
         result = self.collection.update_many(
             {"last_modified": {"$exists": True}},
             {
