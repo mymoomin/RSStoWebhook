@@ -16,10 +16,10 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 if TYPE_CHECKING:
-    from db_types import Comic, Extras
     from feedparser.util import Entry, FeedParserDict
     from multidict import CIMultiDictProxy
     from pymongo.collection import Collection
+    from src.rss_to_webhook.db_types import Comic, Extras
 
 
 def get_new_entries(

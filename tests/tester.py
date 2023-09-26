@@ -9,8 +9,8 @@ from pymongo import MongoClient
 if TYPE_CHECKING:
     from pymongo.collection import Collection
 
-sys.path.insert(1, os.path.join(sys.path[0], ".."))
-from worker import main  # noqa: E402
+# sys.path.insert(1, os.path.join(sys.path[0], ".."))
+from rss_to_webhook.worker import main  # noqa: E402
 
 start = time.time()
 
