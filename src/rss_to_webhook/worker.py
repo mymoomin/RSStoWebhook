@@ -80,7 +80,7 @@ def get_headers(comic: Comic) -> dict[str, str]:
 
 
 def set_headers(
-    comic: Comic, headers: CIMultiDictProxy, comics: Collection[Comic]
+    comic: Comic, headers: CIMultiDictProxy[str], comics: Collection[Comic]
 ) -> None:
     new_headers = {}
     if "ETag" in headers:
