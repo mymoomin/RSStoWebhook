@@ -1,5 +1,5 @@
 from time import struct_time
-from typing import List, Literal, Required, TypedDict, type_check_only
+from typing import Literal, Required, TypedDict, type_check_only
 
 @type_check_only
 class Feed(TypedDict, total=False):
@@ -16,8 +16,8 @@ class Entry(TypedDict, total=False):
     author: str
 
 class FeedParserDict:
-    bozo: Literal[False] | Literal[1]
+    bozo: Literal[False, 1]
     encoding: str
-    entries: List[Entry]
+    entries: list[Entry]
     feed: Feed
     version: str

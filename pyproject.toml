@@ -1,2 +1,29 @@
+[project]
+name = "RSStoWebhooks"
+requires_python = ">=3.11"
+
 [tool.mypy]
 mypy_path="$MYPY_CONFIG_FILE_DIR/typings"
+
+[tool.ruff]
+line-length = 88
+select = [
+    "E", "F", "W",  # default flake-8
+    "I",            # isort
+    "PGH",          # pygrep-hooks
+    "UP",           # pyupgrade
+    "RUF",          # Ruff-specific rules 
+    "C90",          # mccabe # no new errors
+    "N",            # naming # no new errors
+
+    # Some extra flake-8 plugins
+    "ANN",        # flake8-annotations # found a bunch of missing typechecks, re-enable later
+    # "D",          # pydocstyle # a million errors because I don't have any docstrings
+    "S",            # flake8-bandit # found missing timeouts (probably good?)
+    "A",            # flake8-builtins # caught shadowing `hash()` with a variable called `hash`
+    "DTZ",          # flake8-datetimez # found that I was using datetime in the first place (mistake)
+    "PYI",          # flake8-pyi
+    "PT",           # flake8-pytest-style
+    "TCH",          # flake8-type-checking # checks typechecking-only stuff is in the right place
+]
+src = ["src"]

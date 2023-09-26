@@ -1,4 +1,4 @@
-from typing import Optional, TypedDict
+from typing import NotRequired, TypedDict
 
 
 class Author(TypedDict):
@@ -9,14 +9,14 @@ class Author(TypedDict):
 class Comic(TypedDict):
     name: str
     url: str
-    role_id: Optional[int]
-    color: Optional[int]
-    author: Optional[Author]
+    role_id: NotRequired[int]
+    color: NotRequired[int]
+    author: NotRequired[Author]
     last_entries: list[str]
     hash: bytes
-    thread_id: Optional[int]
-    etag: Optional[str]
-    last_modified: Optional[str]
+    thread_id: NotRequired[int]
+    etag: NotRequired[str]
+    last_modified: NotRequired[str]
 
 
 class Extras(TypedDict, total=False):
