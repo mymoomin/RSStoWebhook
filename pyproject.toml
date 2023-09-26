@@ -24,6 +24,7 @@ dependencies = [
 test = [
     "mypy>=1.5.1",
     "ruff>=0.0.291",
+    "black>=23.9.1",
 ]
 
 [project.urls]
