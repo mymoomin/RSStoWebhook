@@ -21,8 +21,8 @@ def comic() -> Comic:
 class Feed:
     bozo: Literal[False, 1]
     encoding: str
-    entries: list
-    feed: dict
+    entries: list[dict[str, str]]
+    feed: dict[str, str]
     version: str
 
 
