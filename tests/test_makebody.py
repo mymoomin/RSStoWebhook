@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rss_to_webhook.db_types import Comic
+from rss_to_webhook.discord_types import Message
 from rss_to_webhook.worker import make_body
 
 if TYPE_CHECKING:
@@ -27,16 +28,19 @@ def test_happy_path(comic):
     """
     entry: Entry = {"link": "https://example.com/page/1", "title": "Page 1!"}
     body = make_body(comic, entry)
-    assert body == {
-        "embeds": [
-            {
-                "color": 0x5C64F4,
-                "title": "**Page 1!**",
-                "url": "https://example.com/page/1",
-                "description": "New Test Webcomic!",
-            },
-        ],
-    }
+    # The Message() is just for show (underhanded cheats to increase our code coverage)
+    assert body == Message(
+        {
+            "embeds": [
+                {
+                    "color": 0x5C64F4,
+                    "title": "**Page 1!**",
+                    "url": "https://example.com/page/1",
+                    "description": "New Test Webcomic!",
+                },
+            ],
+        }
+    )
 
 
 def test_bad_url_scheme(comic):
