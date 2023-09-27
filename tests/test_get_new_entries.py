@@ -97,6 +97,28 @@ def test_yanked_update(comic, feed):
     assert (new_entries, found) == ([], True)
 
 
+def test_all_new_feed(comic, feed):
+    """
+    Test asserts that when the last-seen entry isn't found in the feed, all
+    entries are posted in order
+
+    Regression test for [#3](https://github.com/mymoomin/RSStoWebhook/issues/3)
+    """
+    comic["last_entries"] = ["https://example.com/page/11"]
+    feed["entries"] = [
+        {"link": "https://example.com/page/2"},
+        {"link": "https://example.com/page/1"},
+    ]
+    new_entries, found = get_new_entries(comic, feed, None)
+    assert (new_entries, found) == (
+        [
+            {"link": "https://example.com/page/1"},
+            {"link": "https://example.com/page/2"},
+        ],
+        False,
+    )
+
+
 # GPT tests
 @pytest.mark.parametrize(
     ("comic", "feed", "feed_hash", "expected_entries", "expected_found_last_entry"),
