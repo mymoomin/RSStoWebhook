@@ -6,8 +6,8 @@ This is a list of bugs that have happened in the past and are now fixed, but wou
 - [ ] [01fd62b](https://github.com/mymoomin/RSStoWebhook/commit/01fd62be50918775b68bedbb71c1f4b5ec148acf) Hidden rate limits
 - [x] [0249766](https://github.com/mymoomin/RSStoWebhook/commit/0249766c715879891e3d21bb61bc537839020f5b) Missing title on embed when update has no `<title>`
 - [ ] [4ca9b14](https://github.com/mymoomin/RSStoWebhook/commit/4ca9b140de34290797844104c93952bcf481fc5c) Undetected broken RSS feed
-- [ ] [#1](https://github.com/mymoomin/RSStoWebhook/issues/1) An update being posted, removed, then posted again creates multiple notifications
-- [ ] [#2](https://github.com/mymoomin/RSStoWebhook/issues/2) Updates posted in the wrong order
+- [x] [#1](https://github.com/mymoomin/RSStoWebhook/issues/1) An update being posted, removed, then posted again creates multiple notifications
+- [x] [#2](https://github.com/mymoomin/RSStoWebhook/issues/2) Updates posted in the wrong order
 - [ ] [#3](https://github.com/mymoomin/RSStoWebhook/issues/3) Not all updates posted when the last-seen update is no longer in the feed
 - [ ] [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921) Updates missed when too many new updates are posted at once
 - [ ] [f661a90](https://github.com/mymoomin/RSStoWebhook/commit/f661a902a2ce2be570a9b039e0dde596f52ea624) Spurious errors for failed SSL checks
