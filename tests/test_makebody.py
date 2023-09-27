@@ -20,6 +20,11 @@ def comic():
 
 
 def test_happy_path(comic):
+    """
+    This is just the normal usage.
+
+    Test asserts that `make_body` functions on the happy path.
+    """
     entry: Entry = {"link": "https://example.com/page/1", "title": "Page 1!"}
     body = make_body(comic, entry)
     assert body == {
@@ -39,6 +44,8 @@ def test_bad_url_scheme(comic):
     This is a regression test for
     [13a7171](https://github.com/mymoomin/RSStoWebhook/commit/13a7171be8f19164902a36e1f5abd587f852a303),
     where a bad url scheme caused the service to fail for multiple days.
+
+    Test asserts that `make_body` will correct bad url schemes.
     """
     entry: Entry = {"link": "hps://example.com/page/1", "title": "Page 1!"}
     body = make_body(comic, entry)
