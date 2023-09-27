@@ -26,15 +26,26 @@ class Feed:
     version: str
 
 
+# @pytest.fixture()
+# def feed():
+#     return Feed(
+#         bozo=False,
+#         encoding="utf-8",
+#         version="rss20",
+#         feed={"title": "Test Webcomic"},
+#         entries=[{"link": "https://example.com/page/0"}],
+#     )
+
+
 @pytest.fixture()
 def feed():
-    return Feed(
-        bozo=False,
-        encoding="utf-8",
-        version="rss20",
-        feed={"title": "Test Webcomic"},
-        entries=[{"link": "https://example.com/page/0"}],
-    )
+    return {
+        "bozo": False,
+        "encoding": "utf-8",
+        "version": "rss20",
+        "feed": {"title": "Test Webcomic"},
+        "entries": [{"link": "https://example.com/page/0"}],
+    }
 
 
 def test_happy_path(comic, feed):
