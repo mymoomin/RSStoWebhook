@@ -20,13 +20,13 @@ def comic():
 
 
 def test_happy_path(comic):
-    entry: Entry = {"link": "https://example.com/page/1"}
+    entry: Entry = {"link": "https://example.com/page/1", "title": "Page 1!"}
     body = make_body(comic, entry)
     assert body == {
         "embeds": [
             {
                 "color": 0x5C64F4,
-                "title": "**Test Webcomic**",
+                "title": "**Page 1!**",
                 "url": "https://example.com/page/1",
                 "description": "New Test Webcomic!",
             },
@@ -40,13 +40,13 @@ def test_bad_url_scheme(comic):
     [13a7171](https://github.com/mymoomin/RSStoWebhook/commit/13a7171be8f19164902a36e1f5abd587f852a303),
     where a bad url scheme caused the service to fail for multiple days.
     """
-    entry: Entry = {"link": "hps://example.com/page/1"}
+    entry: Entry = {"link": "hps://example.com/page/1", "title": "Page 1!"}
     body = make_body(comic, entry)
     assert body == {
         "embeds": [
             {
                 "color": 0x5C64F4,
-                "title": "**Test Webcomic**",
+                "title": "**Page 1!**",
                 "url": "https://example.com/page/1",
                 "description": "New Test Webcomic!",
             },
