@@ -160,6 +160,19 @@ def test_minor_url_change(comic, feed):
     assert (new_entries, found) == ([], True)
 
 
+def test_major_url_change(comic, feed):
+    """
+    Tests that when the URL for an entry changes in a semantically-inequivalent
+    way, it is correctly not recognised as the same URL
+
+    Regression test for [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2)
+    """
+    comic["last_entries"] = ["https://example.com/page/1?v=1"]
+    feed["entries"] = [{"link": "https://example.com/page/1?v=2"}]
+    new_entries, found = get_new_entries(comic, feed, None)
+    assert (new_entries, found) == ([{"link": "https://example.com/page/1?v=2"}], False)
+
+
 # GPT tests
 @pytest.mark.parametrize(
     ("comic", "feed", "feed_hash", "expected_entries", "expected_found_last_entry"),
