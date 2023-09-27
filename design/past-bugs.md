@@ -9,7 +9,7 @@ This is a list of bugs that have happened in the past and are now fixed, but wou
 - [x] [#1](https://github.com/mymoomin/RSStoWebhook/issues/1) An update being posted, removed, then posted again creates multiple notifications
 - [x] [#2](https://github.com/mymoomin/RSStoWebhook/issues/2) Updates posted in the wrong order
 - [x] [#3](https://github.com/mymoomin/RSStoWebhook/issues/3) Not all updates posted when the last-seen update is no longer in the feed
-- [ ] [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921) Updates missed when too many new updates are posted at once
+- [x] [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921) Updates missed when too many new updates are posted at once
 - [ ] [f661a90](https://github.com/mymoomin/RSStoWebhook/commit/f661a902a2ce2be570a9b039e0dde596f52ea624) Spurious errors for failed SSL checks
 - [ ] [b0939df](https://github.com/mymoomin/RSStoWebhook/commit/b0939df99bd28ed17d69e814cf51bb725fc97883) Crash when expected response headers are missing
 - [x] [13a7171](https://github.com/mymoomin/RSStoWebhook/commit/13a7171be8f19164902a36e1f5abd587f852a303) Crash on bad URL scheme

@@ -119,6 +119,34 @@ def test_all_new_feed(comic, feed):
     )
 
 
+def test_many_updates_found(comic, feed):
+    """
+    Test asserts that when there are many new updates and the last-seen update
+    is still in the feed, all the new updates are posted
+
+    Partial regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
+    """
+    entries = [{"link": f"https://example.com/page/{i}"} for i in range(1, 101)]
+    feed["entries"] = list(reversed(entries))
+    comic["last_entries"] = ["https://example.com/page/1"]
+    new_entries, found = get_new_entries(comic, feed, None)
+    assert (new_entries, found) == (entries[1:], True)
+
+
+def test_many_updates_not_found(comic, feed):
+    """
+    Test asserts that when there are many new updates and the last-seen update
+    is not in the feed, all the new updates are posted
+
+    Partial regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
+    """
+    entries = [{"link": f"https://example.com/page/{i}"} for i in range(1, 101)]
+    feed["entries"] = list(reversed(entries))
+    comic["last_entries"] = []
+    new_entries, found = get_new_entries(comic, feed, None)
+    assert (new_entries, found) == (entries, False)
+
+
 # GPT tests
 @pytest.mark.parametrize(
     ("comic", "feed", "feed_hash", "expected_entries", "expected_found_last_entry"),
