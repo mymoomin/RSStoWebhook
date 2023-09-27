@@ -37,7 +37,7 @@ def get_new_entries(
         urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
         for url in last_entries
     ]
-    while i < 100 and i < num_entries:
+    while i < 200 and i < num_entries:
         entry_parts = urlsplit(feed["entries"][i]["link"])
         entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
         if entry_path in last_paths:
@@ -45,7 +45,7 @@ def get_new_entries(
             return list(reversed(feed["entries"][:i])), True
         i += 1
     else:
-        return list(reversed(feed["entries"][:30])), False
+        return list(reversed(feed["entries"][:100])), False
 
 
 def make_body(comic: Comic, entry: Entry) -> Message:
