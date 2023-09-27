@@ -238,6 +238,10 @@ if __name__ == "__main__":
         print("Running daily checks")
         WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
         comics = client["discord_rss"]["daily_comics"]
+    elif "--test" in opts:
+        print("testing testing")
+        WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
+        comics = client["discord_rss"]["test_comics"]
     else:
         WEBHOOK_URL = os.environ["WEBHOOK_URL"]
         comics = client["discord_rss"]["comics"]
