@@ -99,7 +99,7 @@ async def get_feed(
     comic: Comic,
     hash_seed: int,
     comics: Collection[Comic],
-    **kwargs: Any,  # noqa: ANN401
+    **kwargs: Any,  # noqa: ANN401, RUF100
 ) -> tuple[FeedParserDict | Exception | None, bytes | None]:
     url = comic["url"]
     caching_headers = get_headers(comic)
@@ -141,7 +141,7 @@ async def get_feeds(
     comic_list: list[Comic],
     hash_seed: int,
     comics: Collection[Comic],
-    **kwargs: Any,  # noqa: ANN401
+    **kwargs: Any,  # noqa: ANN401, RUF100
 ) -> list[tuple[FeedParserDict | Exception | None, bytes | None]]:
     async with aiohttp.ClientSession() as session:
         tasks = [
