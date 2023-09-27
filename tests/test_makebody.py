@@ -52,3 +52,25 @@ def test_bad_url_scheme(comic):
             },
         ],
     }
+
+
+def test_no_title(comic):
+    """
+    This is a regression test for
+    [0249766](https://github.com/mymoomin/RSStoWebhook/commit/0249766c715879891e3d21bb61bc537839020f5b),
+    where a missing entry title caused the embed to not have a title.
+
+    Test asserts that even without a title the embed has a title.
+    """
+    entry: Entry = {"link": "hps://example.com/page/1"}
+    body = make_body(comic, entry)
+    assert body == {
+        "embeds": [
+            {
+                "color": 0x5C64F4,
+                "title": "**Test Webcomic**",
+                "url": "https://example.com/page/1",
+                "description": "New Test Webcomic!",
+            },
+        ],
+    }
