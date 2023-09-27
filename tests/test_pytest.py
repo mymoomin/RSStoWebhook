@@ -4,7 +4,3 @@ def inc(x: int) -> int:
 
 def test_inc() -> None:
     assert inc(3) == 5
-
-
-if __name__ == "__main__":
-    print("hello")
