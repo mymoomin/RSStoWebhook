@@ -10,7 +10,7 @@ def comic() -> Comic:
         name="Test Webcomic",
         url="https://example.com/rss",
         hash=b"\xa9\x0c\x16\xe5\xe2\x8c6\xdd\x01}K\x85\x1fn\x8e\xd2",
-        last_entries=["https://example.com/page/0"],
+        last_entries=["https://example.com/page/1"],
     )
 
 
@@ -21,19 +21,80 @@ def feed():
         "encoding": "utf-8",
         "version": "rss20",
         "feed": {"title": "Test Webcomic"},
-        "entries": [{"link": "https://example.com/page/0"}],
+        "entries": [{"link": "https://example.com/page/1"}],
     }
 
 
-def test_happy_path(comic, feed):
+def test_no_changes(comic, feed):
     """
     This is just the normal usage.
 
     Test asserts that `get_new_entries` functions when nothing has changed
     since the last check
+
+    Partial regression test for [#1](https://github.com/mymoomin/RSStoWebhook/issues/1)
     """
-    new_entries = get_new_entries(comic, feed, None)
-    assert new_entries == ([], True)
+    new_entries, found = get_new_entries(comic, feed, None)
+    assert (new_entries, found) == ([], True)
+
+
+def test_missing_entry(comic, feed):
+    """
+    Test asserts that `get_new_entries` functions when it can't find the last
+    entry in the feed
+    """
+    feed["entries"] = []
+    new_entries, found = get_new_entries(comic, feed, None)
+    assert (new_entries, found) == ([], False)
+
+
+def test_new_update(comic, feed):
+    """
+    Test asserts that when there is one new update, it is posted
+    """
+    feed["entries"] = [
+        {"link": "https://example.com/page/2"},
+        {"link": "https://example.com/page/1"},
+    ]
+    new_entries, found = get_new_entries(comic, feed, None)
+    assert (new_entries, found) == ([{"link": "https://example.com/page/2"}], True)
+
+
+def test_new_updates(comic, feed):
+    """
+    Test asserts that when there are many new updates, they are returned in the
+    correct order (oldest to newest)
+
+    Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
+    """
+    feed["entries"] = [
+        {"link": "https://example.com/page/3"},
+        {"link": "https://example.com/page/2"},
+        {"link": "https://example.com/page/1"},
+    ]
+    new_entries, found = get_new_entries(comic, feed, None)
+    assert (new_entries, found) == (
+        [
+            {"link": "https://example.com/page/2"},
+            {"link": "https://example.com/page/3"},
+        ],
+        True,
+    )
+
+
+def test_yanked_update(comic, feed):
+    """
+    Test asserts that when the most recent update is pulled but the one before
+    has been seen already, nothing is done
+
+    Partial regression test for [#1](https://github.com/mymoomin/RSStoWebhook/issues/1)
+    """
+    comic["last_entries"] = ["https://example.com/page/1", "https://example.com/page/2"]
+    feed["entries"] = [
+        {"link": "https://example.com/page/1"},
+    ]
+    new_entries, found = get_new_entries(comic, feed, None)
+    assert (new_entries, found) == ([], True)
 
 
 # GPT tests
