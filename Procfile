@@ -1,2 +1,2 @@
 worker: python -m rss_to_webhook.worker
-daily: python rss_to_webhook.worker --daily
+daily: python -m rss_to_webhook.worker --daily
