@@ -354,7 +354,8 @@ def test_all_new_updates(
         json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
     )
-    assert len(webhook.calls) == 20  # One post
+    # Check that all 20 items in the RSS feed were posted
+    assert len(webhook.calls) == 20  # noqa: PLR2004
     assert (
         json.loads(webhook.calls[-1].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
