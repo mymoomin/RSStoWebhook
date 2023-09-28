@@ -295,3 +295,17 @@ def test_two_updates(comic: Comic, rss, webhook) -> None:
         json.loads(webhook.calls[1].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
+
+
+def test_idempotency(comic: Comic, rss, webhook) -> None:
+    """
+    Tests that the script will not post the same update twice
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One "new" entry
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    assert len(webhook.calls) == 1  # One post
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    assert len(webhook.calls) == 1  # Still one post
