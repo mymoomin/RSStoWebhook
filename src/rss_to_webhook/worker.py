@@ -15,7 +15,7 @@ import requests
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma no cover
     from feedparser.util import Entry, FeedParserDict
     from multidict import CIMultiDictProxy
     from pymongo.collection import Collection
@@ -227,7 +227,7 @@ def main(
     )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma no cover
     load_dotenv()
     HASH_SEED = int(os.environ["HASH_SEED"], 16)
     MONGODB_URI = os.environ["MONGODB_URI"]
