@@ -239,7 +239,7 @@ def rss() -> Generator[aioresponses, None, None]:
 
 
 @pytest.fixture()
-def _no_sleep(monkeypatch: pytest.MonkeyPatch):
+def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
     def nothing(time: float) -> None:
         pass
 
@@ -247,7 +247,7 @@ def _no_sleep(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_no_sleep():
+def test_no_sleep() -> None:
     time.sleep(10)
     assert 1 == 1
 
@@ -360,7 +360,7 @@ def test_all_new_updates(
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock):
+def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """
     Tests that caching headers in responses are stored, and that they are
     used in the next run
@@ -418,7 +418,7 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock):
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_tolerates_errors(comic: Comic, rss: aioresponses, webhook: RequestsMock):
+def test_handles_errors(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """
     Tests that if one feed has a connection error, other feeds work as normal
     """
@@ -436,7 +436,7 @@ def test_tolerates_errors(comic: Comic, rss: aioresponses, webhook: RequestsMock
 
 @responses.activate()
 @pytest.mark.usefixtures("_no_sleep")
-def test_thread_comic(comic: Comic, rss: aioresponses):
+def test_thread_comic(comic: Comic, rss: aioresponses) -> None:
     """
     Tests that comics with a thread_id are posted in the appropriate thread
     """
