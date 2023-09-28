@@ -239,6 +239,18 @@ def test_mongo_mock(comic):
     assert comic == comics.find_one({"_id": ObjectId("612819b293b99b5809e18ab3")})
 
 
+def test_no_update(comic: Comic, rss, webhook) -> None:
+    """
+    Tests that the script will post the correct response to the webhook when
+    no new updates are found
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    assert len(webhook.calls) == 0
+
+
 def test_one_update(comic: Comic, rss, webhook) -> None:
     """
     Tests that the script will post the correct response to the webhook when
@@ -262,3 +274,24 @@ def test_one_update(comic: Comic, rss, webhook) -> None:
         ],
         "username": "KiwiFlea",
     }
+
+
+def test_two_updates(comic: Comic, rss, webhook) -> None:
+    """
+    Tests that the script will post two updates in the right order to the webhook when
+    two new updates are found
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One "new" entry
+    comic["last_entries"].pop()  # Two "new" entries
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    assert (
+        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
+    )
+    assert (
+        json.loads(webhook.calls[1].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+    )
