@@ -4,6 +4,7 @@ import asyncio
 import os
 import sys
 import time
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
@@ -36,8 +37,8 @@ def get_new_entries(
         urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
         for url in last_entries
     ]
-    while i < 200 and i < num_entries:
-        entry_parts = urlsplit(feed["entries"][i]["link"])
+    for i, entry in enumerate(feed["entries"]):
+        entry_parts = urlsplit(entry["link"])
         entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
         if entry_path in last_paths:
             print(f"{i} new entries")
@@ -121,9 +122,9 @@ async def get_feed(
         )
         data = await resp.text()
         print(f"Received data for {comic['name']}")
-        if resp.status == 304:
+        if resp.status == HTTPStatus.NOT_MODIFIED:  # 304
             return None, None
-        if resp.status != 200:
+        if resp.status != HTTPStatus.OK:  # 200
             print(f"HTTP {resp.status}: {resp.reason}")
             resp.raise_for_status()
         feed = feedparser.parse(data)
@@ -201,7 +202,7 @@ def main(
                     f" {h.get('x-ratelimit-limit')} requests left in the next"
                     f" {h.get('x-ratelimit-reset-after')} seconds"
                 )
-                if r.status_code == 429:
+                if r.status_code == HTTPStatus.TOO_MANY_REQUESTS:  # 429
                     print(r.json())
                     r.raise_for_status()
                 counter = (counter + 1) % 30
