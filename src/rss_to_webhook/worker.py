@@ -41,7 +41,6 @@ def get_new_entries(
         if entry_path in last_paths:
             print(f"{i} new entries")
             return list(reversed(feed["entries"][:i])), True
-        i += 1
     else:
         return list(reversed(feed["entries"][:100])), False
 
