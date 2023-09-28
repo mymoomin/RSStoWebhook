@@ -44,6 +44,7 @@ build-backend = "setuptools.build_meta"
 addopts = [
     "--import-mode=importlib",
     "--cov=rss_to_webhook",
+    "--cov-report=term-missing",
 ]
 testpaths = [
     "tests",
