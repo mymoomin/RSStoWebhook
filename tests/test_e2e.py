@@ -351,3 +351,61 @@ def test_all_new_updates(comic: Comic, rss, webhook) -> None:
         json.loads(webhook.calls[-1].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_caching_match(comic: Comic, rss, webhook):
+    """
+    Tests that caching headers in responses are stored, and that they are
+    used in the next run
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["name"] = "xkcd"
+    comic["last_entries"] = ["https://xkcd.com/2834/"]
+    comic["url"] = "https://xkcd.com/atom.xml"
+    comics.insert_one(comic)
+    rss.get(
+        "https://xkcd.com/atom.xml",
+        status=200,
+        headers={
+            "ETag": '"f56-6062f676a7367-gzip"',
+            "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
+        },
+        body="""
+        <feed xml:lang="en">
+            <title>xkcd.com</title>
+            <link href="https://xkcd.com/" rel="alternate"/>
+            <id>https://xkcd.com/</id>
+            <updated>2023-09-27T00:00:00Z</updated>
+                <entry>
+                <title>Book Podcasts</title>
+                <link href="https://xkcd.com/2834/" rel="alternate"/>
+                <updated>2023-09-27T00:00:00Z</updated>
+                <id>https://xkcd.com/2834/</id>
+            </entry>
+        </feed>
+        """,
+    )
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    new_comic = comics.find_one({"name": "xkcd"})
+    assert new_comic
+    assert "etag" in new_comic
+    assert "last_modified" in new_comic
+    rss.get(
+        "https://xkcd.com/atom.xml",
+        status=304,
+        headers={
+            "ETag": '"f56-6062f676a7367-gzip"',
+            "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
+        },
+    )
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    print(list(rss.requests.keys()))
+    req = rss.requests[("GET", URL("https://xkcd.com/atom.xml"))][-1]
+    print(req, dir(req))
+    h = req.kwargs["headers"]
+    assert h == h | {
+        "If-None-Match": '"f56-6062f676a7367-gzip"',
+        "If-Modified-Since": "Wed, 27 Sep 2023 20:10:14 GMT",
+    }  # Tests headers includes these values
