@@ -37,14 +37,14 @@ def comic() -> Comic:
             "https://www.sleeplessdomain.com/comic/chapter-21-page-32",
             "https://www.sleeplessdomain.com/comic/chapter-21-page-33",
             "https://www.sleeplessdomain.com/comic/chapter-22-page-1",
-            # "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+            "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
         ],
     }
 
 
 @pytest.fixture()
 def webhook() -> Generator[RequestsMock, None, None]:
-    with RequestsMock() as responses:
+    with RequestsMock(assert_all_requests_are_fired=False) as responses:
         responses.post(
             WEBHOOK_URL,
             status=204,
@@ -239,13 +239,14 @@ def test_mongo_mock(comic):
     assert comic == comics.find_one({"_id": ObjectId("612819b293b99b5809e18ab3")})
 
 
-def test_one_update(comic, rss, webhook) -> None:
+def test_one_update(comic: Comic, rss, webhook) -> None:
     """
     Tests that the script will post the correct response to the webhook when
     one new update is found
     """
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
+    comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL)
     assert json.loads(webhook.calls[0].request.body) == {
