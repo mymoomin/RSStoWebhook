@@ -31,12 +31,10 @@ def get_new_entries(
         print("no changes")
         return ([], True)
     last_entries = comic["last_entries"]
-    i = 0
-    num_entries = len(feed["entries"])
-    last_paths = [
+    last_paths = {
         urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
         for url in last_entries
-    ]
+    }
     for i, entry in enumerate(feed["entries"]):
         entry_parts = urlsplit(entry["link"])
         entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
