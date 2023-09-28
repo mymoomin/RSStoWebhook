@@ -240,7 +240,7 @@ def rss() -> Generator[aioresponses, None, None]:
 
 @pytest.fixture()
 def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
-    def nothing(time: float) -> None:
+    def nothing(_time: float) -> None:
         pass
 
     monkeypatch.setattr(time, "sleep", nothing)
