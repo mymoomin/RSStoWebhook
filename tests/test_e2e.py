@@ -2,6 +2,7 @@ import json
 import os
 import time
 from collections.abc import Generator
+from copy import deepcopy
 
 import pytest
 import responses
@@ -414,6 +415,23 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock):
         "If-None-Match": '"f56-6062f676a7367-gzip"',
         "If-Modified-Since": "Wed, 27 Sep 2023 20:10:14 GMT",
     }  # Tests headers includes these values
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_tolerates_errors(comic: Comic, rss: aioresponses, webhook: RequestsMock):
+    """
+    Tests that if one feed has a connection error, other feeds work as normal
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One new entry
+    bad_comic = deepcopy(comic)
+    bad_comic["url"] = "http://does.not.exist/nowhere"
+    del bad_comic["_id"]  # So it doesn't conflict with the other comic
+    rss.get("http://does.not.exist/nowhere", status=404)
+    comics.insert_many([bad_comic, comic])
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    assert len(webhook.calls) == 1
 
 
 @responses.activate()
