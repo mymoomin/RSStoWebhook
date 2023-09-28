@@ -17,7 +17,7 @@ jobs:
         uses: michcio1234/heroku-run@0.1.1
         with:
           # This will be used for authentication. You can find it in your heroku homepage account settings.
-          heroku_api_key: aa3a8a35-60c4-4f67-a21a-0833f9692750
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           # Email that you use with heroku.
           heroku_email: larrytheworm@gmail.com
           # The name of the app to run the command in.
