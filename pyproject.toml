@@ -76,12 +76,21 @@ select = [
     "N",            # naming # no new errors
 
     # Some extra flake-8 plugins
-    # "ANN",        # flake8-annotations # checks everything has type annotations
+    "ANN",        # flake8-annotations # checks everything has type annotations
     # "D",          # pydocstyle # a million errors because I don't have any docstrings
     "A",            # flake8-builtins # caught shadowing `hash()` with a variable called `hash`
     "DTZ",          # flake8-datetimez # found that I was using datetime in the first place (mistake)
     "PYI",          # flake8-pyi
     "PT",           # flake8-pytest-style
     "TCH",          # flake8-type-checking # checks typechecking-only stuff is in the right place
+    # "T20",        # Detects use of `print` rather than logging. One day I'll add it
+    # Let's just add everything that works
+    "ASYNC", "C4", "T10", "EM", "FA", "ISC", "ICN", "G", "INP", "PIE",  "PYI",
+    "Q", "RSE", "RET", "SLF", "SIM", "TID", "PTH", "TD", "FIX", "ERA", "PL",
+    "TRY", "FLY", "PERF", "FURB", "LOG","FBT", "S", "ARG", "B",
 ]
+ignore = [
+    "PLW0120", "TRY300", "B008", "B905"
+]
+per-file-ignores = {"tests/*" = ["S101", "ARG001", "FBT001"]}
 src = ["src"]
