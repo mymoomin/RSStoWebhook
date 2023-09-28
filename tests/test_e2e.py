@@ -9,6 +9,7 @@ from aioresponses import aioresponses
 from bson import Int64, ObjectId
 from dotenv import load_dotenv
 from mongomock import Collection, MongoClient
+from requests import HTTPError
 from responses import RequestsMock, matchers
 from yarl import URL
 
@@ -440,3 +441,36 @@ def test_thread_comic(comic: Comic, rss):
     )
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL)
+
+
+@responses.activate()
+@pytest.mark.usefixtures("_no_sleep")
+def test_fails_on_rate_limit(comic: Comic, rss: aioresponses) -> None:
+    """
+    Tests that the script fails with an exception when it is rate limited
+
+    In the future this should be set to email me
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One "new" entry
+    comics.insert_one(comic)
+    responses.post(
+        WEBHOOK_URL,
+        status=429,
+        headers={
+            "retry-after": "1",
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "4",
+            "x-ratelimit-reset-after": "0.399",
+            "x-ratelimit-scope": "shared",
+        },
+        json={
+            "message": "The resource is being rate limited.",
+            "retry_after": 0.529,
+            "global": False,
+        },
+    )
+    with pytest.raises(HTTPError) as e:
+        main(comics, HASH_SEED, WEBHOOK_URL)
+    assert "429" in str(e.value)
