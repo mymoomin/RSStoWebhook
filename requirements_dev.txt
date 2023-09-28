@@ -49,3 +49,8 @@ sentinels==1.0.0
 
 # aioresponses
 aioresponses==0.7.4
+
+# responses
+responses==0.23.3
+pyyaml==6.0.1
+types-PyYAML==6.0.12.12
