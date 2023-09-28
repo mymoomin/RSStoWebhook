@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from collections.abc import Generator
 
 import pytest
@@ -328,3 +329,25 @@ def test_idempotency(comic: Comic, rss, webhook) -> None:
     assert len(webhook.calls) == 1  # One post
     main(comics, HASH_SEED, WEBHOOK_URL)
     assert len(webhook.calls) == 1  # Still one post
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_all_new_updates(comic: Comic, rss, webhook) -> None:
+    """
+    Tests that the script works when every entry in the feed is new,
+    and that the script can correctly handle 20 new updates at once
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"] = ["https://comic.com/not-a-page"]  # No seen entries in feed
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    assert (
+        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
+    )
+    assert len(webhook.calls) == 20  # One post
+    assert (
+        json.loads(webhook.calls[-1].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+    )
