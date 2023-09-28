@@ -1,8 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
-from feedparser.util import Entry, FeedParserDict
 
 from rss_to_webhook.db_types import Comic
 from rss_to_webhook.worker import get_new_entries
+
+if TYPE_CHECKING:
+    from feedparser.util import Entry, FeedParserDict
 
 
 @pytest.fixture()
