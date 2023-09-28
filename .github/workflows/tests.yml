@@ -12,6 +12,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ['3.11']
+    
+    env:
+      TEST_WEBHOOK_URL: ${{ secrets.TEST_WEBHOOK_URL }}
+      HASH_SEED: ${{ secrets.HASH_SEED }}
 
     steps:
     - uses: actions/checkout@v2
