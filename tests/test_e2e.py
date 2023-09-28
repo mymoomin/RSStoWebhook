@@ -252,14 +252,14 @@ def test_no_sleep():
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_mongo_mock(comic) -> None:
+def test_mongo_mock(comic: Comic) -> None:
     comics: Collection[Comic] = MongoClient().db.collection  # type: ignore [assignment]
     comics.insert_one(comic)
     assert comic == comics.find_one({"_id": ObjectId("612819b293b99b5809e18ab3")})
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_no_update(comic: Comic, rss, webhook) -> None:
+def test_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """
     Tests that the script will post the correct response to the webhook when
     no new updates are found
@@ -272,7 +272,7 @@ def test_no_update(comic: Comic, rss, webhook) -> None:
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_one_update(comic: Comic, rss, webhook) -> None:
+def test_one_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """
     Tests that the script will post the correct response to the webhook when
     one new update is found
@@ -298,7 +298,7 @@ def test_one_update(comic: Comic, rss, webhook) -> None:
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_two_updates(comic: Comic, rss, webhook) -> None:
+def test_two_updates(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """
     Tests that the script will post two updates in the right order to the webhook when
     two new updates are found
@@ -320,7 +320,7 @@ def test_two_updates(comic: Comic, rss, webhook) -> None:
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_idempotency(comic: Comic, rss, webhook) -> None:
+def test_idempotency(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """
     Tests that the script will not post the same update twice
     """
@@ -335,7 +335,9 @@ def test_idempotency(comic: Comic, rss, webhook) -> None:
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_all_new_updates(comic: Comic, rss, webhook) -> None:
+def test_all_new_updates(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
     """
     Tests that the script works when every entry in the feed is new,
     and that the script can correctly handle 20 new updates at once
@@ -357,7 +359,7 @@ def test_all_new_updates(comic: Comic, rss, webhook) -> None:
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_caching_match(comic: Comic, rss, webhook):
+def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock):
     """
     Tests that caching headers in responses are stored, and that they are
     used in the next run
@@ -416,7 +418,7 @@ def test_caching_match(comic: Comic, rss, webhook):
 
 @responses.activate()
 @pytest.mark.usefixtures("_no_sleep")
-def test_thread_comic(comic: Comic, rss):
+def test_thread_comic(comic: Comic, rss: aioresponses):
     """
     Tests that comics with a thread_id are posted in the appropriate thread
     """
