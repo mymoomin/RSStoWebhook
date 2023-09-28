@@ -4,7 +4,6 @@ import asyncio
 import os
 import sys
 import time
-from time import sleep
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
@@ -188,7 +187,7 @@ def main(
                     " most recent entries"
                 )
             for entry in entries:
-                sleep(0.4) if counter != 0 else sleep(50)
+                time.sleep(0.4) if counter != 0 else time.sleep(50)
                 body = make_body(comic, entry)
                 if thread_id := comic.get("thread_id"):
                     url = f"{webhook_url}?thread_id={thread_id}&wait=true"
