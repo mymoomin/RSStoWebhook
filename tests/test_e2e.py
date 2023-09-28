@@ -233,12 +233,28 @@ def rss() -> Generator[aioresponses, None, None]:
         yield mocked
 
 
-def test_mongo_mock(comic):
+@pytest.fixture()
+def _no_sleep(monkeypatch: pytest.MonkeyPatch):
+    def nothing(time: float) -> None:
+        pass
+
+    monkeypatch.setattr(time, "sleep", nothing)
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_no_sleep():
+    time.sleep(10)
+    assert 1 == 1
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_mongo_mock(comic) -> None:
     comics: Collection[Comic] = MongoClient().db.collection  # type: ignore [assignment]
     comics.insert_one(comic)
     assert comic == comics.find_one({"_id": ObjectId("612819b293b99b5809e18ab3")})
 
 
+@pytest.mark.usefixtures("_no_sleep")
 def test_no_update(comic: Comic, rss, webhook) -> None:
     """
     Tests that the script will post the correct response to the webhook when
@@ -251,6 +267,7 @@ def test_no_update(comic: Comic, rss, webhook) -> None:
     assert len(webhook.calls) == 0
 
 
+@pytest.mark.usefixtures("_no_sleep")
 def test_one_update(comic: Comic, rss, webhook) -> None:
     """
     Tests that the script will post the correct response to the webhook when
@@ -276,6 +293,7 @@ def test_one_update(comic: Comic, rss, webhook) -> None:
     }
 
 
+@pytest.mark.usefixtures("_no_sleep")
 def test_two_updates(comic: Comic, rss, webhook) -> None:
     """
     Tests that the script will post two updates in the right order to the webhook when
@@ -297,6 +315,7 @@ def test_two_updates(comic: Comic, rss, webhook) -> None:
     )
 
 
+@pytest.mark.usefixtures("_no_sleep")
 def test_idempotency(comic: Comic, rss, webhook) -> None:
     """
     Tests that the script will not post the same update twice
