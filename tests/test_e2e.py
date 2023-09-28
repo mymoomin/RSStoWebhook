@@ -248,8 +248,10 @@ def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.usefixtures("_no_sleep")
 def test_no_sleep() -> None:
+    start = time.time()
     time.sleep(10)
-    assert 1 == 1
+    end = time.time()
+    assert end - start < 1
 
 
 @pytest.mark.usefixtures("_no_sleep")
