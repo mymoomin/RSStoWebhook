@@ -4,11 +4,13 @@ import time
 from collections.abc import Generator
 
 import pytest
+import responses
 from aioresponses import aioresponses
 from bson import Int64, ObjectId
 from dotenv import load_dotenv
 from mongomock import Collection, MongoClient
-from responses import RequestsMock
+from responses import RequestsMock, matchers
+from yarl import URL
 
 from rss_to_webhook.db_types import Comic
 from rss_to_webhook.worker import main
@@ -409,3 +411,32 @@ def test_caching_match(comic: Comic, rss, webhook):
         "If-None-Match": '"f56-6062f676a7367-gzip"',
         "If-Modified-Since": "Wed, 27 Sep 2023 20:10:14 GMT",
     }  # Tests headers includes these values
+
+
+@responses.activate()
+@pytest.mark.usefixtures("_no_sleep")
+def test_thread_comic(comic: Comic, rss):
+    """
+    Tests that comics with a thread_id are posted in the appropriate thread
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One new entry
+    comic["thread_id"] = 932666606000164965
+    responses.post(
+        WEBHOOK_URL,
+        status=204,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "4",
+            "x-ratelimit-reset-after": "0.399",
+        },
+        match=[
+            matchers.query_param_matcher(
+                {"thread_id": 932666606000164965},
+                strict_match=False,
+            )
+        ],
+    )
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL)
