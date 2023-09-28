@@ -145,8 +145,7 @@ async def get_feeds(
             get_feed(session, comic, hash_seed, comics, **kwargs)
             for comic in comic_list
         ]
-        feeds = await asyncio.gather(*tasks, return_exceptions=False)
-        return feeds
+        return await asyncio.gather(*tasks, return_exceptions=False)
 
 
 def main(
