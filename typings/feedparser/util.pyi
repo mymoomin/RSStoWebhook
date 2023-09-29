@@ -15,7 +15,7 @@ class Entry(TypedDict, total=False):
     published_parsed: struct_time
     author: str
 
-class FeedParserDict:
+class FeedParserDict(TypedDict):
     bozo: Literal[False, 1]
     encoding: str
     entries: list[Entry]

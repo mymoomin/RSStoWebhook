@@ -4,7 +4,7 @@ import asyncio
 import os
 import sys
 import time
-from time import sleep
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
@@ -15,11 +15,13 @@ import requests
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-if TYPE_CHECKING:
-    from db_types import Comic, Extras
+if TYPE_CHECKING:  # pragma no cover
     from feedparser.util import Entry, FeedParserDict
     from multidict import CIMultiDictProxy
     from pymongo.collection import Collection
+
+    from rss_to_webhook.db_types import Comic
+    from rss_to_webhook.discord_types import Extras, Message
 
 
 def get_new_entries(
@@ -29,30 +31,25 @@ def get_new_entries(
         print("no changes")
         return ([], True)
     last_entries = comic["last_entries"]
-    i = 0
-    num_entries = len(feed.entries)
-    last_paths = [
+    last_paths = {
         urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
         for url in last_entries
-    ]
-    while i < 100 and i < num_entries:
-        entry_parts = urlsplit(feed.entries[i]["link"])
+    }
+    for i, entry in enumerate(feed["entries"]):
+        entry_parts = urlsplit(entry["link"])
         entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
         if entry_path in last_paths:
             print(f"{i} new entries")
-            return list(reversed(feed.entries[:i])), True
-        i += 1
+            return list(reversed(feed["entries"][:i])), True
     else:
-        return list(reversed(feed.entries[:30])), False
+        return list(reversed(feed["entries"][:100])), False
 
 
-def make_body(comic: Comic, entry: Entry) -> dict:
+def make_body(comic: Comic, entry: Entry) -> Message:
     extras: Extras = {}
     if author := comic.get("author"):
         extras["username"] = author["name"]
         extras["avatar_url"] = author["url"]
-    if thread_id := comic.get("thread_id"):
-        extras["thread_id"] = thread_id
     if role_id := comic.get("role_id"):
         extras["content"] = f"<@&{role_id}>"
     if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
@@ -67,12 +64,11 @@ def make_body(comic: Comic, entry: Entry) -> dict:
                 "description": f"New {comic['name']}!",
             },
         ],
-    } | extras  # type: ignore[operator]
-    # This is fine, because TypedDicts are just dicts so | is a supported operator.
-    # However, mypy doesn't know this yet, so we need to silence the error.
+    } | extras  # type: ignore[return-value]
+    # mypy can't understand this assignment, but it is valid
 
 
-def get_headers(comic: Comic) -> dict:
+def get_headers(comic: Comic) -> dict[str, str]:
     caching_headers = {}
     if "etag" in comic:
         caching_headers["If-None-Match"] = comic["etag"]
@@ -81,7 +77,9 @@ def get_headers(comic: Comic) -> dict:
     return caching_headers
 
 
-def set_headers(comic: Comic, headers: CIMultiDictProxy, comics: Collection) -> None:
+def set_headers(
+    comic: Comic, headers: CIMultiDictProxy[str], comics: Collection[Comic]
+) -> None:
     new_headers = {}
     if "ETag" in headers:
         new_headers["etag"] = headers["ETag"]
@@ -97,8 +95,8 @@ async def get_feed(
     session: aiohttp.ClientSession,
     comic: Comic,
     hash_seed: int,
-    comics: Collection,
-    **kwargs: Any,  # noqa: ANN401
+    comics: Collection[Comic],
+    **kwargs: Any,  # noqa: ANN401, RUF100
 ) -> tuple[FeedParserDict | Exception | None, bytes | None]:
     url = comic["url"]
     caching_headers = get_headers(comic)
@@ -114,15 +112,16 @@ async def get_feed(
                     " Firefox/96.0"
                 ),
                 "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
             }
             | caching_headers,
             **kwargs,
         )
         data = await resp.text()
         print(f"Received data for {comic['name']}")
-        if resp.status == 304:
+        if resp.status == HTTPStatus.NOT_MODIFIED:  # 304
             return None, None
-        if resp.status != 200:
+        if resp.status != HTTPStatus.OK:  # 200
             print(f"HTTP {resp.status}: {resp.reason}")
             resp.raise_for_status()
         feed = feedparser.parse(data)
@@ -138,20 +137,19 @@ async def get_feed(
 async def get_feeds(
     comic_list: list[Comic],
     hash_seed: int,
-    comics: Collection,
-    **kwargs: Any,  # noqa: ANN401
+    comics: Collection[Comic],
+    **kwargs: Any,  # noqa: ANN401, RUF100
 ) -> list[tuple[FeedParserDict | Exception | None, bytes | None]]:
     async with aiohttp.ClientSession() as session:
         tasks = [
             get_feed(session, comic, hash_seed, comics, **kwargs)
             for comic in comic_list
         ]
-        feeds = await asyncio.gather(*tasks, return_exceptions=False)
-        return feeds
+        return await asyncio.gather(*tasks, return_exceptions=False)
 
 
 def main(
-    comics: Collection,
+    comics: Collection[Comic],
     hash_seed: int,
     webhook_url: str,
     timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(
@@ -186,7 +184,7 @@ def main(
                     " most recent entries"
                 )
             for entry in entries:
-                sleep(0.4) if counter != 0 else sleep(50)
+                time.sleep(0.4) if counter != 0 else time.sleep(50)
                 body = make_body(comic, entry)
                 if thread_id := comic.get("thread_id"):
                     url = f"{webhook_url}?thread_id={thread_id}&wait=true"
@@ -200,7 +198,7 @@ def main(
                     f" {h.get('x-ratelimit-limit')} requests left in the next"
                     f" {h.get('x-ratelimit-reset-after')} seconds"
                 )
-                if r.status_code == 429:
+                if r.status_code == HTTPStatus.TOO_MANY_REQUESTS:  # 429
                     print(r.json())
                     r.raise_for_status()
                 counter = (counter + 1) % 30
@@ -225,19 +223,24 @@ def main(
     )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma no cover
     load_dotenv()
     HASH_SEED = int(os.environ["HASH_SEED"], 16)
     MONGODB_URI = os.environ["MONGODB_URI"]
+    client: MongoClient[Comic] = MongoClient(MONGODB_URI)
     opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
     args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
     if "--daily" in opts:
         print("Running daily checks")
         WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
-        comics: Collection = MongoClient(MONGODB_URI)["discord_rss"]["daily_comics"]
+        comics = client["discord_rss"]["daily_comics"]
+    elif "--test" in opts:
+        print("testing testing")
+        WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
+        comics = client["discord_rss"]["test_comics"]
     else:
         WEBHOOK_URL = os.environ["WEBHOOK_URL"]
-        comics = MongoClient(MONGODB_URI)["discord_rss"]["comics"]
+        comics = client["discord_rss"]["comics"]
     timeout = aiohttp.ClientTimeout(sock_connect=15, sock_read=10)
     main(
         comics=comics,
@@ -246,5 +249,5 @@ if __name__ == "__main__":
     )
 
     WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
-    comics = MongoClient(MONGODB_URI)["discord_rss"]["server_comics"]
+    comics = client["discord_rss"]["server_comics"]
     main(comics=comics, hash_seed=HASH_SEED, webhook_url=WEBHOOK_URL)
