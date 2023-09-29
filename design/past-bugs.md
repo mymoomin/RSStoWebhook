@@ -2,7 +2,7 @@
 
 This is a list of bugs that have happened in the past and are now fixed, but would ideally have regression tests.
 In the future this will hopefully just link to github issues.
-Once bugs have a regression test, they will be removed from the list.
+Once bugs have a regression test, they will be marked as done.
 
 - [ ] [99880a0](https://github.com/mymoomin/RSStoWebhook/commit/99880a040f5a3f365951836298555c06ea65a034) Incorrectly guessing rate limits
 - [ ] [01fd62b](https://github.com/mymoomin/RSStoWebhook/commit/01fd62be50918775b68bedbb71c1f4b5ec148acf) Hidden rate limits
