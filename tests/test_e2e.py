@@ -434,7 +434,9 @@ def test_handles_errors(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     comic["last_entries"].pop()  # One new entry
     bad_comic = deepcopy(comic)
     bad_comic["url"] = "http://does.not.exist/nowhere"
-    del bad_comic["_id"]  # So it doesn't conflict with the other comic
+    bad_comic["_id"] = ObjectId(
+        "6129798080ead12f9ac5dbbc"
+    )  # So it doesn't conflict with the other comic
     rss.get("http://does.not.exist/nowhere", status=404)
     comics.insert_many([bad_comic, comic])
     main(comics, HASH_SEED, WEBHOOK_URL)
