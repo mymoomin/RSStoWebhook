@@ -23,7 +23,7 @@ jobs:
           # The name of the app to run the command in.
           heroku_app_name: rss-to-webhooks
           # Command to run.
-          command: python -m rss-to-webhooks.worker
+          command: worker
       - name: test end
         run: echo Ended
 
