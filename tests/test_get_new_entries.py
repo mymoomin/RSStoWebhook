@@ -10,28 +10,6 @@ if TYPE_CHECKING:
     from feedparser.util import Entry
 
 
-# @pytest.fixture()
-# def comic() -> Comic:
-#     return Comic(
-#         _id=ObjectId("111111111111111111111111"),
-#         name="Test Webcomic",
-#         url="https://example.com/rss",
-#         hash=b"\xa9\x0c\x16\xe5\xe2\x8c6\xdd\x01}K\x85\x1fn\x8e\xd2",
-#         last_entries=["https://example.com/page/1"],
-#     )
-
-
-# @pytest.fixture()
-# def feed() -> list[Entry]:
-#     return {
-#         "bozo": False,
-#         "encoding": "utf-8",
-#         "version": "rss20",
-#         "feed": {"title": "Test Webcomic"},
-#         "entries": [{"link": "https://example.com/page/1"}],
-#     }
-
-
 def test_no_changes() -> None:
     """
     This is just the normal usage.
@@ -211,8 +189,6 @@ def test_major_url_change() -> None:
                 {"link": "https://example.com/entry3"},
             ],
         ),
-        # Test case 4: No changes in the feed hash
-        # (["https://example.com/entry1"], [{"link": "https://example.com/entry2"}], []),
         # Test case 5: No entries in the feed
         (["https://example.com/entry1"], [], []),
         # Test case 6: No entries in the feed, but hash has changed
