@@ -85,7 +85,7 @@ def test_yanked_update() -> None:
 def test_all_new_feed() -> None:
     """
     Test asserts that when the last-seen entry isn't found in the feed, all
-    entries are posted in order
+    entries are returned in chronological order
 
     Regression test for [#3](https://github.com/mymoomin/RSStoWebhook/issues/3)
     """
@@ -104,7 +104,7 @@ def test_all_new_feed() -> None:
 def test_many_updates_found() -> None:
     """
     Test asserts that when there are many new updates and the last-seen update
-    is still in the feed, all the new updates are posted
+    is still in the feed, all the new updates are returned in order
 
     Partial regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
     """
@@ -120,7 +120,7 @@ def test_many_updates_found() -> None:
 def test_many_updates_not_found() -> None:
     """
     Test asserts that when there are many new updates and the last-seen update
-    is not in the feed, all the new updates are posted
+    is not in the feed, all the new updates are returned
 
     Partial regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
     """
