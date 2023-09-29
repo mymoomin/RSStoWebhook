@@ -19,8 +19,7 @@ from pymongo import MongoClient
 if TYPE_CHECKING:  # pragma no cover
     from collections.abc import Iterable
 
-    from feedparser.util import Entry, FeedParserDict
-    from multidict import CIMultiDictProxy
+    from feedparser.util import Entry
     from pymongo.collection import Collection
 
     from rss_to_webhook.db_types import CachingInfo, Comic
