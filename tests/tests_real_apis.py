@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
-import pytest
 import requests
 import responses
 from dotenv import load_dotenv
@@ -21,7 +20,6 @@ load_dotenv()
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 MONGODB_URI = os.environ["MONGODB_URI"]
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
-client: MongoClient[Comic] = MongoClient(MONGODB_URI)
 
 
 def relay_request(
@@ -33,10 +31,6 @@ def relay_request(
     return (r.status_code, r.headers, r.text)
 
 
-@pytest.mark.skipif(
-    "LOCAL" not in os.environ,
-    reason="This test takes ages, so I don't want to run it on every commit",
-)
 @responses.activate()
 def test_fully() -> None:
     """
