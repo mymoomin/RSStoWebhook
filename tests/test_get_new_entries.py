@@ -127,7 +127,7 @@ def test_many_updates_not_found() -> None:
     all_entries: list[Entry] = [
         {"link": f"https://example.com/page/{i}"} for i in range(1, 101)
     ]
-    last_seen = []
+    last_seen: list[str] = []
     feed_entries: list[Entry] = list(reversed(all_entries))
     new_entries = get_new_entries(last_seen, feed_entries)
     assert new_entries == all_entries
