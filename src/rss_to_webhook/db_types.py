@@ -1,5 +1,7 @@
 from typing import NotRequired, TypedDict
 
+from bson import ObjectId
+
 
 class Author(TypedDict):
     name: str
@@ -7,6 +9,7 @@ class Author(TypedDict):
 
 
 class Comic(TypedDict):
+    _id: NotRequired[ObjectId]
     name: str
     url: str
     role_id: NotRequired[int]
@@ -17,11 +20,3 @@ class Comic(TypedDict):
     thread_id: NotRequired[int]
     etag: NotRequired[str]
     last_modified: NotRequired[str]
-
-
-class Extras(TypedDict, total=False):
-    content: str
-    color: int
-    username: str
-    avatar_url: str
-    thread_id: int
