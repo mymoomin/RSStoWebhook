@@ -20,3 +20,9 @@ class Comic(TypedDict):
     thread_id: NotRequired[int]
     etag: NotRequired[str]
     last_modified: NotRequired[str]
+
+
+class CachingInfo(TypedDict, total=False):
+    last_modified: str
+    etag: str
+    hash: bytes
