@@ -4,8 +4,9 @@ import asyncio
 import os
 import sys
 import time
+from dataclasses import dataclass
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from urllib.parse import urlsplit, urlunsplit
 
 import aiohttp
@@ -22,29 +23,25 @@ if TYPE_CHECKING:  # pragma no cover
     from multidict import CIMultiDictProxy
     from pymongo.collection import Collection
 
-    from rss_to_webhook.db_types import Comic
+    from rss_to_webhook.db_types import CachingInfo, Comic
     from rss_to_webhook.discord_types import Extras, Message
 
 
 def get_new_entries(
-    comic: Comic, feed: FeedParserDict, feed_hash: bytes | None
-) -> tuple[list[Entry], bool]:
-    if comic["hash"] == feed_hash:
-        print("no changes")
-        return ([], True)
-    last_entries = comic["last_entries"]
+    last_entries: list[str], current_entries: list[Entry]
+) -> list[Entry]:
     last_paths = {
         urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
         for url in last_entries
     }
-    for i, entry in enumerate(feed["entries"]):
+    for i, entry in enumerate(current_entries):
         entry_parts = urlsplit(entry["link"])
         entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
         if entry_path in last_paths:
             print(f"{i} new entries")
-            return list(reversed(feed["entries"][:i])), True
+            return list(reversed(current_entries[:i]))
     else:
-        return list(reversed(feed["entries"][:100])), False
+        return list(reversed(current_entries[:100]))
 
 
 def make_body(comic: Comic, entry: Entry) -> Message:
@@ -79,32 +76,18 @@ def get_headers(comic: Comic) -> dict[str, str]:
     return caching_headers
 
 
-def set_headers(
-    comic: Comic, headers: CIMultiDictProxy[str], comics: Collection[Comic]
-) -> None:
-    new_headers = {}
-    if "ETag" in headers:
-        new_headers["etag"] = headers["ETag"]
-    if "Last-Modified" in headers:
-        new_headers["last_modified"] = headers["Last-Modified"]
-    if new_headers:
-        result = comics.update_one({"name": comic["name"]}, {"$set": new_headers})
-        if result.modified_count != 0:
-            print(f"Updated caching headers for {comic['name']}")
-
-
 async def get_feed(
     session: aiohttp.ClientSession,
     comic: Comic,
     hash_seed: int,
     comics: Collection[Comic],
     **kwargs: Any,  # noqa: ANN401, RUF100
-) -> tuple[FeedParserDict | Exception | None, bytes | None]:
+) -> tuple[Comic, list[Entry], CachingInfo] | None:
     url = comic["url"]
     caching_headers = get_headers(comic)
     print(f"Requesting {url}")
     try:
-        resp = await session.request(
+        r = await session.request(
             "GET",
             url=url,
             ssl=False,
@@ -119,21 +102,36 @@ async def get_feed(
             | caching_headers,
             **kwargs,
         )
-        data = await resp.text()
+        data = await r.text()
         print(f"Received data for {comic['name']}")
-        if resp.status == HTTPStatus.NOT_MODIFIED:  # 304
-            return None, None
-        if resp.status != HTTPStatus.OK:  # 200
-            print(f"HTTP {resp.status}: {resp.reason}")
-            resp.raise_for_status()
+
+        if r.status == HTTPStatus.NOT_MODIFIED:  # 304
+            print("Cached response. No changes")
+            return None
+
+        if r.status != HTTPStatus.OK:  # 200
+            print(f"HTTP {r.status}: {r.reason}")
+            r.raise_for_status()
+
         feed = feedparser.parse(data)
         feed_hash = mmh3.hash_bytes(data, hash_seed)
-        set_headers(comic, resp.headers, comics)
+        if feed_hash == comic["hash"]:
+            print("no changes")
+            return None
+
+        caching_info: CachingInfo = {"hash": feed_hash}
+        if "ETag" in r.headers:
+            caching_info["etag"] = r.headers["ETag"]
+        if "Last-Modified" in r.headers:
+            caching_info["last_modified"] = r.headers["Last-Modified"]
+
         print("Parsed feed")
-        return feed, feed_hash
+        new_entries = get_new_entries(comic["last_entries"], feed["entries"])
+        return (comic, new_entries, caching_info)
     except Exception as e:
-        print(f"Problem connecting to {comic['name']}")
-        return e, None
+        print(f"Problem connecting to {comic['name']}. {type(e).__name__}: {e} ")
+        comics.update_one({"_id": comic["_id"]}, {"$inc": {"error_count": 1}})
+        return None
 
 
 async def get_feeds(
@@ -141,80 +139,74 @@ async def get_feeds(
     hash_seed: int,
     comics: Collection[Comic],
     **kwargs: Any,  # noqa: ANN401, RUF100
-) -> list[tuple[FeedParserDict | Exception | None, bytes | None]]:
+) -> Iterable[tuple[Comic, list[Entry], CachingInfo]]:
     async with aiohttp.ClientSession() as session:
         tasks = [
             get_feed(session, comic, hash_seed, comics, **kwargs)
             for comic in comic_list
         ]
-        return await asyncio.gather(*tasks, return_exceptions=False)
+        feeds = await asyncio.gather(*tasks, return_exceptions=False)
+        return filter(None, feeds)
 
 
-def post_and_update(
-    comics_feeds_and_hashes: Iterable[
-        tuple[Comic, FeedParserDict | Exception | None, bytes | None]
-    ],
-    webhook_url: str,
-    comics: Collection[Comic],
+@dataclass(slots=True)
+class RateLimitState:
+    counter: int
+    chunk_start: float
+    chunk_length: ClassVar[int] = 65
+
+
+def post(
+    webhook_url: str, comic: Comic, entries: list[Entry], state: RateLimitState
 ) -> None:
-    counter = 1
-    chunk_start = time.time()
-    chunk_length = 65
-    for comic, feed, feed_hash in comics_feeds_and_hashes:
-        print(f"Checking {comic['name']}")
-        if isinstance(feed, Exception):
-            print(f"{type(feed).__name__}: {feed}")
-        elif not feed:
-            print("Cached response. No changes")
+    for entry in entries:
+        if state.counter == 0:
+            chunk_time = time.time() - state.chunk_start
+            print(f"Sleeping {state.chunk_length - chunk_time:.3} seconds")
+            time.sleep(state.chunk_length - chunk_time)
+            state.chunk_start = time.time()
+        body = make_body(comic, entry)
+        if thread_id := comic.get("thread_id"):
+            url = f"{webhook_url}?thread_id={thread_id}&wait=true"
         else:
-            entries, found = get_new_entries(comic, feed, feed_hash)
-            if not found:
-                print(
-                    f"Couldn't find last entry for {comic['name']}, defaulting to"
-                    f" {len(entries)} most recent entries"
-                )
+            url = f"{webhook_url}?wait=true"
+        r = requests.post(url, None, body, timeout=10)
+        print(f"{body['embeds'][0]['title']}: {r.status_code}: {r.reason}")
+        h = r.headers
+        remaining = h.get("x-ratelimit-remaining")
+        reset_after = h.get("x-ratelimit-reset-after")
+        print(
+            f"{remaining} of"
+            f" {h.get('x-ratelimit-limit')} requests left in the next"
+            f" {reset_after} seconds"
+        )
+        if r.status_code == HTTPStatus.TOO_MANY_REQUESTS:  # 429
+            print(r.json())
+            r.raise_for_status()
+        if remaining == "0" and reset_after is not None:
+            print(f"Exhausted rate limit bucket. Retrying in {reset_after}")
+            time.sleep(float(reset_after))
+        state.counter = (state.counter + 1) % 30
 
-            for entry in entries:
-                if counter == 0:
-                    chunk_time = time.time() - chunk_start
-                    print(f"Sleeping {chunk_length - chunk_time:.3} seconds")
-                    time.sleep(chunk_length - chunk_time)
-                    chunk_start = time.time()
-                body = make_body(comic, entry)
-                if thread_id := comic.get("thread_id"):
-                    url = f"{webhook_url}?thread_id={thread_id}&wait=true"
-                else:
-                    url = f"{webhook_url}?wait=true"
-                r = requests.post(url, None, body, timeout=10)
-                print(f"{body['embeds'][0]['title']}: {r.status_code}: {r.reason}")
-                h = r.headers
-                remaining = h.get("x-ratelimit-remaining")
-                reset_after = h.get("x-ratelimit-reset-after")
-                print(
-                    f"{remaining} of"
-                    f" {h.get('x-ratelimit-limit')} requests left in the next"
-                    f" {reset_after} seconds"
-                )
-                if r.status_code == HTTPStatus.TOO_MANY_REQUESTS:  # 429
-                    print(r.json())
-                    r.raise_for_status()
-                if remaining == "0" and reset_after is not None:
-                    print(f"Exhausted rate limit bucket. Retrying in {reset_after}")
-                    time.sleep(float(reset_after))
-                counter = (counter + 1) % 30
 
-            comics.update_one(
-                {"name": comic["name"]},
-                {
-                    "$set": {"hash": feed_hash},
-                    "$push": {
-                        "last_entries": {
-                            "$each": [entry["link"] for entry in entries],
-                            "$slice": -10,
-                        }
-                    },
-                },
-            )
+def update(
+    comics: Collection[Comic],
+    comic: Comic,
+    entries: list[Entry],
+    caching_info: CachingInfo,
+) -> None:
+    comics.update_one(
+        {"_id": comic["_id"]},
+        {
+            "$set": caching_info,
+            "$push": {
+                "last_entries": {
+                    "$each": [entry["link"] for entry in entries],
+                    "$slice": -10,
+                }
+            },
+        },
+    )
 
 
 def main(
@@ -227,18 +219,15 @@ def main(
 ) -> None:
     start = time.time()
     comic_list: list[Comic] = list(comics.find())
-    feeds_and_hashes = asyncio.get_event_loop().run_until_complete(
+    comics_entries_headers = asyncio.get_event_loop().run_until_complete(
         get_feeds(comic_list, hash_seed, comics, timeout=timeout)
     )
     print("done")
-    comics_feeds_and_hashes: zip[
-        tuple[Comic, FeedParserDict | Exception | None, bytes | None]
-    ] = zip(
-        comic_list, *zip(*feeds_and_hashes)
-    )  # pyright: ignore [reportGeneralTypeIssues]
-    # mypy understands this just fine, but Pyright has issues.
 
-    post_and_update(comics_feeds_and_hashes, webhook_url, comics)
+    ratelimit_state = RateLimitState(1, time.time())
+    for comic, entries, headers in comics_entries_headers:
+        post(webhook_url, comic, entries, ratelimit_state)
+        update(comics, comic, entries, headers)
 
     time_taken = time.time() - start
     print(
