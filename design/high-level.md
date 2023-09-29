@@ -45,3 +45,15 @@ People can add a comic by asking me to do so.
 - Add better logging, whether through tracing or just refactoring
 - Think about transactions and state and when to recover from errors
 - Check the current rate-limiting rules
+
+## Progress
+
+### Functional
+
+- Decided that the goal is to let people add comics through a discord bot, since that'll be easier to implement and also less of a context-shift for users
+
+### Architectural
+
+- Added a lot of automated tests, and regression tests for half of the old bugs
+- Superficially cleaned up the code a lot but no deeper refactorings yet
+- Checked the rate-limiting rules, might rework how the script rate limits to better conform to them but at the moment it looks like it just about does already
