@@ -79,14 +79,9 @@ class TestCollection:
 
 
 if __name__ == "__main__":
-    opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
-    args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
     comics = TestCollection("test_comics")
-    if not args or "e2e" in args:
-        comics.end_to_end_test()
-        # No goal value so can't say if succeeded or failed
-    if "make_body" in args:
-        pass
+    comics.end_to_end_test()
+    # No goal value so can't say if succeeded or failed
 
 time_taken = int(time.time() - start)
 print(f"Tests run in {time_taken//60} minutes and {time_taken % 60} seconds")
