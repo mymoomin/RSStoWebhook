@@ -305,6 +305,8 @@ def test_two_updates(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
     """
     Tests that the script will post two updates in the right order to the webhook when
     two new updates are found
+
+    Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
     """
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -344,6 +346,8 @@ def test_all_new_updates(
     """
     Tests that the script works when every entry in the feed is new,
     and that the script can correctly handle 20 new updates at once
+
+    Regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
     """
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
