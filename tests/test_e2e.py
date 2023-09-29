@@ -264,8 +264,7 @@ def test_mongo_mock(comic: Comic) -> None:
 @pytest.mark.usefixtures("_no_sleep")
 def test_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """
-    Tests that the script will post the correct response to the webhook when
-    no new updates are found
+    Tests that the script won't post to the webhook when no new updates are found
     """
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
