@@ -170,7 +170,7 @@ def post(
         else:
             url = f"{webhook_url}?wait=true"
         r = requests.post(url, None, body, timeout=10)
-        print(f"{body['embeds'][0]['title']}: {r.status_code}: {r.reason}")
+        print(f"{body['embeds'][0]['url']}: {r.status_code}: {r.reason}")
         h = r.headers
         remaining = h.get("x-ratelimit-remaining")
         reset_after = h.get("x-ratelimit-reset-after")
