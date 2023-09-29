@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 if TYPE_CHECKING:  # pragma no cover
+    from collections.abc import Iterable
+
     from feedparser.util import Entry, FeedParserDict
     from multidict import CIMultiDictProxy
     from pymongo.collection import Collection
@@ -148,6 +150,73 @@ async def get_feeds(
         return await asyncio.gather(*tasks, return_exceptions=False)
 
 
+def post_and_update(
+    comics_feeds_and_hashes: Iterable[
+        tuple[Comic, FeedParserDict | Exception | None, bytes | None]
+    ],
+    webhook_url: str,
+    comics: Collection[Comic],
+) -> None:
+    counter = 1
+    chunk_start = time.time()
+    chunk_length = 65
+    for comic, feed, feed_hash in comics_feeds_and_hashes:
+        print(f"Checking {comic['name']}")
+        if isinstance(feed, Exception):
+            print(f"{type(feed).__name__}: {feed}")
+        elif not feed:
+            print("Cached response. No changes")
+        else:
+            entries, found = get_new_entries(comic, feed, feed_hash)
+            if not found:
+                print(
+                    f"Couldn't find last entry for {comic['name']}, defaulting to"
+                    f" {len(entries)} most recent entries"
+                )
+
+            for entry in entries:
+                if counter == 0:
+                    chunk_time = time.time() - chunk_start
+                    print(f"Sleeping {chunk_length - chunk_time:.3} seconds")
+                    time.sleep(chunk_length - chunk_time)
+                    chunk_start = time.time()
+                body = make_body(comic, entry)
+                if thread_id := comic.get("thread_id"):
+                    url = f"{webhook_url}?thread_id={thread_id}&wait=true"
+                else:
+                    url = f"{webhook_url}?wait=true"
+                r = requests.post(url, None, body, timeout=10)
+                print(f"{body['embeds'][0]['title']}: {r.status_code}: {r.reason}")
+                h = r.headers
+                remaining = h.get("x-ratelimit-remaining")
+                reset_after = h.get("x-ratelimit-reset-after")
+                print(
+                    f"{remaining} of"
+                    f" {h.get('x-ratelimit-limit')} requests left in the next"
+                    f" {reset_after} seconds"
+                )
+                if r.status_code == HTTPStatus.TOO_MANY_REQUESTS:  # 429
+                    print(r.json())
+                    r.raise_for_status()
+                if remaining == "0" and reset_after is not None:
+                    print(f"Exhausted rate limit bucket. Retrying in {reset_after}")
+                    time.sleep(float(reset_after))
+                counter = (counter + 1) % 30
+
+            comics.update_one(
+                {"name": comic["name"]},
+                {
+                    "$set": {"hash": feed_hash},
+                    "$push": {
+                        "last_entries": {
+                            "$each": [entry["link"] for entry in entries],
+                            "$slice": -10,
+                        }
+                    },
+                },
+            )
+
+
 def main(
     comics: Collection[Comic],
     hash_seed: int,
@@ -169,52 +238,7 @@ def main(
     )  # pyright: ignore [reportGeneralTypeIssues]
     # mypy understands this just fine, but Pyright has issues.
 
-    counter = 1
-    for comic, feed, feed_hash in comics_feeds_and_hashes:
-        print(f"Checking {comic['name']}")
-        if isinstance(feed, Exception):
-            print(f"{type(feed).__name__}: {feed}")
-        elif not feed:
-            print("Cached response. No changes")
-        else:
-            entries, found = get_new_entries(comic, feed, feed_hash)
-            if not found:
-                print(
-                    f"Couldn't find last entry for {comic['name']}, defaulting to"
-                    " most recent entries"
-                )
-            for entry in entries:
-                time.sleep(0.4) if counter != 0 else time.sleep(50)
-                body = make_body(comic, entry)
-                if thread_id := comic.get("thread_id"):
-                    url = f"{webhook_url}?thread_id={thread_id}&wait=true"
-                else:
-                    url = f"{webhook_url}?wait=true"
-                r = requests.post(url, None, body, timeout=10)
-                print(f"{body['embeds'][0]['title']}: {r.status_code}: {r.reason}")
-                h = r.headers
-                print(
-                    f"{h.get('x-ratelimit-remaining')} of"
-                    f" {h.get('x-ratelimit-limit')} requests left in the next"
-                    f" {h.get('x-ratelimit-reset-after')} seconds"
-                )
-                if r.status_code == HTTPStatus.TOO_MANY_REQUESTS:  # 429
-                    print(r.json())
-                    r.raise_for_status()
-                counter = (counter + 1) % 30
-
-            comics.update_one(
-                {"name": comic["name"]},
-                {
-                    "$set": {"hash": feed_hash},
-                    "$push": {
-                        "last_entries": {
-                            "$each": [entry["link"] for entry in entries],
-                            "$slice": -10,
-                        }
-                    },
-                },
-            )
+    post_and_update(comics_feeds_and_hashes, webhook_url, comics)
 
     time_taken = time.time() - start
     print(
