@@ -53,7 +53,7 @@ def webhook() -> Generator[RequestsMock, None, None]:
     with RequestsMock(assert_all_requests_are_fired=False) as responses:
         responses.post(
             WEBHOOK_URL,
-            status=204,
+            status=200,
             headers={
                 "x-ratelimit-limit": "5",
                 "x-ratelimit-remaining": "4",
