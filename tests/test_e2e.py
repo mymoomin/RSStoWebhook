@@ -82,6 +82,17 @@ def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(time, "sleep", nothing)
 
 
+@pytest.fixture()
+def measure_sleep(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    sleeps = []
+
+    def log_sleep(time: float) -> None:
+        sleeps.append(time)
+
+    monkeypatch.setattr(time, "sleep", log_sleep)
+    return sleeps
+
+
 @pytest.mark.usefixtures("_no_sleep")
 def test_no_sleep() -> None:
     start = time.time()
@@ -320,6 +331,34 @@ def test_thread_comic(comic: Comic, rss: aioresponses) -> None:
     )
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL)
+
+
+@responses.activate()
+def test_pauses_at_rate_limit(
+    comic: Comic, rss: aioresponses, measure_sleep: list[float]
+) -> None:
+    """
+    Tests that the script sleeps until the rate-limiting window is over when it
+    exhausts the rate limit
+
+    Regression test for [99880a0](https://github.com/mymoomin/RSStoWebhook/commit/99880a040f5a3f365951836298555c06ea65a034)
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One "new" entry
+    comics.insert_one(comic)
+    responses.post(
+        WEBHOOK_URL,
+        status=200,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "0",
+            "x-ratelimit-reset-after": "1",
+        },
+    )
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    assert len(measure_sleep) == 1
+    assert measure_sleep[0] == 1
 
 
 @responses.activate()

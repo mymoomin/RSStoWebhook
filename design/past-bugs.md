@@ -4,7 +4,7 @@ This is a list of bugs that have happened in the past and are now fixed, but wou
 In the future this will hopefully just link to github issues.
 Once bugs have a regression test, they will be marked as done.
 
-- [ ] [99880a0](https://github.com/mymoomin/RSStoWebhook/commit/99880a040f5a3f365951836298555c06ea65a034) Incorrectly guessing rate limits
+- [x] [99880a0](https://github.com/mymoomin/RSStoWebhook/commit/99880a040f5a3f365951836298555c06ea65a034) Incorrectly guessing rate limits
 - [ ] [01fd62b](https://github.com/mymoomin/RSStoWebhook/commit/01fd62be50918775b68bedbb71c1f4b5ec148acf) Hidden rate limits
 - [x] [0249766](https://github.com/mymoomin/RSStoWebhook/commit/0249766c715879891e3d21bb61bc537839020f5b) Missing title on embed when update has no `<title>`
 - [ ] [4ca9b14](https://github.com/mymoomin/RSStoWebhook/commit/4ca9b140de34290797844104c93952bcf481fc5c) Undetected broken RSS feed
