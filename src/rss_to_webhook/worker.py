@@ -152,7 +152,9 @@ async def get_feeds(
 class RateLimitState:
     counter: int
     chunk_start: float
-    chunk_length: ClassVar[int] = 65
+    window_length: ClassVar[int] = 60
+    fuzz_factor: ClassVar[int] = 1
+    chunk_length: ClassVar[int] = window_length + fuzz_factor
 
 
 def post(
