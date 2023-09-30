@@ -16,7 +16,7 @@ from responses import RequestsMock, matchers
 from yarl import URL
 
 from rss_to_webhook.db_types import Comic
-from rss_to_webhook.worker import main
+from rss_to_webhook.worker import RateLimitState, main
 
 load_dotenv()
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
@@ -331,6 +331,42 @@ def test_thread_comic(comic: Comic, rss: aioresponses) -> None:
     )
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL)
+
+
+def test_pauses_at_hidden_rate_limit(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock, measure_sleep: list[float]
+) -> None:
+    """
+    Tests that the script avoids the hidden rate limit of 30 messages every
+    60 seconds, as documented in [this tweet](https://twitter.com/lolpython/status/967621046277820416)
+
+    Regression test for [99880a0](https://github.com/mymoomin/RSStoWebhook/commit/99880a040f5a3f365951836298555c06ea65a034)
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["url"] = "https://www.neorice.com/rss"
+    comic["last_entries"] = []
+    comics.insert_one(comic)
+    long_feed = f"""
+    <rss version="2.0"><channel><title>Hero Oh Hero</title>
+    <link>http://www.neorice.com/</link>
+    <description>A pixelart comic</description>
+    {"".join(
+        f"<item><link>http://www.neorice.com/hoh/{i}</link></item>" for i in range(30)
+    )}
+    </channel></rss>"""
+    rss.get(
+        "https://www.neorice.com/rss",
+        status=200,
+        body=long_feed,
+    )
+    start = time.time()
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    end = time.time()
+    main_duration = end - start
+    assert len(measure_sleep) == 1
+    assert main_duration + measure_sleep[0] > RateLimitState.window_length
+    assert main_duration + measure_sleep[0] < 1.5 * RateLimitState.window_length
 
 
 @responses.activate()
