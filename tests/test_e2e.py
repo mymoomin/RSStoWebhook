@@ -4,6 +4,7 @@ import time
 from collections.abc import Generator
 from copy import deepcopy
 
+import mmh3
 import pytest
 import responses
 from aioresponses import aioresponses
@@ -103,6 +104,21 @@ def test_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> No
     """
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL)
+    assert len(webhook.calls) == 0
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_hash_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+    """
+    Tests that the script won't post to the webhook when the feed's hash
+    matches the previous hash
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One new entry
+    comic["hash"] = mmh3.hash_bytes(example_feed, HASH_SEED)  # But the hash is the same
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL)
     assert len(webhook.calls) == 0
