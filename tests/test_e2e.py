@@ -324,9 +324,9 @@ def test_thread_comic(comic: Comic, rss: aioresponses) -> None:
 
 @responses.activate()
 @pytest.mark.usefixtures("_no_sleep")
-def test_fails_on_rate_limit(comic: Comic, rss: aioresponses) -> None:
+def test_fails_on_429(comic: Comic, rss: aioresponses) -> None:
     """
-    Tests that the script fails with an exception when it is rate limited
+    Tests that the script fails with an exception when it exceeds the rate limit
 
     In the future this should be set to email me
     """
