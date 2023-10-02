@@ -40,7 +40,7 @@ def get_new_entries(
             print(f"{i} new entries")
             return list(reversed(current_entries[:i]))
     else:
-        return list(reversed(current_entries[:100]))
+        return list(reversed(current_entries[:50]))
 
 
 def make_body(comic: Comic, entry: Entry) -> Message:
