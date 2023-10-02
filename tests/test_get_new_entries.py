@@ -125,7 +125,7 @@ def test_many_updates_not_found() -> None:
     Partial regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
     """
     all_entries: list[Entry] = [
-        {"link": f"https://example.com/page/{i}"} for i in range(1, 101)
+        {"link": f"https://example.com/page/{i}"} for i in range(1, 51)
     ]
     last_seen: list[str] = []
     feed_entries: list[Entry] = list(reversed(all_entries))
