@@ -26,58 +26,49 @@ if TYPE_CHECKING:  # pragma no cover
     from rss_to_webhook.discord_types import Extras, Message
 
 
-def get_new_entries(
-    last_entries: list[str], current_entries: list[Entry]
-) -> list[Entry]:
-    last_paths = {
-        urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
-        for url in last_entries
-    }
-    for i, entry in enumerate(current_entries):
-        entry_parts = urlsplit(entry["link"])
-        entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
-        if entry_path in last_paths:
-            print("Found last entry")
-            return list(reversed(current_entries[:i]))
-    else:
-        print("No last entry. Returning up to 50 most recent entries")
-        return list(reversed(current_entries[:50]))
+def main(
+    comics: Collection[Comic],
+    hash_seed: int,
+    webhook_url: str,
+    timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(
+        sock_connect=15, sock_read=10
+    ),
+) -> None:
+    start = time.time()
+    comic_list: list[Comic] = list(comics.find().sort("name"))
+    comics_entries_headers = asyncio.get_event_loop().run_until_complete(
+        get_changed_feeds(comic_list, hash_seed, comics, timeout=timeout)
+    )
+
+    ratelimit_state = RateLimitState(1, time.time())
+    for comic, entries, headers in comics_entries_headers:
+        post(webhook_url, comic, entries, ratelimit_state)
+        update(comics, comic, entries, headers)
+
+    time_taken = time.time() - start
+    print(
+        f"All feeds updated in {int(time_taken)//60} minutes and"
+        f" {time_taken % 60:.2g} seconds"
+    )
 
 
-def make_body(comic: Comic, entry: Entry) -> Message:
-    extras: Extras = {}
-    if author := comic.get("author"):
-        extras["username"] = author["name"]
-        extras["avatar_url"] = author["url"]
-    if role_id := comic.get("role_id"):
-        extras["content"] = f"<@&{role_id}>"
-    if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
-        print(f"{comic['name']}: bad url {entry['link']}")
-        parts = urlsplit(link)
-        link = urlunsplit(parts._replace(scheme="https"))
-    return {
-        "embeds": [
-            {
-                "color": comic.get("color", 0x5C64F4),
-                "title": f"**{entry.get('title', comic['name'])}**",
-                "url": link,
-                "description": f"New {comic['name']}!",
-            },
-        ],
-    } | extras  # type: ignore[return-value]
-    # mypy can't understand this assignment, but it is valid
+async def get_changed_feeds(
+    comic_list: list[Comic],
+    hash_seed: int,
+    comics: Collection[Comic],
+    **kwargs: Any,  # noqa: ANN401, RUF100
+) -> Iterable[tuple[Comic, list[Entry], CachingInfo]]:
+    async with aiohttp.ClientSession() as session:
+        tasks = [
+            get_feed_changes(session, comic, hash_seed, comics, **kwargs)
+            for comic in comic_list
+        ]
+        feeds = await asyncio.gather(*tasks, return_exceptions=False)
+        print("All feeds checked")
+        return filter(None, feeds)
 
 
-def get_headers(comic: Comic) -> dict[str, str]:
-    caching_headers = {}
-    if "etag" in comic:
-        caching_headers["If-None-Match"] = comic["etag"]
-    if "last_modified" in comic:
-        caching_headers["If-Modified-Since"] = comic["last_modified"]
-    return caching_headers
-
-
-async def get_feed(
+async def get_feed_changes(
     session: aiohttp.ClientSession,
     comic: Comic,
     hash_seed: int,
@@ -108,11 +99,11 @@ async def get_feed(
         )
         print(f"{comic['name']}: Got response {r.status}: {r.reason}")
 
-        if r.status == HTTPStatus.NOT_MODIFIED:  # 304
+        if r.status == HTTPStatus.NOT_MODIFIED:
             print(f"{comic['name']}: Cached response. No changes")
             return None
 
-        if r.status != HTTPStatus.OK:  # 200
+        if r.status != HTTPStatus.OK:
             print(f"{comic['name']}: HTTP {r.status}: {r.reason}")
             r.raise_for_status()
 
@@ -142,20 +133,31 @@ async def get_feed(
         return None
 
 
-async def get_feeds(
-    comic_list: list[Comic],
-    hash_seed: int,
-    comics: Collection[Comic],
-    **kwargs: Any,  # noqa: ANN401, RUF100
-) -> Iterable[tuple[Comic, list[Entry], CachingInfo]]:
-    async with aiohttp.ClientSession() as session:
-        tasks = [
-            get_feed(session, comic, hash_seed, comics, **kwargs)
-            for comic in comic_list
-        ]
-        feeds = await asyncio.gather(*tasks, return_exceptions=False)
-        print("All feeds checked")
-        return filter(None, feeds)
+def get_headers(comic: Comic) -> dict[str, str]:
+    caching_headers = {}
+    if "etag" in comic:
+        caching_headers["If-None-Match"] = comic["etag"]
+    if "last_modified" in comic:
+        caching_headers["If-Modified-Since"] = comic["last_modified"]
+    return caching_headers
+
+
+def get_new_entries(
+    last_entries: list[str], current_entries: list[Entry]
+) -> list[Entry]:
+    last_paths = {
+        urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
+        for url in last_entries
+    }
+    for i, entry in enumerate(current_entries):
+        entry_parts = urlsplit(entry["link"])
+        entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
+        if entry_path in last_paths:
+            print("Found last entry")
+            return list(reversed(current_entries[:i]))
+    else:
+        print("No last entry. Returning up to 50 most recent entries")
+        return list(reversed(current_entries[:50]))
 
 
 @dataclass(slots=True)
@@ -225,6 +227,30 @@ def post(
         state.counter = (state.counter + 1) % RateLimitState.max_in_window
 
 
+def make_body(comic: Comic, entry: Entry) -> Message:
+    extras: Extras = {}
+    if author := comic.get("author"):
+        extras["username"] = author["name"]
+        extras["avatar_url"] = author["url"]
+    if role_id := comic.get("role_id"):
+        extras["content"] = f"<@&{role_id}>"
+    if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
+        print(f"{comic['name']}: bad url {entry['link']}")
+        parts = urlsplit(link)
+        link = urlunsplit(parts._replace(scheme="https"))
+    return {
+        "embeds": [
+            {
+                "color": comic.get("color", 0x5C64F4),
+                "title": f"**{entry.get('title', comic['name'])}**",
+                "url": link,
+                "description": f"New {comic['name']}!",
+            },
+        ],
+    } | extras  # type: ignore[return-value]
+    # mypy can't understand this assignment, but it is valid
+
+
 def update(
     comics: Collection[Comic],
     comic: Comic,
@@ -248,32 +274,6 @@ def update(
     print(
         f"{comic['name']}: Set {', '.join(caching_info.keys())} and posted"
         f" {updates} new {word}"
-    )
-
-
-def main(
-    comics: Collection[Comic],
-    hash_seed: int,
-    webhook_url: str,
-    timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(
-        sock_connect=15, sock_read=10
-    ),
-) -> None:
-    start = time.time()
-    comic_list: list[Comic] = list(comics.find().sort("name"))
-    comics_entries_headers = asyncio.get_event_loop().run_until_complete(
-        get_feeds(comic_list, hash_seed, comics, timeout=timeout)
-    )
-
-    ratelimit_state = RateLimitState(1, time.time())
-    for comic, entries, headers in comics_entries_headers:
-        post(webhook_url, comic, entries, ratelimit_state)
-        update(comics, comic, entries, headers)
-
-    time_taken = time.time() - start
-    print(
-        f"All feeds updated in {int(time_taken)//60} minutes and"
-        f" {time_taken % 60:.2g} seconds"
     )
 
 
