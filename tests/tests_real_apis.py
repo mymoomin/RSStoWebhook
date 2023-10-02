@@ -78,6 +78,8 @@ def test_fully() -> None:
 def test_real_rate_limit() -> None:
     """
     Tests that when the script makes many posts at once, it respects the rate limits
+
+    This is a regression test for [01fd62b](https://github.com/mymoomin/RSStoWebhook/commit/01fd62be50918775b68bedbb71c1f4b5ec148acf)
     """
     comic: Comic = {
         "_id": ObjectId("111111111111111111111111"),
