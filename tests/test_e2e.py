@@ -430,6 +430,22 @@ def test_fails_on_429(comic: Comic, rss: aioresponses) -> None:
     assert "429" in str(e.value)
 
 
+@responses.activate()
+@pytest.mark.usefixtures("_no_sleep")
+def test_no_crash_on_missing_headers(comic: Comic, rss: aioresponses) -> None:
+    """
+    Tests that the script does not crash when headers are missing
+
+    This is a regression test for [b0939df](https://github.com/mymoomin/RSStoWebhook/commit/b0939df99bd28ed17d69e814cf51bb725fc97883)
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One "new" entry
+    comics.insert_one(comic)
+    responses.post(WEBHOOK_URL, status=200, headers={})
+    main(comics, HASH_SEED, WEBHOOK_URL)
+
+
 example_feed = """
 <?xml version="1.0" encoding="UTF-8" ?>\r\n\t<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\r\n\t<channel>\r\n\t\t<title>Sleepless Domain</title>\r\n\t\t<atom:link href="https://www.sleeplessdomain.com/comic/rss" rel="self" type="application/rss+xml" />
 \r\n\t\t<link>https://www.sleeplessdomain.com/</link>\r\n\t\t<description>Latest Sleepless Domain comics and news</description>\r\n\t\t<language>en-us</language>

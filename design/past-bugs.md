@@ -13,7 +13,7 @@ Once bugs have a regression test, they will be marked as done.
 - [x] [#3](https://github.com/mymoomin/RSStoWebhook/issues/3) Not all updates posted when the last-seen update is no longer in the feed
 - [x] [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921) Updates missed when too many new updates are posted at once
 - [ ] [f661a90](https://github.com/mymoomin/RSStoWebhook/commit/f661a902a2ce2be570a9b039e0dde596f52ea624) Spurious errors for failed SSL checks
-- [ ] [b0939df](https://github.com/mymoomin/RSStoWebhook/commit/b0939df99bd28ed17d69e814cf51bb725fc97883) Crash when expected response headers are missing
+- [x] [b0939df](https://github.com/mymoomin/RSStoWebhook/commit/b0939df99bd28ed17d69e814cf51bb725fc97883) Crash when expected response headers are missing
 - [x] [13a7171](https://github.com/mymoomin/RSStoWebhook/commit/13a7171be8f19164902a36e1f5abd587f852a303) Crash on bad URL scheme
 - [ ] [192de2b](https://github.com/mymoomin/RSStoWebhook/commit/192de2b456810174aa09b6feac6a7b05f695a001) Blocked by Tumblr because of user agent presumably marked as malicious
 - [ ] [c45d8b7](https://github.com/mymoomin/RSStoWebhook/commit/c45d8b7a8cdb3507f0a407f2e453e1ebde284e14) Blocked by other sites because of missing user agent
