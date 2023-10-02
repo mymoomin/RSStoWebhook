@@ -432,6 +432,55 @@ def test_fails_on_429(comic: Comic, rss: aioresponses) -> None:
 
 @responses.activate()
 @pytest.mark.usefixtures("_no_sleep")
+def test_no_update_on_failure(comic: Comic, rss: aioresponses) -> None:
+    """
+    Tests that the script does not update caching headers if there is an error
+    while posting updates to the server
+
+    This is a regression test for [No Commit]
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    entry_url = comic["last_entries"].pop()  # One "new" entry
+    comic["url"] = "https://www.questionablecontent.net/QCRSS.xml"
+    comics.insert_one(comic)
+    rss.get(
+        "https://www.questionablecontent.net/QCRSS.xml",
+        status=200,
+        body=example_feed,
+        headers={
+            "ETag": '"f56-6062f676a7367-gzip"',
+            "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
+        },
+    )
+    responses.post(
+        WEBHOOK_URL,
+        status=429,
+        headers={
+            "retry-after": "1",
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "4",
+            "x-ratelimit-reset-after": "0.399",
+            "x-ratelimit-scope": "shared",
+        },
+        json={
+            "message": "The resource is being rate limited.",
+            "retry_after": 0.529,
+            "global": False,
+        },
+    )
+    with pytest.raises(HTTPError):
+        main(comics, HASH_SEED, WEBHOOK_URL)
+    new_comic = comics.find_one({"_id": comic["_id"]})
+    assert new_comic
+    assert "last_modified" not in new_comic
+    assert "etag" not in new_comic
+    assert comic["hash"] != mmh3.hash_bytes(example_feed, HASH_SEED)
+    assert entry_url not in comic["last_entries"]
+
+
+@responses.activate()
+@pytest.mark.usefixtures("_no_sleep")
 def test_no_crash_on_missing_headers(comic: Comic, rss: aioresponses) -> None:
     """
     Tests that the script does not crash when headers are missing
