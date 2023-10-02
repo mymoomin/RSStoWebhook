@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import TYPE_CHECKING
 
+import pytest
 import requests
 import responses
+from bson import ObjectId
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import PreparedRequest
 
-from rss_to_webhook.worker import main
+from rss_to_webhook.worker import RateLimitState, main, post
 
 if TYPE_CHECKING:
+    from feedparser.util import Entry
     from requests.structures import CaseInsensitiveDict
 
     from rss_to_webhook.db_types import Comic
@@ -31,6 +35,7 @@ def relay_request(
     return (r.status_code, r.headers, r.text)
 
 
+@pytest.mark.slow()
 @responses.activate()
 def test_fully() -> None:
     """
@@ -67,3 +72,23 @@ def test_fully() -> None:
     )
     # The rss feeds with a Last-Modified header have had that saved
     assert comics.find_one({"last_modified": {"$exists": True}})
+
+
+@pytest.mark.slow()
+def test_real_rate_limit() -> None:
+    """
+    Tests that when the script makes many posts at once, it respects the rate limits
+    """
+    comic: Comic = {
+        "_id": ObjectId("111111111111111111111111"),
+        "name": "Test Webcomic",
+        "url": "https://example.com/",
+        "last_entries": [],
+        "hash": b"",
+    }
+    entries: list[Entry] = [
+        {"title": str(i), "link": f"https://example.com/{i}/"}
+        for i in range(59)  # Sleeps once and stops just before sleep 2
+    ]
+    state = RateLimitState(1, time.time())
+    post(WEBHOOK_URL, comic, entries, state)
