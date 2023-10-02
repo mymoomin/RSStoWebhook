@@ -70,6 +70,7 @@ def rss() -> Generator[aioresponses, None, None]:
             "http://www.sleeplessdomain.com/comic/rss",
             status=200,
             body=example_feed,
+            repeat=True,
         )
         yield mocked
 
