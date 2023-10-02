@@ -203,7 +203,7 @@ def update(
             "$push": {
                 "last_entries": {
                     "$each": [entry["link"] for entry in entries],
-                    "$slice": -10,
+                    "$slice": -400,
                 }
             },
         },
