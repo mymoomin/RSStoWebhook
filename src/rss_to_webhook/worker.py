@@ -150,11 +150,33 @@ async def get_feeds(
 
 @dataclass(slots=True)
 class RateLimitState:
+    """
+    This class stores the information necesary to obey Discord's hidden
+    30 message/minute rate-limit on posts to webhooks in a channel, which
+    is documented in [this tweet](https://twitter.com/lolpython/status/967621046277820416).
+
+    `counter` is the number of posts made in the current rate-limiting window
+
+    `window_start` is the timestamp of the start of the current window
+
+    `window_length` is the length of the window, sourced from the tweet
+
+    `fuzz_factor` is an additional safety margin. I know 61 seconds is
+        enough for this because I've tested this by posting 500 messages
+        to one webhook with this fuzz factor multiple times
+
+    `fuzzed_window` is the window plus the safety factor
+
+    `max_in_window` is the maximum number of posts that can be made in each
+        window, sourced from the tweet again
+    """
+
     counter: int
-    chunk_start: float
+    window_start: float
     window_length: ClassVar[int] = 60
     fuzz_factor: ClassVar[int] = 1
-    chunk_length: ClassVar[int] = window_length + fuzz_factor
+    fuzzed_window: ClassVar[int] = window_length + fuzz_factor
+    max_in_window: ClassVar[int] = 30
 
 
 def post(
@@ -162,10 +184,10 @@ def post(
 ) -> None:
     for entry in entries:
         if state.counter == 0:
-            chunk_time = time.time() - state.chunk_start
-            print(f"Sleeping {state.chunk_length - chunk_time:.3} seconds")
-            time.sleep(state.chunk_length - chunk_time)
-            state.chunk_start = time.time()
+            window_time = time.time() - state.window_start
+            print(f"Sleeping {state.fuzzed_window - window_time:.3} seconds")
+            time.sleep(state.fuzzed_window - window_time)
+            state.window_start = time.time()
         body = make_body(comic, entry)
         if thread_id := comic.get("thread_id"):
             url = f"{webhook_url}?thread_id={thread_id}&wait=true"
@@ -187,7 +209,7 @@ def post(
         if remaining == "0" and reset_after is not None:
             print(f"Exhausted rate limit bucket. Retrying in {reset_after}")
             time.sleep(float(reset_after))
-        state.counter = (state.counter + 1) % 30
+        state.counter = (state.counter + 1) % RateLimitState.max_in_window
 
 
 def update(
