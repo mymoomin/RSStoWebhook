@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+from bson import ObjectId
 
 from rss_to_webhook.db_types import Comic
 from rss_to_webhook.discord_types import Message
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
 @pytest.fixture()
 def comic() -> Comic:
     return Comic(
+        _id=ObjectId("111111111111111111111111"),
         name="Test Webcomic",
         url="https://example.com/rss",
         hash=b"\xa9\x0c\x16\xe5\xe2\x8c6\xdd\x01}K\x85\x1fn\x8e\xd2",

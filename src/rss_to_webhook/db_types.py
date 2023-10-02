@@ -9,7 +9,7 @@ class Author(TypedDict):
 
 
 class Comic(TypedDict):
-    _id: NotRequired[ObjectId]
+    _id: ObjectId
     name: str
     url: str
     role_id: NotRequired[int]
@@ -20,3 +20,9 @@ class Comic(TypedDict):
     thread_id: NotRequired[int]
     etag: NotRequired[str]
     last_modified: NotRequired[str]
+
+
+class CachingInfo(TypedDict):
+    hash: bytes
+    last_modified: NotRequired[str]
+    etag: NotRequired[str]

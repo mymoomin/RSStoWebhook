@@ -72,15 +72,18 @@ class TestCollection:
     def end_to_end_test(self: Self) -> None:
         self.reset_caching()
         self.pop_last_update()
+        print("test starts")
         main(self.collection, HASH_SEED, WEBHOOK_URL)
         # Nothing more should be sent
         main(self.collection, HASH_SEED, WEBHOOK_URL)
 
 
 if __name__ == "__main__":
+    print("start")
     comics = TestCollection("test_comics")
+    print("clearing caches")
     comics.end_to_end_test()
     # No goal value so can't say if succeeded or failed
 
 time_taken = int(time.time() - start)
-print(f"Tests run in {time_taken//60} minutes and {time_taken % 60} seconds")
+print(f"Tests ran in {time_taken//60} minutes and {time_taken % 60} seconds")
