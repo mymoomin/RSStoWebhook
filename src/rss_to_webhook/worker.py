@@ -260,7 +260,7 @@ def main(
     ),
 ) -> None:
     start = time.time()
-    comic_list: list[Comic] = list(comics.find())
+    comic_list: list[Comic] = list(comics.find().sort("name"))
     comics_entries_headers = asyncio.get_event_loop().run_until_complete(
         get_feeds(comic_list, hash_seed, comics, timeout=timeout)
     )
