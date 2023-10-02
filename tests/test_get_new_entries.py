@@ -7,6 +7,8 @@ from rss_to_webhook.worker import get_new_entries
 if TYPE_CHECKING:
     from feedparser.util import Entry
 
+    from rss_to_webhook.db_types import EntrySubset
+
 
 def test_no_changes() -> None:
     """
@@ -17,7 +19,7 @@ def test_no_changes() -> None:
 
     Partial regression test for [#1](https://github.com/mymoomin/RSStoWebhook/issues/1)
     """
-    last_seen = ["https://example.com/page/1"]
+    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = [{"link": "https://example.com/page/1"}]
     new_entries = get_new_entries(last_seen, feed_entries)
     assert new_entries == []
@@ -28,7 +30,7 @@ def test_missing_entry() -> None:
     Test asserts that `get_new_entries` functions when it can't find the last
     entry in the feed
     """
-    last_seen = ["https://example.com/page/1"]
+    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = []
     new_entries = get_new_entries(last_seen, feed_entries)
     assert new_entries == []
@@ -38,7 +40,7 @@ def test_new_update() -> None:
     """
     Test asserts that when there is one new update, it is posted
     """
-    last_seen = ["https://example.com/page/1"]
+    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = [
         {"link": "https://example.com/page/2"},
         {"link": "https://example.com/page/1"},
@@ -54,7 +56,7 @@ def test_new_updates() -> None:
 
     Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
     """
-    last_seen = ["https://example.com/page/1"]
+    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = [
         {"link": "https://example.com/page/3"},
         {"link": "https://example.com/page/2"},
@@ -74,7 +76,10 @@ def test_yanked_update() -> None:
 
     Partial regression test for [#1](https://github.com/mymoomin/RSStoWebhook/issues/1)
     """
-    last_seen = ["https://example.com/page/1", "https://example.com/page/2"]
+    last_seen: list[EntrySubset] = [
+        {"link": "https://example.com/page/1"},
+        {"link": "https://example.com/page/2"},
+    ]
     feed_entries: list[Entry] = [
         {"link": "https://example.com/page/1"},
     ]
@@ -89,7 +94,7 @@ def test_all_new_feed() -> None:
 
     Regression test for [#3](https://github.com/mymoomin/RSStoWebhook/issues/3)
     """
-    last_seen = ["https://example.com/page/11"]
+    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/11"}]
     feed_entries: list[Entry] = [
         {"link": "https://example.com/page/2"},
         {"link": "https://example.com/page/1"},
@@ -111,7 +116,7 @@ def test_many_updates_found() -> None:
     all_entries: list[Entry] = [
         {"link": f"https://example.com/page/{i}"} for i in range(1, 101)
     ]
-    last_seen = ["https://example.com/page/1"]
+    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = list(reversed(all_entries))
     new_entries = get_new_entries(last_seen, feed_entries)
     assert new_entries == all_entries[1:]
@@ -127,7 +132,7 @@ def test_many_updates_not_found() -> None:
     all_entries: list[Entry] = [
         {"link": f"https://example.com/page/{i}"} for i in range(1, 51)
     ]
-    last_seen: list[str] = []
+    last_seen: list[EntrySubset] = []
     feed_entries: list[Entry] = list(reversed(all_entries))
     new_entries = get_new_entries(last_seen, feed_entries)
     assert new_entries == all_entries
@@ -140,7 +145,7 @@ def test_minor_url_change() -> None:
 
     Regression test for [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2)
     """
-    last_seen = ["https://example.com/page/1"]
+    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = [{"link": "http://example.com/page/1/"}]
     new_entries = get_new_entries(last_seen, feed_entries)
     assert new_entries == []
@@ -153,7 +158,7 @@ def test_major_url_change() -> None:
 
     Regression test for [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2)
     """
-    last_seen = ["https://example.com/page/1?v=1"]
+    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1?v=1"}]
     feed_entries: list[Entry] = [{"link": "https://example.com/page/1?v=2"}]
     new_entries = get_new_entries(last_seen, feed_entries)
     assert new_entries == [{"link": "https://example.com/page/1?v=2"}]

@@ -18,6 +18,6 @@ class Message(TypedDict, total=False):
 class Extras(TypedDict, total=False):
     content: str
     color: int
-    username: str
-    avatar_url: str
+    username: str | None
+    avatar_url: str | None
     thread_id: int

@@ -16,35 +16,108 @@ from responses import RequestsMock, matchers
 from yarl import URL
 
 from rss_to_webhook.db_types import Comic
-from rss_to_webhook.worker import RateLimitState, main
+from rss_to_webhook.worker import RateLimitState, daily_checks, main
 
 load_dotenv()
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
+THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 
 
 @pytest.fixture()
 def comic() -> Comic:
     return {
         "_id": ObjectId("612819b293b99b5809e18ab3"),
-        "name": "Sleepless Domain",
+        "title": "Sleepless Domain",
         "url": "http://www.sleeplessdomain.com/comic/rss",
         "role_id": Int64("581531863127031868"),
         "color": 11240119,
-        "author": {"name": "KiwiFlea", "url": "https://i.imgur.com/XYbqy7f.png"},
-        "hash": b"*\xc5\x10O\xf3\xa1\x9f\xca5\x017\xdd\xf3\x8e\xe84",
+        "username": "KiwiFlea",
+        "avatar_url": "https://i.imgur.com/XYbqy7f.png",
+        "feed_hash": b"*\xc5\x10O\xf3\xa1\x9f\xca5\x017\xdd\xf3\x8e\xe84",
         "last_entries": [
-            "https://www.sleeplessdomain.com/comic/chapter-21-page-25-2",
-            "https://www.sleeplessdomain.com/comic/chapter-21-page-27",
-            "https://www.sleeplessdomain.com/comic/chapter-21-page-28",
-            "https://www.sleeplessdomain.com/comic/chapter-21-page-29",
-            "https://www.sleeplessdomain.com/comic/chapter-21-page-30",
-            "https://www.sleeplessdomain.com/comic/chapter-21-page-31",
-            "https://www.sleeplessdomain.com/comic/chapter-21-page-32",
-            "https://www.sleeplessdomain.com/comic/chapter-21-page-33",
-            "https://www.sleeplessdomain.com/comic/chapter-22-page-1",
-            "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-16",
+                "published": "Fri, 21 Apr 2023 02:53:08 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-17",
+                "published": "Sat, 29 Apr 2023 00:04:19 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-18",
+                "published": "Sat, 06 May 2023 04:26:58 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-19",
+                "published": "Sat, 13 May 2023 05:02:53 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-20",
+                "published": "Sat, 20 May 2023 16:53:59 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-21",
+                "published": "Sun, 28 May 2023 05:23:45 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-22",
+                "published": "Sat, 03 Jun 2023 20:35:17 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-23",
+                "published": "Sun, 11 Jun 2023 04:54:17 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-24",
+                "published": "Sun, 18 Jun 2023 16:29:02 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-25",
+                "published": "Mon, 26 Jun 2023 01:45:29 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-25-2",
+                "published": "Mon, 03 Jul 2023 20:00:38 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-27",
+                "published": "Wed, 12 Jul 2023 16:55:26 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-28",
+                "published": "Fri, 28 Jul 2023 03:01:51 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-29",
+                "published": "Wed, 09 Aug 2023 02:57:57 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-30",
+                "published": "Sun, 20 Aug 2023 05:46:19 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-31",
+                "published": "Fri, 25 Aug 2023 14:36:21 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-32",
+                "published": "Sat, 02 Sep 2023 15:02:04 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-33",
+                "published": "Mon, 11 Sep 2023 15:01:54 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-22-page-1",
+                "published": "Tue, 19 Sep 2023 15:12:58 -0400",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+                "published": "Tue, 26 Sep 2023 01:39:48 -0400",
+            },
         ],
+        "dailies": [],
     }
 
 
@@ -70,6 +143,7 @@ def rss() -> Generator[aioresponses, None, None]:
             "http://www.sleeplessdomain.com/comic/rss",
             status=200,
             body=example_feed,
+            repeat=True,
         )
         yield mocked
 
@@ -116,7 +190,7 @@ def test_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> No
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 0
 
 
@@ -129,9 +203,11 @@ def test_hash_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> N
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comic["last_entries"].pop()  # One new entry
-    comic["hash"] = mmh3.hash_bytes(example_feed, HASH_SEED)  # But the hash is the same
+    comic["feed_hash"] = mmh3.hash_bytes(
+        example_feed, HASH_SEED
+    )  # But the hash is the same
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 0
 
 
@@ -145,7 +221,7 @@ def test_one_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> N
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert json.loads(webhook.calls[0].request.body) == {
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
         "content": "<@&581531863127031868>",
@@ -174,7 +250,7 @@ def test_two_updates(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
     comic["last_entries"].pop()  # One "new" entry
     comic["last_entries"].pop()  # Two "new" entries
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert (
         json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
@@ -194,9 +270,9 @@ def test_idempotency(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1  # One post
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1  # Still one post
 
 
@@ -212,9 +288,10 @@ def test_all_new_updates(
     """
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
-    comic["last_entries"] = ["https://comic.com/not-a-page"]  # No seen entries in feed
+    # No seen entries in feed
+    comic["last_entries"] = [{"link": "https://comic.com/not-a-page"}]
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert (
         json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
@@ -235,8 +312,8 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -
     """
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
-    comic["name"] = "xkcd"
-    comic["last_entries"] = ["https://xkcd.com/2834/"]
+    comic["title"] = "xkcd"
+    comic["last_entries"] = [{"link": "https://xkcd.com/2834/"}]
     comic["url"] = "https://xkcd.com/atom.xml"
     comics.insert_one(comic)
     rss.get(
@@ -261,8 +338,8 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -
         </feed>
         """,
     )
-    main(comics, HASH_SEED, WEBHOOK_URL)
-    new_comic = comics.find_one({"name": "xkcd"})
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    new_comic = comics.find_one({"title": "xkcd"})
     assert new_comic
     assert "etag" in new_comic
     assert "last_modified" in new_comic
@@ -274,7 +351,7 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -
             "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
         },
     )
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     print(list(rss.requests.keys()))
     req = rss.requests[("GET", URL("https://xkcd.com/atom.xml"))][-1]
     print(req, dir(req))
@@ -300,7 +377,7 @@ def test_handles_errors(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     )  # So it doesn't conflict with the other comic
     rss.get("http://does.not.exist/nowhere", status=404)
     comics.insert_many([bad_comic, comic])
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1
 
 
@@ -314,8 +391,19 @@ def test_thread_comic(comic: Comic, rss: aioresponses) -> None:
     comics = client.db.collection
     comic["last_entries"].pop()  # One new entry
     comic["thread_id"] = 932666606000164965
+    # Normal
     responses.post(
         WEBHOOK_URL,
+        status=204,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "4",
+            "x-ratelimit-reset-after": "0.399",
+        },
+    )
+    # Thread
+    responses.post(
+        THREAD_WEBHOOK_URL,
         status=204,
         headers={
             "x-ratelimit-limit": "5",
@@ -330,7 +418,62 @@ def test_thread_comic(comic: Comic, rss: aioresponses) -> None:
         ],
     )
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+
+
+def test_daily_two_updates(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
+    """
+    Tests that the script maintains order when posting daily updates
+
+    Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One "new" entry
+    comic["last_entries"].pop()  # Two "new" entries
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert (
+        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
+    )
+    assert (
+        json.loads(webhook.calls[1].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+    )
+    daily_checks(comics, WEBHOOK_URL)
+    assert (
+        json.loads(webhook.calls[2].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
+    )
+    assert (
+        json.loads(webhook.calls[3].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+    )
+
+
+def test_daily_idempotent(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
+    """
+    Tests that the script maintains order when posting daily updates
+
+    Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["dailies"].append(comic["last_entries"][-1])  # One "new" entry
+    comics.insert_one(comic)
+    daily_checks(comics, WEBHOOK_URL)
+    assert (
+        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+    )
+    assert len(webhook.calls) == 1
+    daily_checks(comics, WEBHOOK_URL)
+    assert len(webhook.calls) == 1
 
 
 def test_pauses_at_hidden_rate_limit(
@@ -361,7 +504,7 @@ def test_pauses_at_hidden_rate_limit(
         body=long_feed,
     )
     start = time.time()
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     end = time.time()
     main_duration = end - start
     assert len(measure_sleep) == 1
@@ -392,7 +535,7 @@ def test_pauses_at_rate_limit(
             "x-ratelimit-reset-after": "1",
         },
     )
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(measure_sleep) == 1
     assert measure_sleep[0] == 1
 
@@ -426,7 +569,7 @@ def test_fails_on_429(comic: Comic, rss: aioresponses) -> None:
         },
     )
     with pytest.raises(HTTPError) as e:
-        main(comics, HASH_SEED, WEBHOOK_URL)
+        main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert "429" in str(e.value)
 
 
@@ -470,12 +613,12 @@ def test_no_update_on_failure(comic: Comic, rss: aioresponses) -> None:
         },
     )
     with pytest.raises(HTTPError):
-        main(comics, HASH_SEED, WEBHOOK_URL)
+        main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     new_comic = comics.find_one({"_id": comic["_id"]})
     assert new_comic
     assert "last_modified" not in new_comic
     assert "etag" not in new_comic
-    assert comic["hash"] != mmh3.hash_bytes(example_feed, HASH_SEED)
+    assert comic["feed_hash"] != mmh3.hash_bytes(example_feed, HASH_SEED)
     assert entry_url not in comic["last_entries"]
 
 
@@ -492,7 +635,7 @@ def test_no_crash_on_missing_headers(comic: Comic, rss: aioresponses) -> None:
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
     responses.post(WEBHOOK_URL, status=200, headers={})
-    main(comics, HASH_SEED, WEBHOOK_URL)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
 
 
 example_feed = """

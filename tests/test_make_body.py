@@ -17,11 +17,22 @@ if TYPE_CHECKING:
 def comic() -> Comic:
     return Comic(
         _id=ObjectId("111111111111111111111111"),
-        name="Test Webcomic",
+        role_id=1,
+        dailies=[],
+        title="Test Webcomic",
         url="https://example.com/rss",
-        hash=b"\xa9\x0c\x16\xe5\xe2\x8c6\xdd\x01}K\x85\x1fn\x8e\xd2",
-        last_entries=["https://example.com/page/0"],
+        feed_hash=b"\xa9\x0c\x16\xe5\xe2\x8c6\xdd\x01}K\x85\x1fn\x8e\xd2",
+        last_entries=[{"link": "https://example.com/page/0"}],
     )
+
+
+def filter_nones(message: Message) -> Message:
+    """
+    Discord treats message values that are `None` as though they weren't in the
+    dictionary at all, so `None` and missing are equivalent. Pytest doesn't.
+    This normalises all `None` values to just be missing, to hide the difference
+    """
+    return {key: value for key, value in message.items() if value is not None}
 
 
 def test_happy_path(comic: Comic) -> None:
@@ -33,7 +44,7 @@ def test_happy_path(comic: Comic) -> None:
     entry: Entry = {"link": "https://example.com/page/1", "title": "Page 1!"}
     body = make_body(comic, entry)
     # The Message() is just for show (underhanded cheats to increase our code coverage)
-    assert body == Message(
+    assert filter_nones(body) == Message(
         {
             "embeds": [
                 {
@@ -43,6 +54,7 @@ def test_happy_path(comic: Comic) -> None:
                     "description": "New Test Webcomic!",
                 },
             ],
+            "content": "<@&1>",
         }
     )
 
@@ -57,7 +69,7 @@ def test_bad_url_scheme(comic: Comic) -> None:
     """
     entry: Entry = {"link": "hps://example.com/page/1", "title": "Page 1!"}
     body = make_body(comic, entry)
-    assert body == {
+    assert filter_nones(body) == {
         "embeds": [
             {
                 "color": 0x5C64F4,
@@ -66,6 +78,7 @@ def test_bad_url_scheme(comic: Comic) -> None:
                 "description": "New Test Webcomic!",
             },
         ],
+        "content": "<@&1>",
     }
 
 
@@ -79,7 +92,7 @@ def test_no_title(comic: Comic) -> None:
     """
     entry: Entry = {"link": "hps://example.com/page/1"}
     body = make_body(comic, entry)
-    assert body == {
+    assert filter_nones(body) == {
         "embeds": [
             {
                 "color": 0x5C64F4,
@@ -88,6 +101,7 @@ def test_no_title(comic: Comic) -> None:
                 "description": "New Test Webcomic!",
             },
         ],
+        "content": "<@&1>",
     }
 
 
@@ -98,9 +112,10 @@ def test_no_title(comic: Comic) -> None:
         # Test case 1: Minimal input
         (
             {
-                "name": "Comic1",
+                "title": "Comic1",
                 "url": "https://example.com/comic1",
-                "author": {"name": "Author1", "url": "https://example.com/icon"},
+                "username": "Author1",
+                "avatar_url": "https://example.com/icon",
             },
             {
                 "link": "https://example.com/entry1",
@@ -124,10 +139,11 @@ def test_no_title(comic: Comic) -> None:
         # Test case 2: Test with role_id and thread_id
         (
             {
-                "name": "Comic2",
+                "title": "Comic2",
                 "url": "https://example.com/comic2",
                 "role_id": 123,
-                "author": {"name": "Author2", "url": "https://example.com/icon"},
+                "username": "Author2",
+                "avatar_url": "https://example.com/icon",
             },
             {
                 "link": "https://example.com/entry2",
@@ -159,4 +175,4 @@ def test_gpt_make_body(comic: Comic, entry: Entry, expected_output: Message) -> 
     Tests general usage
     """
     result = make_body(comic, entry)
-    assert result == expected_output
+    assert filter_nones(result) == expected_output

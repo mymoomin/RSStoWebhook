@@ -90,7 +90,7 @@ select = [
     "TRY", "FLY", "PERF", "FURB", "LOG","FBT", "S", "ARG", "B",
 ]
 ignore = [
-    "PLW0120", "TRY300", "B008", "B905"
+    "PLW0120", "TRY300", "B008", "B905", "S101"
 ]
 per-file-ignores = {"tests/*" = ["S101", "ARG001", "FBT001"]}
 src = ["src"]

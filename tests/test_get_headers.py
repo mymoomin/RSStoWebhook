@@ -9,10 +9,12 @@ from rss_to_webhook.worker import get_headers
 def comic() -> Comic:
     return Comic(
         _id=ObjectId("111111111111111111111111"),
-        name="Test Webcomic",
+        role_id=1,
+        dailies=[],
+        title="Test Webcomic",
         url="https://example.com/rss",
-        hash=b"\xa9\x0c\x16\xe5\xe2\x8c6\xdd\x01}K\x85\x1fn\x8e\xd2",
-        last_entries=["https://example.com/page/1"],
+        feed_hash=b"\xa9\x0c\x16\xe5\xe2\x8c6\xdd\x01}K\x85\x1fn\x8e\xd2",
+        last_entries=[{"link": "https://example.com/page/1"}],
     )
 
 
