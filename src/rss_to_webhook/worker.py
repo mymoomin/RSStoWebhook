@@ -37,9 +37,10 @@ def get_new_entries(
         entry_parts = urlsplit(entry["link"])
         entry_path = entry_parts.path.rstrip("/") + "?" + entry_parts.query
         if entry_path in last_paths:
-            print(f"{i} new entries")
+            print("Found last entry")
             return list(reversed(current_entries[:i]))
     else:
+        print("No last entry. Returning up to 50 most recent entries")
         return list(reversed(current_entries[:50]))
 
 
@@ -51,6 +52,7 @@ def make_body(comic: Comic, entry: Entry) -> Message:
     if role_id := comic.get("role_id"):
         extras["content"] = f"<@&{role_id}>"
     if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
+        print(f"{comic['name']}: bad url {entry['link']}")
         parts = urlsplit(link)
         link = urlunsplit(parts._replace(scheme="https"))
     return {
@@ -84,7 +86,10 @@ async def get_feed(
 ) -> tuple[Comic, list[Entry], CachingInfo] | None:
     url = comic["url"]
     caching_headers = get_headers(comic)
-    print(f"Requesting {url}")
+    print(
+        f"{comic['name']}: Requesting"
+        f" {url}{f' with {caching_headers}' if caching_headers else ''}"
+    )
     try:
         r = await session.request(
             "GET",
@@ -101,34 +106,38 @@ async def get_feed(
             | caching_headers,
             **kwargs,
         )
-        data = await r.text()
-        print(f"Received data for {comic['name']}")
+        print(f"{comic['name']}: Got response {r.status}: {r.reason}")
 
         if r.status == HTTPStatus.NOT_MODIFIED:  # 304
-            print("Cached response. No changes")
+            print(f"{comic['name']}: Cached response. No changes")
             return None
 
         if r.status != HTTPStatus.OK:  # 200
-            print(f"HTTP {r.status}: {r.reason}")
+            print(f"{comic['name']}: HTTP {r.status}: {r.reason}")
             r.raise_for_status()
 
-        feed = feedparser.parse(data)
+        data = await r.text()
+        print(f"{comic['name']}: Received data")
         feed_hash = mmh3.hash_bytes(data, hash_seed)
         if feed_hash == comic["hash"]:
-            print("no changes")
+            print(f"{comic['name']}: Hash match. No changes")
             return None
 
         caching_info: CachingInfo = {"hash": feed_hash}
         if "ETag" in r.headers:
             caching_info["etag"] = r.headers["ETag"]
+            print(f"{comic['name']}: Got new etag")
         if "Last-Modified" in r.headers:
             caching_info["last_modified"] = r.headers["Last-Modified"]
+            print(f"{comic['name']}: Got new last-modified")
 
-        print("Parsed feed")
+        feed = feedparser.parse(data)
+        print(f"{comic['name']}: Parsed feed")
         new_entries = get_new_entries(comic["last_entries"], feed["entries"])
+        print(f"{comic['name']}: {len(new_entries)} new entries")
         return (comic, new_entries, caching_info)
     except Exception as e:
-        print(f"Problem connecting to {comic['name']}. {type(e).__name__}: {e} ")
+        print(f"{comic['name']}: Problem connecting. {type(e).__name__}: {e} ")
         comics.update_one({"_id": comic["_id"]}, {"$inc": {"error_count": 1}})
         return None
 
@@ -145,6 +154,7 @@ async def get_feeds(
             for comic in comic_list
         ]
         feeds = await asyncio.gather(*tasks, return_exceptions=False)
+        print("All feeds checked")
         return filter(None, feeds)
 
 
@@ -194,7 +204,10 @@ def post(
         else:
             url = f"{webhook_url}?wait=true"
         r = requests.post(url, None, body, timeout=10)
-        print(f"{body['embeds'][0]['url']}: {r.status_code}: {r.reason}")
+        print(
+            f"{comic['name']}, {entry.get('title')}, {body['embeds'][0]['url']}:"
+            f" {r.status_code}: {r.reason}"
+        )
         h = r.headers
         remaining = h.get("x-ratelimit-remaining")
         reset_after = h.get("x-ratelimit-reset-after")
@@ -230,6 +243,12 @@ def update(
             },
         },
     )
+    updates = len(entries)
+    word = "entry" if updates == 1 else "entries"
+    print(
+        f"{comic['name']}: Set {', '.join(caching_info.keys())} and posted"
+        f" {updates} new {word}"
+    )
 
 
 def main(
@@ -245,7 +264,6 @@ def main(
     comics_entries_headers = asyncio.get_event_loop().run_until_complete(
         get_feeds(comic_list, hash_seed, comics, timeout=timeout)
     )
-    print("done")
 
     ratelimit_state = RateLimitState(1, time.time())
     for comic, entries, headers in comics_entries_headers:
@@ -254,7 +272,7 @@ def main(
 
     time_taken = time.time() - start
     print(
-        f"All feeds checked in {int(time_taken)//60} minutes and"
+        f"All feeds updated in {int(time_taken)//60} minutes and"
         f" {time_taken % 60:.2g} seconds"
     )
 
@@ -275,6 +293,7 @@ if __name__ == "__main__":  # pragma no cover
         WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
         comics = client["discord_rss"]["test_comics"]
     else:
+        print("Running regular checks")
         WEBHOOK_URL = os.environ["WEBHOOK_URL"]
         comics = client["discord_rss"]["comics"]
     timeout = aiohttp.ClientTimeout(sock_connect=15, sock_read=10)
