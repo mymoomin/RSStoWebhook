@@ -22,7 +22,7 @@ class Comic(TypedDict):
     last_modified: NotRequired[str]
 
 
-class CachingInfo(TypedDict, total=False):
-    last_modified: str
-    etag: str
+class CachingInfo(TypedDict):
     hash: bytes
+    last_modified: NotRequired[str]
+    etag: NotRequired[str]
