@@ -210,7 +210,7 @@ def post_and_update(
                     "$push": {
                         "last_entries": {
                             "$each": [entry["link"] for entry in entries],
-                            "$slice": -100, # keep the 100 most recently-seen comics
+                            "$slice": -400, # keep the 400 most recently-seen comics
                         }
                     },
                 },
