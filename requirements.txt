@@ -38,4 +38,4 @@ dnspython==2.4.2
 multidict==6.0.4
 
 # The package itself
-.
+-e .
