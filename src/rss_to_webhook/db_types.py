@@ -22,7 +22,7 @@ class URL(str):
         if value:
             v0 = value[0]
             if not isinstance(v0, str):
-                raise TypeError('Unexpected type for URL: "%s"' % type(v0))
+                raise TypeError(f'Unexpected type for URL: "{type(v0)}"')
             scheme, netloc, _path, _query, _fragment = urlsplit(v0)
             if scheme not in {"http", "https"}:
                 error = f"{v0}: Invalid URL scheme (can only be 'http' or 'https')"
