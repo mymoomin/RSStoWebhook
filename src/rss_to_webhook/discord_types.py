@@ -20,4 +20,3 @@ class Extras(TypedDict, total=False):
     color: int
     username: str | None
     avatar_url: str | None
-    thread_id: int
