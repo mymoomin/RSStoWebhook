@@ -138,7 +138,7 @@ async def get_feed_changes(
 
 
 def get_headers(comic: Comic) -> dict[str, str]:
-    caching_headers = {}
+    caching_headers: dict[str, str] = {}
     if "etag" in comic:
         caching_headers["If-None-Match"] = comic["etag"]
     if "last_modified" in comic:
@@ -159,7 +159,7 @@ def get_new_entries(
         if entry.get("published") is not None  # We check that "publish" is a key here
     }
     last_ids = {entry.get("id") for entry in last_entries}
-    new_entries = []
+    new_entries: list[Entry] = []
     capped_entries = list(reversed(current_entries[:100]))
     max_entries = len(capped_entries)
     for entry in capped_entries:
@@ -180,6 +180,8 @@ def get_new_entries(
                 ) not in last_paths:
                     print("new link")
                     new_entries.append(entry)
+            case _:
+                print(f"malformed entry: {entry}")
     if len(new_entries) == max_entries:
         print("No last entry. Returning up to 100 most recent entries")
     else:
