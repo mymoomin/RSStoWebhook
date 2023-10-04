@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import Response
 
-from rss_to_webhook.constants import DEFAULT_GET_HEADERS
+from rss_to_webhook.constants import DEFAULT_AIOHTTP_TIMEOUT, DEFAULT_GET_HEADERS
 
 if TYPE_CHECKING:  # pragma no cover
     from collections.abc import Iterable
@@ -34,9 +34,7 @@ def main(
     hash_seed: int,
     webhook_url: str,
     thread_webhook_url: str,
-    timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(
-        sock_connect=15, sock_read=10
-    ),
+    timeout: aiohttp.ClientTimeout = DEFAULT_AIOHTTP_TIMEOUT,
 ) -> None:
     start = time.time()
     comic_list: list[Comic] = list(comics.find().sort("title"))
