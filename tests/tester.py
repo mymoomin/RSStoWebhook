@@ -86,4 +86,4 @@ if __name__ == "__main__":
     # No goal value so can't say if succeeded or failed
 
 time_taken = int(time.time() - start)
-print(f"Tests ran in {time_taken//60} minutes and {time_taken % 60} seconds")
+print(f"Tests ran in {time_taken // 60} minutes and {time_taken % 60} seconds")

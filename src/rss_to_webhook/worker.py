@@ -47,7 +47,7 @@ def main(
 
     time_taken = time.time() - start
     print(
-        f"All feeds updated in {int(time_taken)//60} minutes and"
+        f"All feeds updated in {int(time_taken) // 60} minutes and"
         f" {time_taken % 60:.2g} seconds"
     )
 
