@@ -362,7 +362,7 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
         rate_limiter.limit_rate(webhook_url, response)
         updates = len(comic["dailies"])
         word = "entry" if updates == 1 else "entries"
-        print(f"{comic['title']} dailly: Posted {len(comic['dailies'])} new {word}")
+        print(f"{comic['title']} daily: Posted {len(comic['dailies'])} new {word}")
         comics.update_one({"_id": comic["_id"]}, {"$set": {"dailies": []}})
 
     time_taken = time.time() - start
