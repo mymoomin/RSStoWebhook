@@ -90,8 +90,6 @@ requests==2.31.0
     #   rss-to-webhook (setup.py)
 responses==0.23.3
     # via rss-to-webhook
-rss-to-webhook[test] @ file:///C:/Users/aidan/OneDrive/Desktop/Code/Python%20Stuff/RSStoWebhook-newschema
-    # via rss-to-webhook (setup.py)
 sentinels==1.0.0
     # via mongomock
 sgmllib3k==1.0.0

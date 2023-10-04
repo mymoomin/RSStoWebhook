@@ -129,8 +129,6 @@ requests==2.31.0
     #   rss-to-webhook (setup.py)
 responses==0.23.3
     # via rss-to-webhook
-rss-to-webhook[lint,test,type] @ file:///C:/Users/aidan/OneDrive/Desktop/Code/Python%20Stuff/RSStoWebhook-newschema
-    # via rss-to-webhook (setup.py)
 ruff==0.0.292
     # via rss-to-webhook
 sentinels==1.0.0
