@@ -15,6 +15,7 @@ import mmh3
 import requests
 from dotenv import load_dotenv
 from pymongo import MongoClient
+from requests import Response
 
 if TYPE_CHECKING:  # pragma no cover
     from collections.abc import Iterable
@@ -41,12 +42,29 @@ def main(
         get_changed_feeds(comic_list, hash_seed, comics, timeout=timeout)
     )
 
-    normal_state = RateLimitState(1, time.time())
-    thread_state = RateLimitState(1, time.time())
+    rate_limiter = RateLimiter()
+
     for comic, entries, headers in comics_entries_headers:
-        post(webhook_url, comic, entries, normal_state)
-        if thread_id := comic.get("thread_id"):
-            post(thread_webhook_url, comic, entries, thread_state, thread_id=thread_id)
+        if entries:
+            body = make_body(comic, entries)
+            print(body)
+            response = requests.post(
+                f"{webhook_url}?wait=true", json=body, timeout=10, stream=True
+            )
+            print(
+                f"{comic['title']}, {body['embeds'][0]['title']},"
+                f" {body['embeds'][0]['url']}: {response.status_code}:"
+                f" {response.reason}"
+            )
+            rate_limiter.limit_rate(webhook_url, response)
+            if thread_id := comic.get("thread_id"):
+                del body["content"]
+                response = requests.post(
+                    f"{thread_webhook_url}?wait=true&thread_id={thread_id}",
+                    json=body,
+                    timeout=10,
+                )
+                rate_limiter.limit_rate(thread_webhook_url, response)
         update(comics, comic, entries, headers)
 
     time_taken = time.time() - start
@@ -220,68 +238,87 @@ class RateLimitState:
     max_in_window: ClassVar[int] = 30
 
 
-def post(
-    webhook_url: str,
-    comic: Comic,
-    entries: list[Entry],
-    state: RateLimitState,
-    thread_id: int | None = None,
-) -> None:
-    if thread_id:
-        url = f"{webhook_url}?wait=true&thread_id={thread_id}"
-    else:
-        url = f"{webhook_url}?wait=true"
-    for entry in entries:
-        if state.counter == 0:
-            window_time = time.time() - state.window_start
-            print(f"Sleeping {state.fuzzed_window - window_time:.3} seconds")
-            time.sleep(state.fuzzed_window - window_time)
-            state.window_start = time.time()
-        body = make_body(comic, entry)
-        r = requests.post(url, None, body, timeout=10)
-        print(
-            f"{comic['title']}, {entry.get('title')}, {body['embeds'][0]['url']}:"
-            f" {r.status_code}: {r.reason}"
-        )
-        h = r.headers
-        remaining = h.get("x-ratelimit-remaining")
-        reset_after = h.get("x-ratelimit-reset-after")
-        print(
-            f"{remaining} of"
-            f" {h.get('x-ratelimit-limit')} requests left in the next"
-            f" {reset_after} seconds"
-        )
-        if r.status_code == HTTPStatus.TOO_MANY_REQUESTS:  # 429
-            print(r.json())
-            r.raise_for_status()
-        if remaining == "0" and reset_after is not None:
-            print(f"Exhausted rate limit bucket. Retrying in {reset_after}")
-            time.sleep(float(reset_after))
-        state.counter = (state.counter + 1) % RateLimitState.max_in_window
-
-
-def make_body(comic: Comic, entry: Entry) -> Message:
+def make_body(comic: Comic, entries: list[Entry]) -> Message:
     extras: Extras = {
         "username": comic.get("username"),
         "avatar_url": comic.get("avatar_url"),
     }
     if role_id := comic.get("role_id"):
         extras["content"] = f"<@&{role_id}>"
-    if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
-        print(f"{comic['title']}: bad url {entry['link']}")
-        parts = urlsplit(link)
-        link = urlunsplit(parts._replace(scheme="https"))
-    return {
-        "embeds": [
+    embeds = []
+    for entry in entries:
+        if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
+            print(f"{comic['title']}: bad url {entry['link']}")
+            parts = urlsplit(link)
+            link = urlunsplit(parts._replace(scheme="https"))
+        embeds.append(
             {
                 "color": comic.get("color", 0x5C64F4),
                 "title": f"**{entry.get('title', comic['title'])}**",
                 "url": link,
                 "description": f"New {comic['title']}!",
-            },
-        ],
-    } | extras  # type: ignore[return-value]
+            }
+        )
+    return {"embeds": embeds} | extras  # type: ignore[return-value]
     # mypy can't understand this assignment, but it is valid
+
+
+class RateLimiter:
+    """
+    This class stores the information necesary to obey Discord's hidden
+    30 message/minute rate-limit on posts to webhooks in a channel, which
+    is documented in [this tweet](https://twitter.com/lolpython/status/967621046277820416).
+
+    `counter` is the number of posts made in the current rate-limiting window
+
+    `window_start` is the timestamp of the start of the current window
+
+    `window_length` is the length of the window, sourced from the tweet
+
+    `fuzz_factor` is an additional safety margin. I know 61 seconds is
+        enough for this because I've tested this by posting 500 messages
+        to one webhook with this fuzz factor multiple times
+
+    `fuzzed_window` is the window plus the safety factor
+
+    `max_in_window` is the maximum number of posts that can be made in each
+        window, sourced from the tweet again
+    """
+
+    window_length: int = 60
+    fuzz_factor: int = 1
+    fuzzed_window: int = window_length + fuzz_factor
+    max_in_window: int = 30
+    buckets: dict[str, tuple[int, float]]
+
+    def __init__(self) -> None:
+        self.buckets = {}
+
+    def limit_rate(self, bucket: str, response: Response) -> None:
+        if bucket not in self.buckets:
+            self.buckets[bucket] = (1, time.time())
+        counter, window_start = self.buckets[bucket]
+        if counter == 0:
+            window_time = time.time() - window_start
+            print(f"Sleeping {self.fuzzed_window - window_time:.3} seconds")
+            time.sleep(self.fuzzed_window - window_time)
+            window_start = time.time()
+        headers = response.headers
+        remaining = headers.get("x-ratelimit-remaining")
+        reset_after = headers.get("x-ratelimit-reset-after")
+        print(
+            f"{remaining} of"
+            f" {headers.get('x-ratelimit-limit')} requests left in the next"
+            f" {reset_after} seconds"
+        )
+        if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:  # 429
+            print(response.json())
+            response.raise_for_status()
+        if remaining == "0" and reset_after is not None:
+            print(f"Exhausted rate limit bucket. Retrying in {reset_after}")
+            time.sleep(float(reset_after))
+        counter = (counter + 1) % self.max_in_window
+        self.buckets[bucket] = (counter, window_start)
 
 
 def update(
@@ -315,17 +352,14 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
     start = time.time()
     comic_list: list[Comic] = list(comics.find({"dailies": {"$ne": []}}).sort("name"))
 
-    ratelimit_state = RateLimitState(1, time.time())
+    rate_limiter = RateLimiter()
     for comic in comic_list:
         print(f"{comic['title']} daily: Posting")
-        post(
-            webhook_url,
-            comic,
-            comic["dailies"],  # type: ignore [arg-type]
-            ratelimit_state,
-        )
+        body = make_body(comic, comic["dailies"])  # type: ignore [arg-type]
         # The type is fine because `entries`` is only read, so it's
         # covariant, and so list[EntrySubset] is a subtype of list[Entry]
+        response = requests.post(f"{webhook_url}?wait=true", json=body, timeout=10)
+        rate_limiter.limit_rate(webhook_url, response)
         updates = len(comic["dailies"])
         word = "entry" if updates == 1 else "entries"
         print(f"{comic['title']} dailly: Posted {len(comic['dailies'])} new {word}")

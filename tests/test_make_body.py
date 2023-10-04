@@ -44,7 +44,7 @@ def test_happy_path(comic: Comic) -> None:
     Test asserts that `make_body` functions on the happy path.
     """
     entry: Entry = {"link": "https://example.com/page/1", "title": "Page 1!"}
-    body = make_body(comic, entry)
+    body = make_body(comic, [entry])
     # The Message() is just for show (underhanded cheats to increase our code coverage)
     assert filter_nones(body) == Message(
         {
@@ -70,7 +70,7 @@ def test_bad_url_scheme(comic: Comic) -> None:
     Test asserts that `make_body` will correct bad url schemes.
     """
     entry: Entry = {"link": "hps://example.com/page/1", "title": "Page 1!"}
-    body = make_body(comic, entry)
+    body = make_body(comic, [entry])
     assert filter_nones(body) == {
         "embeds": [
             {
@@ -93,7 +93,7 @@ def test_no_title(comic: Comic) -> None:
     Test asserts that even without a title the embed has a title.
     """
     entry: Entry = {"link": "hps://example.com/page/1"}
-    body = make_body(comic, entry)
+    body = make_body(comic, [entry])
     assert filter_nones(body) == {
         "embeds": [
             {
@@ -176,5 +176,5 @@ def test_gpt_make_body(comic: Comic, entry: Entry, expected_output: Message) -> 
 
     Tests general usage
     """
-    result = make_body(comic, entry)
+    result = make_body(comic, [entry])
     assert filter_nones(result) == expected_output

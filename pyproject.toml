@@ -105,11 +105,13 @@ select = [
     # "T20",        # Detects use of `print` rather than logging. One day I'll add it
     # Let's just add everything that works
     "ASYNC", "C4", "T10", "EM", "FA", "ISC", "ICN", "G", "INP", "PIE",  "PYI",
-    "Q", "RSE", "RET", "SLF", "SIM", "TID", "PTH", "TD", "FIX", "ERA", "PL",
+    "Q", "RSE", "RET", "SLF", "SIM", "TID", "PTH", "ERA", "PL",
     "TRY", "FLY", "PERF", "FURB", "LOG","FBT", "S", "ARG", "B",
+    # "TD", "FIX" # These disallow "# Todo" comments unless you jump through hoops, so I'm disabling
+    # them for now
 ]
 ignore = [
-    "PLW0120", "TRY300", "B008", "B905", "S101"
+    "PLW0120", "TRY300", "B008", "B905", "S101", "ANN101"
 ]
 per-file-ignores = {"tests/*" = ["S101", "ARG001", "FBT001"]}
 src = ["src"]
