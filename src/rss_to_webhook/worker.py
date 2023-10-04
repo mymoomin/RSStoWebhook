@@ -37,7 +37,7 @@ def main(
     ),
 ) -> None:
     start = time.time()
-    comic_list: list[Comic] = list(comics.find().sort("name"))
+    comic_list: list[Comic] = list(comics.find().sort("title"))
     comics_entries_headers = asyncio.get_event_loop().run_until_complete(
         get_changed_feeds(comic_list, hash_seed, comics, timeout=timeout)
     )
@@ -350,7 +350,7 @@ def update(
 
 def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
     start = time.time()
-    comic_list: list[Comic] = list(comics.find({"dailies": {"$ne": []}}).sort("name"))
+    comic_list: list[Comic] = list(comics.find({"dailies": {"$ne": []}}).sort("title"))
 
     rate_limiter = RateLimiter()
     for comic in comic_list:
