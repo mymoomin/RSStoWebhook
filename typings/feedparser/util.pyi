@@ -16,7 +16,7 @@ class Entry(TypedDict, total=False):
     author: str
 
 class FeedParserDict(TypedDict):
-    bozo: Literal[False, 1]
+    bozo: Literal[False, 1, True]
     encoding: str
     entries: list[Entry]
     feed: Feed
