@@ -319,16 +319,17 @@ def update(
     entries: list[Entry],
     caching_info: CachingInfo,
 ) -> None:
+    entry_subsets = strip_extra_data(entries)
     comics.update_one(
         {"_id": comic["_id"]},
         {
             "$set": caching_info,
             "$push": {
                 "last_entries": {
-                    "$each": entries,
+                    "$each": entry_subsets,
                     "$slice": -400,
                 },
-                "dailies": {"$each": entries},
+                "dailies": {"$each": entry_subsets},
             },
         },
     )
@@ -338,6 +339,14 @@ def update(
         f"{comic['title']}: Set {', '.join(caching_info.keys())} and posted"
         f" {updates} new {word}"
     )
+
+
+def strip_extra_data(entries: list[Entry]) -> list[EntrySubset]:
+    valid_keys = frozenset({"link", "id", "title", "published"})
+    return [
+        {key: value for key, value in entry.items() if key in valid_keys}
+        for entry in entries
+    ]  # type: ignore [ignoreGeneralTypeIssues, misc]
 
 
 def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
