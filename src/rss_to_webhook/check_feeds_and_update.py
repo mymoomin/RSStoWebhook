@@ -17,6 +17,8 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import Response
 
+from rss_to_webhook.constants import DEFAULT_GET_HEADERS
+
 if TYPE_CHECKING:  # pragma no cover
     from collections.abc import Iterable
 
@@ -108,15 +110,7 @@ async def get_feed_changes(
             "GET",
             url=url,
             ssl=False,
-            headers={
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101"
-                    " Firefox/96.0"
-                ),
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-            }
-            | caching_headers,
+            headers=DEFAULT_GET_HEADERS | caching_headers,
             **kwargs,
         )
         print(f"{comic['title']}: Got response {r.status}: {r.reason}")
