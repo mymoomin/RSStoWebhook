@@ -32,7 +32,9 @@ def filter_nones(message: Message) -> Message:
     dictionary at all, so `None` and missing are equivalent. Pytest doesn't.
     This normalises all `None` values to just be missing, to hide the difference
     """
-    return {key: value for key, value in message.items() if value is not None}
+    return {key: value for key, value in message.items() if value is not None}  # type: ignore [reportGeneralTypeIssues, return-value]
+    # This is correctly-typed because every key in `Message` is optional,
+    # so removing keys doesn't change the type
 
 
 def test_happy_path(comic: Comic) -> None:
