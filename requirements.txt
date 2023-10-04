@@ -48,5 +48,5 @@ urllib3==2.0.5
     # via requests
 yarl==1.9.2
     # via aiohttp
-. -e
+-e .
     # This installs the folder as a package (necessary for Heroku)
