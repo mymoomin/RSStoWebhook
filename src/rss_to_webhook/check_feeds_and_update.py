@@ -344,9 +344,9 @@ def update(
 def strip_extra_data(entries: list[Entry]) -> list[EntrySubset]:
     valid_keys = frozenset({"link", "id", "title", "published"})
     return [
-        {key: value for key, value in entry.items() if key in valid_keys}
+        {key: value for key, value in entry.items() if key in valid_keys}  # type: ignore [misc]
         for entry in entries
-    ]  # type: ignore [ignoreGeneralTypeIssues, misc]
+    ]
 
 
 def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
