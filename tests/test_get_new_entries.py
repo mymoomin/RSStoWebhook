@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from rss_to_webhook.worker import get_new_entries
+from rss_to_webhook.check_feeds_and_update import get_new_entries
 
 if TYPE_CHECKING:
     from feedparser.util import Entry

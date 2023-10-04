@@ -1,8 +1,8 @@
 import pytest
 from bson import ObjectId
 
+from rss_to_webhook.check_feeds_and_update import get_headers
 from rss_to_webhook.db_types import Comic
-from rss_to_webhook.worker import get_headers
 
 
 @pytest.fixture()

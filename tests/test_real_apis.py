@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import PreparedRequest
 
-from rss_to_webhook.worker import main
+from rss_to_webhook.check_feeds_and_update import main
 
 if TYPE_CHECKING:
     from requests.structures import CaseInsensitiveDict

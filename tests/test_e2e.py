@@ -15,8 +15,8 @@ from requests import HTTPError
 from responses import RequestsMock, matchers
 from yarl import URL
 
+from rss_to_webhook.check_feeds_and_update import RateLimitState, daily_checks, main
 from rss_to_webhook.db_types import Comic
-from rss_to_webhook.worker import RateLimitState, daily_checks, main
 
 load_dotenv()
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
@@ -434,13 +434,13 @@ def test_daily_two_updates(
     comic["last_entries"].pop()  # Two "new" entries
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    worker_embeds = json.loads(webhook.calls[0].request.body)["embeds"]
+    regular_embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert (
-        worker_embeds[0]["url"]
+        regular_embeds[0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
     )
     assert (
-        worker_embeds[1]["url"]
+        regular_embeds[1]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
     daily_checks(comics, WEBHOOK_URL)

@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING
 import pytest
 from bson import ObjectId
 
+from rss_to_webhook.check_feeds_and_update import make_body
 from rss_to_webhook.db_types import Comic
 from rss_to_webhook.discord_types import Message
-from rss_to_webhook.worker import make_body
 
 if TYPE_CHECKING:
     from feedparser.util import Entry
