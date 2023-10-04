@@ -81,6 +81,8 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   mypy
+nodeenv==1.8.0
+    # via pyright
 packaging==23.2
     # via
     #   black
@@ -110,6 +112,8 @@ pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
     # via build
+pyright==1.1.329
+    # via rss-to-webhook
 pytest==7.4.2
     # via
     #   pytest-cov
