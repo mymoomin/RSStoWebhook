@@ -51,6 +51,7 @@ testpaths = [
 ]
 
 [tool.mypy]
+exclude = ["src/rss_to_webhook/scripts"]
 mypy_path="$MYPY_CONFIG_FILE_DIR/typings"
 check_untyped_defs = true
 disallow_any_generics = true
