@@ -259,9 +259,10 @@ def post(
 
 
 def make_body(comic: Comic, entry: Entry) -> Message:
-    extras: Extras = {}
-    extras["username"] = comic.get("username")
-    extras["avatar_url"] = comic.get("avatar_url")
+    extras: Extras = {
+        "username": comic.get("username"),
+        "avatar_url": comic.get("avatar_url"),
+    }
     if role_id := comic.get("role_id"):
         extras["content"] = f"<@&{role_id}>"
     if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
