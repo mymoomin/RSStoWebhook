@@ -109,7 +109,7 @@ if __name__ == "__main__":  # pragma: no cover
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)
     collection = client["test-database"]["comics"]
     comic_list: list[ComicData] = json.loads(
-        Path("./scripts/new_comics.json").read_text()
+        Path("./src/rss_to_webhook/scripts/new_comics.json").read_text()
     )
     for comic in comic_list:
         add_to_collection(comic, collection, HASH_SEED)
