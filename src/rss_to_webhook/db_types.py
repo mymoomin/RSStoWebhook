@@ -36,7 +36,7 @@ class URL(str):
 
 
 class Comic(TypedDict):
-    _id: NotRequired[ObjectId]
+    _id: ObjectId
     title: str
     url: str  # URL but it causes serialisation issues even though it's just a string
     role_id: int
