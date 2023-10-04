@@ -21,15 +21,28 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = [
-    "mypy>=1.5.1",
-    "ruff>=0.0.291",
+lint = [
+    "ruff>=0.0.292",
     "black>=23.9.1",
+]
+test = [
     "pytest>=7.3.2",
     "pytest-cov>=4.1.0",
     "mongomock>=4.1.2",
     "aioresponses>=0.7.4",
     "responses>=0.23.3",
+]
+type = [
+    "rss_to_webhook[test]",
+    "mypy>=1.5.1",
+    "types-requests>=2.31.0.6",
+    "types-urllib3>=1.26.25.14",
+]
+dev = [
+    "rss_to_webhook[lint,test,type]",
+    "tox>=4.11.3",
+    "tox-gh-actions>=3.1.3",
+    "pip-tools>=7.3.0",
 ]
 
 [project.urls]
@@ -64,6 +77,10 @@ warn_return_any = true
 warn_unreachable = true
 warn_unused_configs = true
 no_implicit_reexport = true
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["src/rss_to_webhook/scripts"]
 
 [tool.ruff]
 line-length = 88
