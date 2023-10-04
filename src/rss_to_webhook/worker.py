@@ -154,9 +154,9 @@ def get_new_entries(
         urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query for url in last_urls
     }
     last_pubdates = {
-        entry["published"]
+        entry["published"]  # pyright: ignore [reportTypedDictNotRequiredAccess]
         for entry in last_entries
-        if entry.get("published") is not None
+        if entry.get("published") is not None  # We check that "publish" is a key here
     }
     last_ids = {entry.get("id") for entry in last_entries}
     new_entries = []
