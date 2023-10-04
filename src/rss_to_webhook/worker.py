@@ -69,7 +69,7 @@ def main(
 
     time_taken = time.time() - start
     print(
-        f"All feeds updated in {int(time_taken) // 60} minutes and"
+        f"Regular checks done in {int(time_taken) // 60} minutes and"
         f" {time_taken % 60:.2g} seconds"
     )
 
@@ -367,7 +367,7 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
 
     time_taken = time.time() - start
     print(
-        f"All feeds updated in {int(time_taken) // 60} minutes and"
+        f"Daily checks done in {int(time_taken) // 60} minutes and"
         f" {time_taken % 60:.2g} seconds"
     )
 
