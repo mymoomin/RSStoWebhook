@@ -347,6 +347,18 @@ def _update(
 
 
 def strip_extra_data(entries: list[Entry]) -> list[EntrySubset]:
+    """Strip extras from RSS feed entries before pushing them to the database.
+
+    An RSS feed entry can contain a lot of extra information we don't care
+    about, like each entry's description or author. Here we strip that extra
+    junk away, leaving only the values we want to persist to the database.
+
+    Args:
+        entries: A list of entries from an RSS feed.
+
+    Returns:
+        A list of entries stripped of unnecessary values.
+    """
     valid_keys = frozenset({"link", "id", "title", "published"})
     return [
         {key: value for key, value in entry.items() if key in valid_keys}  # type: ignore [misc]
@@ -355,6 +367,17 @@ def strip_extra_data(entries: list[Entry]) -> list[EntrySubset]:
 
 
 def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
+    """Posts new comics to the daily webhook, once a day.
+
+    This does the daily checks, which don't actually have to check any RSS feeds
+    because that work has already been done by `main`. `daily` can just post the
+    new entries that have been pushed to `comic["dailies"]` for each comic, and
+    then reset each comic's `dailies` value back to an empty array.
+
+    Args:
+        comics: A MongoDB collection containing all of the comics we track.
+        webhook_url: The URL to post daily updates to.
+    """
     start = time.time()
     comic_list: list[Comic] = list(comics.find({"dailies": {"$ne": []}}).sort("title"))
 
