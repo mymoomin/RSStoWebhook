@@ -38,9 +38,8 @@ def relay_request(
 @pytest.mark.slow()
 @responses.activate()
 def test_fully() -> None:
-    """
-    Test asserts that when called in a production environment, everything
-    behaves as expected
+    """Test asserts that when called in a production environment, everything
+    behaves as expected.
     """
     responses.add_passthru(WEBHOOK_URL)
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)

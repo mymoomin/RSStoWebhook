@@ -11,8 +11,7 @@ if TYPE_CHECKING:
 
 
 def test_no_changes() -> None:
-    """
-    This is just the normal usage.
+    """This is just the normal usage.
 
     Test asserts that `get_new_entries` functions when nothing has changed
     since the last check
@@ -26,9 +25,8 @@ def test_no_changes() -> None:
 
 
 def test_missing_entry() -> None:
-    """
-    Test asserts that `get_new_entries` functions when it can't find the last
-    entry in the feed
+    """Test asserts that `get_new_entries` functions when it can't find the last
+    entry in the feed.
     """
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = []
@@ -37,9 +35,7 @@ def test_missing_entry() -> None:
 
 
 def test_new_update() -> None:
-    """
-    Test asserts that when there is one new update, it is posted
-    """
+    """Test asserts that when there is one new update, it is posted."""
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = [
         {"link": "https://example.com/page/2"},
@@ -50,9 +46,8 @@ def test_new_update() -> None:
 
 
 def test_new_updates() -> None:
-    """
-    Test asserts that when there are two new updates, they are returned in the
-    correct order (oldest to newest)
+    """Test asserts that when there are two new updates, they are returned in the
+    correct order (oldest to newest).
 
     Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
     """
@@ -70,9 +65,8 @@ def test_new_updates() -> None:
 
 
 def test_yanked_update() -> None:
-    """
-    Test asserts that when the most recent update is pulled but the one before
-    has been seen already, nothing is done
+    """Test asserts that when the most recent update is pulled but the one before
+    has been seen already, nothing is done.
 
     Partial regression test for [#1](https://github.com/mymoomin/RSStoWebhook/issues/1)
     """
@@ -88,9 +82,8 @@ def test_yanked_update() -> None:
 
 
 def test_all_new_feed() -> None:
-    """
-    Test asserts that when the last-seen entry isn't found in the feed, all
-    entries are returned in chronological order
+    """Test asserts that when the last-seen entry isn't found in the feed, all
+    entries are returned in chronological order.
 
     Regression test for [#3](https://github.com/mymoomin/RSStoWebhook/issues/3)
     """
@@ -107,9 +100,8 @@ def test_all_new_feed() -> None:
 
 
 def test_many_updates_found() -> None:
-    """
-    Test asserts that when there are many new updates and the last-seen update
-    is still in the feed, all the new updates are returned in order
+    """Test asserts that when there are many new updates and the last-seen update
+    is still in the feed, all the new updates are returned in order.
 
     Partial regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
     """
@@ -123,9 +115,8 @@ def test_many_updates_found() -> None:
 
 
 def test_many_updates_not_found() -> None:
-    """
-    Test asserts that when there are many new updates and the last-seen update
-    is not in the feed, all the new updates are returned
+    """Test asserts that when there are many new updates and the last-seen update
+    is not in the feed, all the new updates are returned.
 
     Partial regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
     """
@@ -139,9 +130,8 @@ def test_many_updates_not_found() -> None:
 
 
 def test_minor_url_change() -> None:
-    """
-    Tests that when the URL for an entry changes in a semantically-equivalent
-    way, it is recognised as the same URL
+    """Tests that when the URL for an entry changes in a semantically-equivalent
+    way, it is recognised as the same URL.
 
     Regression test for [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2)
     """
@@ -152,9 +142,8 @@ def test_minor_url_change() -> None:
 
 
 def test_major_url_change() -> None:
-    """
-    Tests that when the URL for an entry changes in a semantically-inequivalent
-    way, it is correctly not recognised as the same URL
+    """Tests that when the URL for an entry changes in a semantically-inequivalent
+    way, it is correctly not recognised as the same URL.
 
     Regression test for [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2)
     """

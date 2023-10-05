@@ -113,5 +113,5 @@ select = [
 ignore = [
     "PLW0120", "TRY300", "B008", "B905", "S101", "ANN101", "RET505"
 ]
-per-file-ignores = {"tests/*" = ["S101", "ARG001", "FBT001"]}
+per-file-ignores = {"tests/*" = ["S101", "ARG001", "FBT001", "D"]}
 src = ["src"]
