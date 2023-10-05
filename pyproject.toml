@@ -95,7 +95,7 @@ select = [
     "N",            # naming # no new errors
 
     # Some extra flake-8 plugins
-    "ANN",        # flake8-annotations # checks everything has type annotations
+    "ANN",          # flake8-annotations # checks everything has type annotations
     # "D",          # pydocstyle # a million errors because I don't have any docstrings
     "A",            # flake8-builtins # caught shadowing `hash()` with a variable called `hash`
     "DTZ",          # flake8-datetimez # found that I was using datetime in the first place (mistake)
