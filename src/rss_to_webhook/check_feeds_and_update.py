@@ -4,9 +4,8 @@ import asyncio
 import os
 import sys
 import time
-from dataclasses import dataclass
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
 import aiohttp
