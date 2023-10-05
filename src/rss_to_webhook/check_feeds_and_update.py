@@ -199,37 +199,6 @@ def get_new_entries(
     return new_entries
 
 
-@dataclass(slots=True)
-class RateLimitState:
-    """
-    This class stores the information necesary to obey Discord's hidden
-    30 message/minute rate-limit on posts to webhooks in a channel, which
-    is documented in [this tweet](https://twitter.com/lolpython/status/967621046277820416).
-
-    `counter` is the number of posts made in the current rate-limiting window
-
-    `window_start` is the timestamp of the start of the current window
-
-    `window_length` is the length of the window, sourced from the tweet
-
-    `fuzz_factor` is an additional safety margin. I know 61 seconds is
-        enough for this because I've tested this by posting 500 messages
-        to one webhook with this fuzz factor multiple times
-
-    `fuzzed_window` is the window plus the safety factor
-
-    `max_in_window` is the maximum number of posts that can be made in each
-        window, sourced from the tweet again
-    """
-
-    counter: int
-    window_start: float
-    window_length: ClassVar[int] = 60
-    fuzz_factor: ClassVar[int] = 1
-    fuzzed_window: ClassVar[int] = window_length + fuzz_factor
-    max_in_window: ClassVar[int] = 30
-
-
 def make_body(comic: Comic, entries: list[Entry]) -> Message:
     extras: Extras = {
         "username": comic.get("username"),
