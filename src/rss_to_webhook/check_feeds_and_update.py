@@ -1,3 +1,16 @@
+"""Pulls comic info from a database, checks for new pages, and posts them to discord.
+
+This is intended as a script rather than a library, so if anything needs to be
+imported by non-test code, it should probably be pulled out into a different
+file? I might change my mind on that later though.
+
+There are essentially two pipelines. One runs through `main` and does the
+regular checks, posting new updates to the server and also to any relevant
+threads in the Sleepless Domain server, as well as storing every page it posts
+so the `daily` check can post it later. The other runs though `daily` and just
+posts every update that has been marked for it to post, then clears that list.
+"""
+
 from __future__ import annotations
 
 import asyncio
