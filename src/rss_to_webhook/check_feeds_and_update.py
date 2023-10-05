@@ -72,14 +72,14 @@ def main(
     start = time.time()
     comic_list: list[Comic] = list(comics.find().sort("title"))
     comics_entries_headers = asyncio.get_event_loop().run_until_complete(
-        get_changed_feeds(comic_list, hash_seed, comics, timeout=timeout)
+        _get_changed_feeds(comic_list, hash_seed, comics, timeout=timeout)
     )
 
     rate_limiter = RateLimiter()
 
     for comic, entries, headers in comics_entries_headers:
         if entries:
-            body = make_body(comic, entries)
+            body = _make_body(comic, entries)
             print(body)
             response = requests.post(
                 f"{webhook_url}?wait=true", json=body, timeout=10, stream=True
@@ -98,7 +98,7 @@ def main(
                     timeout=10,
                 )
                 rate_limiter.limit_rate(thread_webhook_url, response)
-        update(comics, comic, entries, headers)
+        _update(comics, comic, entries, headers)
 
     time_taken = time.time() - start
     print(
@@ -107,7 +107,7 @@ def main(
     )
 
 
-async def get_changed_feeds(
+async def _get_changed_feeds(
     comic_list: list[Comic],
     hash_seed: int,
     comics: Collection[Comic],
@@ -115,7 +115,7 @@ async def get_changed_feeds(
 ) -> Iterable[tuple[Comic, list[Entry], CachingInfo]]:
     async with aiohttp.ClientSession() as session:
         tasks = [
-            get_feed_changes(session, comic, hash_seed, comics, **kwargs)
+            _get_feed_changes(session, comic, hash_seed, comics, **kwargs)
             for comic in comic_list
         ]
         feeds = await asyncio.gather(*tasks, return_exceptions=False)
@@ -123,7 +123,7 @@ async def get_changed_feeds(
         return filter(None, feeds)
 
 
-async def get_feed_changes(
+async def _get_feed_changes(
     session: aiohttp.ClientSession,
     comic: Comic,
     hash_seed: int,
@@ -131,7 +131,7 @@ async def get_feed_changes(
     **kwargs: Any,  # noqa: ANN401, RUF100
 ) -> tuple[Comic, list[Entry], CachingInfo] | None:
     url = comic["url"]
-    caching_headers = get_headers(comic)
+    caching_headers = _get_headers(comic)
     print(
         f"{comic['title']}: Requesting"
         f" {url}{f' with {caching_headers}' if caching_headers else ''}"
@@ -171,7 +171,7 @@ async def get_feed_changes(
 
         feed = feedparser.parse(data)
         print(f"{comic['title']}: Parsed feed")
-        new_entries = get_new_entries(comic["last_entries"], feed["entries"])
+        new_entries = _get_new_entries(comic["last_entries"], feed["entries"])
         print(f"{comic['title']}: {len(new_entries)} new entries")
         return (comic, new_entries, caching_info)
     except Exception as e:
@@ -180,7 +180,7 @@ async def get_feed_changes(
         return None
 
 
-def get_headers(comic: Comic) -> dict[str, str]:
+def _get_headers(comic: Comic) -> dict[str, str]:
     caching_headers: dict[str, str] = {}
     if "etag" in comic:
         caching_headers["If-None-Match"] = comic["etag"]
@@ -189,7 +189,7 @@ def get_headers(comic: Comic) -> dict[str, str]:
     return caching_headers
 
 
-def get_new_entries(
+def _get_new_entries(
     last_entries: list[EntrySubset], current_entries: list[Entry]
 ) -> list[Entry]:
     last_urls = {entry["link"] for entry in last_entries}
@@ -232,7 +232,7 @@ def get_new_entries(
     return new_entries
 
 
-def make_body(comic: Comic, entries: list[Entry]) -> Message:
+def _make_body(comic: Comic, entries: list[Entry]) -> Message:
     extras: Extras = {
         "username": comic.get("username"),
         "avatar_url": comic.get("avatar_url"),
@@ -318,7 +318,7 @@ class RateLimiter:
         self.buckets[bucket] = (counter, window_start)
 
 
-def update(
+def _update(
     comics: Collection[Comic],
     comic: Comic,
     entries: list[Entry],
@@ -361,7 +361,7 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
     rate_limiter = RateLimiter()
     for comic in comic_list:
         print(f"{comic['title']} daily: Posting")
-        body = make_body(comic, comic["dailies"])  # type: ignore [arg-type]
+        body = _make_body(comic, comic["dailies"])  # type: ignore [arg-type]
         # The type is fine because `entries`` is only read, so it's
         # covariant, and so list[EntrySubset] is a subtype of list[Entry]
         response = requests.post(f"{webhook_url}?wait=true", json=body, timeout=10)

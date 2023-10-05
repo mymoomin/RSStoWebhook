@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from rss_to_webhook.check_feeds_and_update import get_new_entries
+from rss_to_webhook.check_feeds_and_update import _get_new_entries
 
 if TYPE_CHECKING:
     from feedparser.util import Entry
@@ -20,7 +20,7 @@ def test_no_changes() -> None:
     """
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = [{"link": "https://example.com/page/1"}]
-    new_entries = get_new_entries(last_seen, feed_entries)
+    new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == []
 
 
@@ -30,7 +30,7 @@ def test_missing_entry() -> None:
     """
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = []
-    new_entries = get_new_entries(last_seen, feed_entries)
+    new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == []
 
 
@@ -41,7 +41,7 @@ def test_new_update() -> None:
         {"link": "https://example.com/page/2"},
         {"link": "https://example.com/page/1"},
     ]
-    new_entries = get_new_entries(last_seen, feed_entries)
+    new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == [{"link": "https://example.com/page/2"}]
 
 
@@ -57,7 +57,7 @@ def test_new_updates() -> None:
         {"link": "https://example.com/page/2"},
         {"link": "https://example.com/page/1"},
     ]
-    new_entries = get_new_entries(last_seen, feed_entries)
+    new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == [
         {"link": "https://example.com/page/2"},
         {"link": "https://example.com/page/3"},
@@ -77,7 +77,7 @@ def test_yanked_update() -> None:
     feed_entries: list[Entry] = [
         {"link": "https://example.com/page/1"},
     ]
-    new_entries = get_new_entries(last_seen, feed_entries)
+    new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == []
 
 
@@ -92,7 +92,7 @@ def test_all_new_feed() -> None:
         {"link": "https://example.com/page/2"},
         {"link": "https://example.com/page/1"},
     ]
-    new_entries = get_new_entries(last_seen, feed_entries)
+    new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == [
         {"link": "https://example.com/page/1"},
         {"link": "https://example.com/page/2"},
@@ -110,7 +110,7 @@ def test_many_updates_found() -> None:
     ]
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = list(reversed(all_entries))
-    new_entries = get_new_entries(last_seen, feed_entries)
+    new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == all_entries[1:]
 
 
@@ -125,7 +125,7 @@ def test_many_updates_not_found() -> None:
     ]
     last_seen: list[EntrySubset] = []
     feed_entries: list[Entry] = list(reversed(all_entries))
-    new_entries = get_new_entries(last_seen, feed_entries)
+    new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == all_entries
 
 
@@ -137,7 +137,7 @@ def test_minor_url_change() -> None:
     """
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = [{"link": "http://example.com/page/1/"}]
-    new_entries = get_new_entries(last_seen, feed_entries)
+    new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == []
 
 
@@ -149,5 +149,5 @@ def test_major_url_change() -> None:
     """
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1?v=1"}]
     feed_entries: list[Entry] = [{"link": "https://example.com/page/1?v=2"}]
-    new_entries = get_new_entries(last_seen, feed_entries)
+    new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == [{"link": "https://example.com/page/1?v=2"}]
