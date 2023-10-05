@@ -15,7 +15,7 @@ from requests import HTTPError
 from responses import RequestsMock, matchers
 from yarl import URL
 
-from rss_to_webhook.check_feeds_and_update import RateLimiter, daily_checks, main
+from rss_to_webhook.check_feeds_and_update import daily_checks, main
 from rss_to_webhook.db_types import Comic
 
 load_dotenv()
