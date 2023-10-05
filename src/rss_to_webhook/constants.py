@@ -27,3 +27,5 @@ DEFAULT_GET_HEADERS = {
 }
 
 DEFAULT_AIOHTTP_TIMEOUT = aiohttp.ClientTimeout(sock_connect=15, sock_read=10)
+
+MAX_CACHED_ENTRIES = 400

@@ -14,7 +14,7 @@ from pymongo.results import UpdateResult
 from requests.structures import CaseInsensitiveDict
 
 from rss_to_webhook.check_feeds_and_update import strip_extra_data
-from rss_to_webhook.constants import DEFAULT_GET_HEADERS
+from rss_to_webhook.constants import DEFAULT_GET_HEADERS, MAX_CACHED_ENTRIES
 from rss_to_webhook.db_types import CachingInfo, Comic
 
 
@@ -92,7 +92,7 @@ def add_to_collection(
             "$push": {
                 "last_entries": {
                     "$each": last_entries,
-                    "$slice": -400,
+                    "$slice": -MAX_CACHED_ENTRIES,
                 },
             },
             "$set": {"dailies": [], **caching_info},

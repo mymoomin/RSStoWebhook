@@ -17,7 +17,11 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import Response
 
-from rss_to_webhook.constants import DEFAULT_AIOHTTP_TIMEOUT, DEFAULT_GET_HEADERS
+from rss_to_webhook.constants import (
+    DEFAULT_AIOHTTP_TIMEOUT,
+    DEFAULT_GET_HEADERS,
+    MAX_CACHED_ENTRIES,
+)
 
 if TYPE_CHECKING:  # pragma no cover
     from collections.abc import Iterable
@@ -296,7 +300,7 @@ def update(
             "$push": {
                 "last_entries": {
                     "$each": entry_subsets,
-                    "$slice": -400,
+                    "$slice": -MAX_CACHED_ENTRIES,
                 },
                 "dailies": {"$each": entry_subsets},
             },
