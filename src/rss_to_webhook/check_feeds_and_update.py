@@ -52,6 +52,23 @@ def main(
     thread_webhook_url: str,
     timeout: aiohttp.ClientTimeout = DEFAULT_AIOHTTP_TIMEOUT,
 ) -> None:
+    """Checks for updates, posts them to Discord, then persists the new state.
+
+    Collects comics from `comics`, posts the updates to `webhook_url` and, when
+    the comic has a `thread_id`, to the relevant thread in the channel pointed
+    to by `thread_webhook_url`. Once deployed this will the webcomic channel in
+    the Sleepless Domain server, but for now it's a secret channel in the "RSS
+    but it's Discord" server. The new updates and some caching information are
+    then persisted back to the database.
+
+    Args:
+        comics: A MongoDB collection containing all of the comics we track.
+        hash_seed: A seed to be used to hash an RSS feed's content with, so we
+            can detect unchanged feeds quickly.
+        webhook_url: The URL to post normal updates to.
+        thread_webhook_url: The URL to post thread updates to.
+        timeout: A timeout to be used for all get requests.
+    """
     start = time.time()
     comic_list: list[Comic] = list(comics.find().sort("title"))
     comics_entries_headers = asyncio.get_event_loop().run_until_complete(
