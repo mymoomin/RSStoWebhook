@@ -19,12 +19,12 @@ class EntrySubset(TypedDict):
 class Comic(TypedDict):
     _id: ObjectId
     title: str
-    url: str  # URL but it causes serialisation issues even though it's just a string
+    url: str  # Must be a valid URL
     role_id: int
     thread_id: NotRequired[int]
     color: NotRequired[int]
     username: NotRequired[str]
-    avatar_url: NotRequired[str]  # URL but it causes serialisation issues
+    avatar_url: NotRequired[str]  # must be a valid URL
     dailies: list[EntrySubset]
     last_entries: list[EntrySubset]
     feed_hash: bytes
