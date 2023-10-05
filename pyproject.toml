@@ -110,6 +110,9 @@ select = [
     # "TD", "FIX" # These disallow "# Todo" comments unless you jump through hoops, so I'm disabling
     # them for now
 ]
+exclude = [
+    "__init__.py"
+]
 ignore = [
     "PLW0120", "TRY300", "B008", "B905", "S101", "ANN101", "RET505"
 ]
