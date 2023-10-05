@@ -229,25 +229,22 @@ def make_body(comic: Comic, entries: list[Entry]) -> Message:
 
 
 class RateLimiter:
-    """
+    """Limit rates to match Discord's API.
+
     This class stores the information necesary to obey Discord's hidden
     30 message/minute rate-limit on posts to webhooks in a channel, which
     is documented in [this tweet](https://twitter.com/lolpython/status/967621046277820416).
 
-    `counter` is the number of posts made in the current rate-limiting window
-
-    `window_start` is the timestamp of the start of the current window
-
-    `window_length` is the length of the window, sourced from the tweet
-
-    `fuzz_factor` is an additional safety margin. I know 61 seconds is
-        enough for this because I've tested this by posting 500 messages
-        to one webhook with this fuzz factor multiple times
-
-    `fuzzed_window` is the window plus the safety factor
-
-    `max_in_window` is the maximum number of posts that can be made in each
-        window, sourced from the tweet again
+    Attributes:
+        counter: Number of posts made in the current rate-limiting window.
+        window_start: Timestamp of the start of the current window
+        window_length: Length of the window, sourced from the tweet
+        fuzz_factor: Additional safety margin.
+            I know this margin is safe because I've tested it by posting 500
+            messages to one webhook at this rate multiple times.
+        fuzzed_window: The window plus the safety factor
+        max_in_window: Maximum number of posts that can be made in each window.
+            Sourced from the tweet again.
     """
 
     window_length: int = 60
@@ -257,9 +254,15 @@ class RateLimiter:
     buckets: dict[str, tuple[int, float]]
 
     def __init__(self) -> None:
+        """Sets up rate-limiting buckets."""
         self.buckets = {}
 
     def limit_rate(self, bucket: str, response: Response) -> None:
+        """Limits the rate on webhook posts per-webhook.
+
+        This method will both respect explicit "X-RateLimit" headers in the
+        response, and Discord's hidden rate limits.
+        """
         if bucket not in self.buckets:
             self.buckets[bucket] = (1, time.time())
         counter, window_start = self.buckets[bucket]
