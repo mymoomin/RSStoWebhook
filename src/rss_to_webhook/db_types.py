@@ -48,11 +48,38 @@ class Comic(TypedDict):
     - `title` and `url` are information about the webcomic itself
     - `role_id`, `thread_id`, `color`, `username`, and `avatar_url` are about
         how new entries of the comic are posted to Discord
+    - `dailies` is the list of new entries that haven't yet been posted by the
+        daily webhook
     - `last_entries`, `feed_hash`, `etag`, and `last_modified` are caching
         information, used to quickly find new updates when checking the comic's
         RSS feed
-    - `dailies` is the list of new entries that haven't yet been posted by the
-        daily webhook
+
+    Attributes:
+        _id: The id of the record in the database.
+
+        title: The name of the webcomic.
+        url: The URL of the comic's RSS feed.
+
+        role_id: The ID of the comic's role on the RSS Discord.
+        last_entries: The `constants.MAX_CACHED_ENTRIES` most-recently seen entries.
+        color: The colour of the comic's Discord embed, as an integer.
+            Must be between 0 and 0xFFFFFF (16777215) or Discord complains.
+        username: The username of the comic's webhook posts.
+            Normally a character from the comic.
+        avatar_url: The avatar URL for a comic's webhook posts.
+            Must be a valid URL. Normally a picture of a character from the comic.
+        dailies: A list of entries that haven't yet been posted to the daily webhook.
+            Each entry's `link` must be a valid URL.
+        feed_hash: An mmh3-generated hash of the content of the feed.
+            Used to early-exit when the feed is unchanged.
+        etag: A caching header RSS feeds can use to say when they haven't changed,
+            and return a 304 with no content rather than the full feed, saving
+            both us and them bandwidth and time. Sadly very rarely used.
+        last_modifed: Similar to the above, the date at which the RSS feed was
+            last changed. While the header is intended to always be a date in a
+            specific format, it sometimes isn't, and in any case we only use it
+            as an opaque string, so it's treated as a string here.
+
     """
 
     _id: ObjectId
@@ -60,10 +87,10 @@ class Comic(TypedDict):
     url: str  # Must be a valid URL
     role_id: int
     thread_id: NotRequired[int]
-    color: NotRequired[int]
+    color: NotRequired[int]  # Must be between 0 and 0xFFFFF
     username: NotRequired[str]
-    avatar_url: NotRequired[str]  # must be a valid URL
-    dailies: list[EntrySubset]
+    avatar_url: NotRequired[str]  # Must be a valid URL
+    dailies: list[EntrySubset]  # Must have valid URLs
     last_entries: list[EntrySubset]
     feed_hash: bytes
     etag: NotRequired[str]
