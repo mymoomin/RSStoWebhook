@@ -1,12 +1,19 @@
+"""Constants used by modules in this package."""
+
 import aiohttp
 
-# Default FireFox user agent, to pretend to be human and pass bot checks
+#: Default FireFox user agent, to pretend to be human and pass bot checks.
 NORMAL_HUMAN_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0"
 )
 
+#: A user agent specifically for the script, not currently blocked by any websites.
+#: This lets us be honest about who we are, and if we're an issue hopefully we'll
+#: be contacted before getting blocked since we're googleable?
 CUSTOM_USER_AGENT = "rss-to-webhook update checker"
 
+
+#: Default headers used for reading from RSS feeds when using aiohttp or requests.
 DEFAULT_GET_HEADERS = {
     # Use our own user agent -- aiohttp's default one is blocked by Tumblr as seen in
     # [192de2b](https://github.com/mymoomin/RSStoWebhook/commit/192de2b456810174aa09b6feac6a7b05f695a001)
@@ -26,6 +33,9 @@ DEFAULT_GET_HEADERS = {
     "Connection": "keep-alive",
 }
 
+
 DEFAULT_AIOHTTP_TIMEOUT = aiohttp.ClientTimeout(sock_connect=15, sock_read=10)
 
+
+#: Entries older than this will be removed from the database
 MAX_CACHED_ENTRIES = 400
