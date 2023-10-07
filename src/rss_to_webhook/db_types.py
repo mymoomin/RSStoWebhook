@@ -39,6 +39,26 @@ class EntrySubset(TypedDict, total=False):
     published: NotRequired[str]
 
 
+class BasicComic(TypedDict):
+    """Basic information about a comic and its webhook."""
+
+    title: str
+    feed_url: str
+    color: NotRequired[int]  # Between 0 and 0xFFFFFF (16777215)
+    username: NotRequired[str]
+    avatar_url: NotRequired[str]
+
+
+class DiscordComic(BasicComic):
+    """A `BasicComic` with enough extra information to post updates to Discord.
+
+    Both IDs are [snowflakes](https://discord.com/developers/docs/reference#snowflakes).
+    """
+
+    role_id: int
+    thread_id: NotRequired[int]
+
+
 class Comic(TypedDict):
     """A single comic as stored in the database.
 
@@ -60,7 +80,6 @@ class Comic(TypedDict):
         title: The name of the webcomic.
         url: The URL of the comic's RSS feed.
 
-        role_id: The ID of the comic's role on the RSS Discord.
         last_entries: The `constants.MAX_CACHED_ENTRIES` most-recently seen entries.
         color: The colour of the comic's Discord embed, as an integer.
             Must be between 0 and 0xFFFFFF (16777215) or Discord complains.
@@ -68,8 +87,14 @@ class Comic(TypedDict):
             Normally a character from the comic.
         avatar_url: The avatar URL for a comic's webhook posts.
             Must be a valid URL. Normally a picture of a character from the comic.
+
+        role_id: The ID of the comic's role on the RSS Discord.
+        thread_id: The ID of the comic's thread on the Sleepless Domain server.
+            May be missing or `None`
+
         dailies: A list of entries that haven't yet been posted to the daily webhook.
             Each entry's `link` must be a valid URL.
+
         feed_hash: An mmh3-generated hash of the content of the feed.
             Used to early-exit when the feed is unchanged.
         etag: A caching header RSS feeds can use to say when they haven't changed,
@@ -85,12 +110,16 @@ class Comic(TypedDict):
     _id: ObjectId
     title: str
     url: str  # Must be a valid URL
-    role_id: int
-    thread_id: NotRequired[int]
+
     color: NotRequired[int]  # Must be between 0 and 0xFFFFF
     username: NotRequired[str]
     avatar_url: NotRequired[str]  # Must be a valid URL
+
+    role_id: int
+    thread_id: NotRequired[int]
+
     dailies: list[EntrySubset]  # Must have valid URLs
+
     last_entries: list[EntrySubset]
     feed_hash: bytes
     etag: NotRequired[str]
