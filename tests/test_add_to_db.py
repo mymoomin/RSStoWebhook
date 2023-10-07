@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from mongomock import Collection, MongoClient
 from responses import RequestsMock
 
-from rss_to_webhook.add_comic_to_database import ComicData, add_to_collection
+from rss_to_webhook.add_comic_to_database import DiscordComic, add_to_collection
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -24,10 +24,10 @@ THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 
 
 @pytest.fixture()
-def comic() -> ComicData:
+def comic() -> DiscordComic:
     return {
         "title": "Sleepless Domain",
-        "url": "http://www.sleeplessdomain.com/comic/rss",
+        "feed_url": "http://www.sleeplessdomain.com/comic/rss",
         "role_id": Int64("581531863127031868"),
         "color": 11240119,
         "username": "KiwiFlea",
@@ -51,7 +51,7 @@ def collection_with_sd() -> Collection[Comic]:
     comic: Comic = {
         "_id": ObjectId("111111111111111111111111"),
         "title": "Sleepless Domain",
-        "url": "http://www.sleeplessdomain.com/comic/rss",
+        "feed_url": "http://www.sleeplessdomain.com/comic/rss",
         "role_id": Int64("581531863127031868"),
         "color": 11240119,
         "username": "KiwiFlea",
@@ -89,9 +89,9 @@ def test_add_valid_comic(rss: RequestsMock) -> None:
     """
     client: MongoClient[Comic] = MongoClient()
     collection = client.db.collection
-    comic_data: ComicData = {
+    comic_data: DiscordComic = {
         "title": "Sleepless Domain",
-        "url": "http://www.sleeplessdomain.com/comic/rss",
+        "feed_url": "http://www.sleeplessdomain.com/comic/rss",
         "role_id": 581531863127031868,
         "color": 11240119,
         "username": "KiwiFlea",
@@ -105,7 +105,7 @@ def test_add_valid_comic(rss: RequestsMock) -> None:
     del comic_less_id["_id"]
     assert comic_less_id == {
         "title": "Sleepless Domain",
-        "url": "http://www.sleeplessdomain.com/comic/rss",
+        "feed_url": "http://www.sleeplessdomain.com/comic/rss",
         "role_id": Int64("581531863127031868"),
         "color": 11240119,
         "username": "KiwiFlea",
@@ -139,9 +139,9 @@ def test_no_changes(collection_with_sd: Collection[Comic], rss: RequestsMock) ->
     """Tests that when a comic that is already in the database is inserted again,
     with no change in any of the data, nothing is done.
     """
-    comic_data: ComicData = {
+    comic_data: DiscordComic = {
         "title": "Sleepless Domain",
-        "url": "http://www.sleeplessdomain.com/comic/rss",
+        "feed_url": "http://www.sleeplessdomain.com/comic/rss",
         "role_id": 581531863127031868,
         "color": 11240119,
         "username": "KiwiFlea",
@@ -157,9 +157,9 @@ def test_update(collection_with_sd: Collection[Comic], rss: RequestsMock) -> Non
     """Tests that when a comic that is already in the database is inserted again
     with different key values, those are updated, and the RSS state is preserved.
     """
-    comic_data: ComicData = {
+    comic_data: DiscordComic = {
         "title": "Sleepless Domain",
-        "url": "https://test-site.com/rss",
+        "feed_url": "https://test-site.com/rss",
         "role_id": 581531863127031868,
         "color": 11240119,
         "username": "KiwiFlea",
@@ -171,7 +171,7 @@ def test_update(collection_with_sd: Collection[Comic], rss: RequestsMock) -> Non
     assert len(rss.calls) == 0
     results = list(collection_with_sd.find({"title": comic_data["title"]}))
     assert len(results) == 1
-    assert results[0]["url"] == "https://test-site.com/rss"
+    assert results[0]["feed_url"] == "https://test-site.com/rss"
     assert "last_entries" in results[0]
 
 
