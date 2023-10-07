@@ -10,12 +10,12 @@ from dotenv import load_dotenv
 from mongomock import Collection, MongoClient
 from responses import RequestsMock
 
-from rss_to_webhook.add_comic_to_database import DiscordComic, add_to_collection
+from rss_to_webhook.add_comic_to_database import add_to_collection
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from rss_to_webhook.db_types import Comic
+    from rss_to_webhook.db_types import Comic, DiscordComic
 
 load_dotenv()
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
