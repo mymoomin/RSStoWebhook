@@ -42,7 +42,7 @@ class EntrySubset(TypedDict, total=False):
 class Comic(TypedDict):
     """A single comic as stored in the database.
 
-    The attributes mean what they're called and can be divided into a few subsets.
+    The attributes can be divided into a few subsets.
 
     - `_id` is a surrogate primary key to quickly locate records in the database
     - `title` and `url` are information about the webcomic itself
