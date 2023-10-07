@@ -29,7 +29,7 @@ def comic() -> Comic:
     return {
         "_id": ObjectId("612819b293b99b5809e18ab3"),
         "title": "Sleepless Domain",
-        "url": "http://www.sleeplessdomain.com/comic/rss",
+        "feed_url": "http://www.sleeplessdomain.com/comic/rss",
         "role_id": Int64("581531863127031868"),
         "color": 11240119,
         "username": "KiwiFlea",
@@ -226,7 +226,7 @@ def test_one_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> N
                 "color": 11240119,
                 "description": "New Sleepless Domain!",
                 "title": "**Sleepless Domain - Chapter 22 - Page 2**",
-                "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+                "feed_url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
             }
         ],
         "username": "KiwiFlea",
@@ -247,11 +247,11 @@ def test_two_updates(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert (
-        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
+        json.loads(webhook.calls[0].request.body)["embeds"][0]["feed_url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
     )
     assert (
-        json.loads(webhook.calls[0].request.body)["embeds"][1]["url"]
+        json.loads(webhook.calls[0].request.body)["embeds"][1]["feed_url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
 
@@ -286,12 +286,14 @@ def test_all_new_updates(
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert (
-        embeds[0]["url"] == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
+        embeds[0]["feed_url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
     )
     # Check that all 20 items in the RSS feed were posted
     assert len(embeds) == 20  # noqa: PLR2004
     assert (
-        embeds[-1]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+        embeds[-1]["feed_url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
 
 
@@ -304,7 +306,7 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -
     comics = client.db.collection
     comic["title"] = "xkcd"
     comic["last_entries"] = [{"link": "https://xkcd.com/2834/"}]
-    comic["url"] = "https://xkcd.com/atom.xml"
+    comic["feed_url"] = "https://xkcd.com/atom.xml"
     comics.insert_one(comic)
     rss.get(
         "https://xkcd.com/atom.xml",
@@ -359,7 +361,7 @@ def test_handles_errors(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     comics = client.db.collection
     comic["last_entries"].pop()  # One new entry
     bad_comic = deepcopy(comic)
-    bad_comic["url"] = "http://does.not.exist/nowhere"
+    bad_comic["feed_url"] = "http://does.not.exist/nowhere"
     bad_comic["_id"] = ObjectId(
         "6129798080ead12f9ac5dbbc"
     )  # So it doesn't conflict with the other comic
@@ -422,21 +424,21 @@ def test_daily_two_updates(
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     regular_embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert (
-        regular_embeds[0]["url"]
+        regular_embeds[0]["feed_url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
     )
     assert (
-        regular_embeds[1]["url"]
+        regular_embeds[1]["feed_url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
     daily_checks(comics, WEBHOOK_URL)
     daily_embeds = json.loads(webhook.calls[1].request.body)["embeds"]
     assert (
-        daily_embeds[0]["url"]
+        daily_embeds[0]["feed_url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
     )
     assert (
-        daily_embeds[1]["url"]
+        daily_embeds[1]["feed_url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
 
@@ -454,7 +456,7 @@ def test_daily_idempotent(
     comics.insert_one(comic)
     daily_checks(comics, WEBHOOK_URL)
     assert (
-        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
+        json.loads(webhook.calls[0].request.body)["embeds"][0]["feed_url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
     assert len(webhook.calls) == 1
@@ -477,7 +479,7 @@ def test_daily_idempotent(
 #     """
 #     client: MongoClient[Comic] = MongoClient()
 #     comics = client.db.collection
-#     comic["url"] = "https://www.neorice.com/rss"
+#     comic["feed_url"] = "https://www.neorice.com/rss"
 #     comic["last_entries"] = []
 #     comics.insert_one(comic)
 #     long_feed = f"""
@@ -572,7 +574,7 @@ def test_no_update_on_failure(comic: Comic, rss: aioresponses) -> None:
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     entry_url = comic["last_entries"].pop()  # One "new" entry
-    comic["url"] = "https://www.questionablecontent.net/QCRSS.xml"
+    comic["feed_url"] = "https://www.questionablecontent.net/QCRSS.xml"
     comics.insert_one(comic)
     rss.get(
         "https://www.questionablecontent.net/QCRSS.xml",

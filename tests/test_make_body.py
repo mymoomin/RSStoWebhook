@@ -50,7 +50,7 @@ def test_happy_path(comic: Comic) -> None:
                 {
                     "color": 0x5C64F4,
                     "title": "**Page 1!**",
-                    "url": "https://example.com/page/1",
+                    "feed_url": "https://example.com/page/1",
                     "description": "New Test Webcomic!",
                 },
             ],
@@ -76,7 +76,7 @@ def test_bad_url_scheme(comic: Comic) -> None:
             {
                 "color": 0x5C64F4,
                 "title": "**Page 1!**",
-                "url": "https://example.com/page/1",
+                "feed_url": "https://example.com/page/1",
                 "description": "New Test Webcomic!",
             },
         ],
@@ -98,7 +98,7 @@ def test_no_title(comic: Comic) -> None:
             {
                 "color": 0x5C64F4,
                 "title": "**Test Webcomic**",
-                "url": "https://example.com/page/1",
+                "feed_url": "https://example.com/page/1",
                 "description": "New Test Webcomic!",
             },
         ],
@@ -114,7 +114,7 @@ def test_no_title(comic: Comic) -> None:
         (
             {
                 "title": "Comic1",
-                "url": "https://example.com/comic1",
+                "feed_url": "https://example.com/comic1",
                 "username": "Author1",
                 "avatar_url": "https://example.com/icon",
             },
@@ -129,7 +129,7 @@ def test_no_title(comic: Comic) -> None:
                     {
                         "color": 0x5C64F4,
                         "title": "**Entry 1**",
-                        "url": "https://example.com/entry1",
+                        "feed_url": "https://example.com/entry1",
                         "description": "New Comic1!",
                     },
                 ],
@@ -141,7 +141,7 @@ def test_no_title(comic: Comic) -> None:
         (
             {
                 "title": "Comic2",
-                "url": "https://example.com/comic2",
+                "feed_url": "https://example.com/comic2",
                 "role_id": 123,
                 "username": "Author2",
                 "avatar_url": "https://example.com/icon",
@@ -157,7 +157,7 @@ def test_no_title(comic: Comic) -> None:
                     {
                         "color": 0x5C64F4,
                         "title": "**Entry 2**",
-                        "url": "https://example.com/entry2",
+                        "feed_url": "https://example.com/entry2",
                         "description": "New Comic2!",
                     },
                 ],

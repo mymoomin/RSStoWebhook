@@ -91,7 +91,7 @@ def test_fully() -> None:
 #         "dailies": [],
 #         "feed_hash": b"hello!",
 #         "title": "Test Webcomic",
-#         "url": "https://example.com/",
+#         "feed_url": "https://example.com/",
 #         "last_entries": [],
 #     }
 #     entries: list[Entry] = [
