@@ -20,10 +20,11 @@ from rss_to_webhook.db_types import CachingInfo, Comic, DiscordComic
 
 
 def set_headers(
-    comic: DiscordComic,
+    comic: Comic,
     headers: CaseInsensitiveDict[str],
     collection: Collection[Comic],
 ) -> None:
+    """Sets the caching headers for a given comic."""
     new_headers = {}
     if "ETag" in headers:
         new_headers["etag"] = headers["ETag"]
@@ -32,7 +33,7 @@ def set_headers(
         new_headers["last_modified"] = headers["Last-Modified"]
         print(f"{comic['title']} has a Last-Modified")
     if new_headers:
-        collection.update_one({"title": comic["title"]}, {"$set": new_headers})
+        collection.update_one({"_id": comic["_id"]}, {"$set": new_headers})
         print(f"Set caching headers for {comic['title']}")
     else:
         print(f"No headers for {comic['title']}")
