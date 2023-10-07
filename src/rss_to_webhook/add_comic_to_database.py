@@ -1,8 +1,9 @@
+"""Adds comics to the database."""
+
 import json
 import os
 from http import HTTPStatus
 from pathlib import Path
-from typing import NotRequired, TypedDict
 
 import feedparser
 import mmh3
@@ -15,20 +16,13 @@ from requests.structures import CaseInsensitiveDict
 
 from rss_to_webhook.check_feeds_and_update import strip_extra_data
 from rss_to_webhook.constants import DEFAULT_GET_HEADERS, MAX_CACHED_ENTRIES
-from rss_to_webhook.db_types import CachingInfo, Comic
-
-
-class ComicData(TypedDict):
-    title: str
-    url: str
-    role_id: int
-    color: NotRequired[int]
-    username: str
-    avatar_url: str
+from rss_to_webhook.db_types import CachingInfo, Comic, DiscordComic
 
 
 def set_headers(
-    comic: ComicData, headers: CaseInsensitiveDict[str], collection: Collection[Comic]
+    comic: DiscordComic,
+    headers: CaseInsensitiveDict[str],
+    collection: Collection[Comic],
 ) -> None:
     new_headers = {}
     if "ETag" in headers:
@@ -45,7 +39,7 @@ def set_headers(
 
 
 def add_to_collection(
-    comic: ComicData, collection: Collection[Comic], hash_seed: int
+    comic: DiscordComic, collection: Collection[Comic], hash_seed: int
 ) -> UpdateResult:
     result = collection.update_one(
         {"title": comic["title"]}, {"$set": comic}, upsert=True
@@ -63,16 +57,18 @@ def add_to_collection(
     print(f"Added {comic['title']}")
 
     print(f"Setting up RSS feed state for {comic['title']}")
-    r = requests.get(comic["url"], headers=DEFAULT_GET_HEADERS, timeout=10)
+    r = requests.get(comic["feed_url"], headers=DEFAULT_GET_HEADERS, timeout=10)
     if r.status_code != HTTPStatus.OK:
-        print(f"{comic['title']}, {comic['url']}:  HTTP {r.status_code}: {r.reason}")
+        print(
+            f"{comic['title']}, {comic['feed_url']}:  HTTP {r.status_code}: {r.reason}"
+        )
         r.raise_for_status()
     feed_hash = mmh3.hash_bytes(r.text, hash_seed)
     feed = feedparser.parse(r.text)
 
     if not feed["entries"] or not feed["version"]:
         print(f"The rss feed for {comic['title']} is broken.")
-        print(comic["url"])
+        print(comic["feed_url"])
         return result
 
     # Definitely a valid RSS feed now, so we can update the db
@@ -108,7 +104,7 @@ if __name__ == "__main__":  # pragma: no cover
     MONGODB_URI = os.environ["MONGODB_URI"]
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)
     collection = client["test-database"]["comics"]
-    comic_list: list[ComicData] = json.loads(
+    comic_list: list[DiscordComic] = json.loads(
         Path("./src/rss_to_webhook/scripts/new_comics.json").read_text()
     )
     for comic in comic_list:
