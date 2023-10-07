@@ -12,7 +12,7 @@ def comic() -> Comic:
         role_id=1,
         dailies=[],
         title="Test Webcomic",
-        url="https://example.com/rss",
+        feed_url="https://example.com/rss",
         feed_hash=b"\xa9\x0c\x16\xe5\xe2\x8c6\xdd\x01}K\x85\x1fn\x8e\xd2",
         last_entries=[{"link": "https://example.com/page/1"}],
     )

@@ -20,7 +20,7 @@ def comic() -> Comic:
         role_id=1,
         dailies=[],
         title="Test Webcomic",
-        url="https://example.com/rss",
+        feed_url="https://example.com/rss",
         feed_hash=b"\xa9\x0c\x16\xe5\xe2\x8c6\xdd\x01}K\x85\x1fn\x8e\xd2",
         last_entries=[{"link": "https://example.com/page/0"}],
     )
@@ -50,7 +50,7 @@ def test_happy_path(comic: Comic) -> None:
                 {
                     "color": 0x5C64F4,
                     "title": "**Page 1!**",
-                    "feed_url": "https://example.com/page/1",
+                    "url": "https://example.com/page/1",
                     "description": "New Test Webcomic!",
                 },
             ],
@@ -76,7 +76,7 @@ def test_bad_url_scheme(comic: Comic) -> None:
             {
                 "color": 0x5C64F4,
                 "title": "**Page 1!**",
-                "feed_url": "https://example.com/page/1",
+                "url": "https://example.com/page/1",
                 "description": "New Test Webcomic!",
             },
         ],
@@ -98,7 +98,7 @@ def test_no_title(comic: Comic) -> None:
             {
                 "color": 0x5C64F4,
                 "title": "**Test Webcomic**",
-                "feed_url": "https://example.com/page/1",
+                "url": "https://example.com/page/1",
                 "description": "New Test Webcomic!",
             },
         ],
@@ -114,7 +114,7 @@ def test_no_title(comic: Comic) -> None:
         (
             {
                 "title": "Comic1",
-                "feed_url": "https://example.com/comic1",
+                "url": "https://example.com/comic1",
                 "username": "Author1",
                 "avatar_url": "https://example.com/icon",
             },
@@ -129,7 +129,7 @@ def test_no_title(comic: Comic) -> None:
                     {
                         "color": 0x5C64F4,
                         "title": "**Entry 1**",
-                        "feed_url": "https://example.com/entry1",
+                        "url": "https://example.com/entry1",
                         "description": "New Comic1!",
                     },
                 ],
@@ -141,7 +141,7 @@ def test_no_title(comic: Comic) -> None:
         (
             {
                 "title": "Comic2",
-                "feed_url": "https://example.com/comic2",
+                "url": "https://example.com/comic2",
                 "role_id": 123,
                 "username": "Author2",
                 "avatar_url": "https://example.com/icon",
@@ -157,7 +157,7 @@ def test_no_title(comic: Comic) -> None:
                     {
                         "color": 0x5C64F4,
                         "title": "**Entry 2**",
-                        "feed_url": "https://example.com/entry2",
+                        "url": "https://example.com/entry2",
                         "description": "New Comic2!",
                     },
                 ],

@@ -78,7 +78,7 @@ class Comic(TypedDict):
         _id: The id of the record in the database.
 
         title: The name of the webcomic.
-        url: The URL of the comic's RSS feed.
+        feed_url: The URL of the comic's RSS feed.
 
         last_entries: The `constants.MAX_CACHED_ENTRIES` most-recently seen entries.
         color: The colour of the comic's Discord embed, as an integer.
@@ -109,7 +109,7 @@ class Comic(TypedDict):
 
     _id: ObjectId
     title: str
-    url: str  # Must be a valid URL
+    feed_url: str  # Must be a valid URL
 
     color: NotRequired[int]  # Must be between 0 and 0xFFFFF
     username: NotRequired[str]

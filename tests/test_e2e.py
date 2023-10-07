@@ -226,7 +226,7 @@ def test_one_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> N
                 "color": 11240119,
                 "description": "New Sleepless Domain!",
                 "title": "**Sleepless Domain - Chapter 22 - Page 2**",
-                "feed_url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+                "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
             }
         ],
         "username": "KiwiFlea",
@@ -247,11 +247,11 @@ def test_two_updates(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert (
-        json.loads(webhook.calls[0].request.body)["embeds"][0]["feed_url"]
+        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
     )
     assert (
-        json.loads(webhook.calls[0].request.body)["embeds"][1]["feed_url"]
+        json.loads(webhook.calls[0].request.body)["embeds"][1]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
 
@@ -286,14 +286,12 @@ def test_all_new_updates(
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert (
-        embeds[0]["feed_url"]
-        == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
+        embeds[0]["url"] == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
     )
     # Check that all 20 items in the RSS feed were posted
     assert len(embeds) == 20  # noqa: PLR2004
     assert (
-        embeds[-1]["feed_url"]
-        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+        embeds[-1]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
 
 
@@ -424,21 +422,21 @@ def test_daily_two_updates(
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     regular_embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert (
-        regular_embeds[0]["feed_url"]
+        regular_embeds[0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
     )
     assert (
-        regular_embeds[1]["feed_url"]
+        regular_embeds[1]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
     daily_checks(comics, WEBHOOK_URL)
     daily_embeds = json.loads(webhook.calls[1].request.body)["embeds"]
     assert (
-        daily_embeds[0]["feed_url"]
+        daily_embeds[0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
     )
     assert (
-        daily_embeds[1]["feed_url"]
+        daily_embeds[1]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
 
@@ -456,7 +454,7 @@ def test_daily_idempotent(
     comics.insert_one(comic)
     daily_checks(comics, WEBHOOK_URL)
     assert (
-        json.loads(webhook.calls[0].request.body)["embeds"][0]["feed_url"]
+        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
     assert len(webhook.calls) == 1

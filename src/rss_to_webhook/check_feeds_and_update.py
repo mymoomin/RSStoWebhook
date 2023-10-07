@@ -86,7 +86,7 @@ def main(
             )
             print(
                 f"{comic['title']}, {body['embeds'][0]['title']},"
-                f" {body['embeds'][0]['feed_url']}: {response.status_code}:"
+                f" {body['embeds'][0]['url']}: {response.status_code}:"
                 f" {response.reason}"
             )
             rate_limiter.limit_rate(webhook_url, response)
@@ -249,7 +249,7 @@ def _make_body(comic: Comic, entries: list[Entry]) -> Message:
             {
                 "color": comic.get("color", 0x5C64F4),
                 "title": f"**{entry.get('title', comic['title'])}**",
-                "feed_url": link,
+                "url": link,
                 "description": f"New {comic['title']}!",
             }
         )
