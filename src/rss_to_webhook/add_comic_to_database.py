@@ -42,6 +42,7 @@ def set_headers(
 def add_to_collection(
     comic: DiscordComic, collection: Collection[Comic], hash_seed: int
 ) -> UpdateResult:
+    """Adds a comic to the given collection, setting RSS info as well."""
     result = collection.update_one(
         {"title": comic["title"]}, {"$set": comic}, upsert=True
     )
