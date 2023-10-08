@@ -491,15 +491,6 @@ def test_pauses_at_hidden_rate_limit(
 
     Regression test for [99880a0](https://github.com/mymoomin/RSStoWebhook/commit/99880a040f5a3f365951836298555c06ea65a034).
     """
-    # webhook.post(
-    #     WEBHOOK_URL,
-    #     status=200,
-    #     headers={
-    #         "x-ratelimit-limit": "5",
-    #         "x-ratelimit-remaining": "4",
-    #         "x-ratelimit-reset-after": "0.399",
-    #     },
-    # )
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
