@@ -15,6 +15,7 @@ from requests import HTTPError
 from responses import RequestsMock, matchers
 from yarl import URL
 
+from rss_to_webhook import constants
 from rss_to_webhook.check_feeds_and_update import RateLimiter, daily_checks, main
 from rss_to_webhook.db_types import Comic
 
@@ -436,7 +437,6 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     print(list(rss.requests.keys()))
     req = rss.requests[("GET", URL("https://xkcd.com/atom.xml"))][-1]
-    print(req, dir(req))
     h = req.kwargs["headers"]
     assert h == h | {
         "If-None-Match": '"f56-6062f676a7367-gzip"',
@@ -879,6 +879,23 @@ def test_no_crash_on_missing_headers(comic: Comic, rss: aioresponses) -> None:
     comics.insert_one(comic)
     responses.post(WEBHOOK_URL, status=200, headers={})
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_user_agent(comic: Comic, rss: aioresponses) -> None:
+    """The user agent is set from `constants.CUSTOM_USER_AGENT`.
+
+    Regression test for [192de2b](https://github.com/mymoomin/RSStoWebhook/commit/192de2b456810174aa09b6feac6a7b05f695a001)
+    and [c45d8b7](https://github.com/mymoomin/RSStoWebhook/commit/c45d8b7a8cdb3507f0a407f2e453e1ebde284e14)
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    request = rss.requests[("GET", URL(comic["feed_url"]))][0]
+    assert request
+    headers = request.kwargs["headers"]
+    assert headers["User-Agent"] == constants.CUSTOM_USER_AGENT
 
 
 example_feed = """
