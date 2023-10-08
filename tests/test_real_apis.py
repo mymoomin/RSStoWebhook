@@ -11,12 +11,13 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import PreparedRequest
 
-from rss_to_webhook.check_feeds_and_update import main
+from rss_to_webhook.check_feeds_and_update import RateLimiter, main
 
 if TYPE_CHECKING:
     from requests.structures import CaseInsensitiveDict
 
     from rss_to_webhook.db_types import Comic
+    from rss_to_webhook.discord_types import Message
 
 load_dotenv()
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
@@ -75,26 +76,22 @@ def test_fully() -> None:
     assert comics.find_one({"last_modified": {"$exists": True}})
 
 
-# ruff: noqa: ERA001 # TODO(me): Work out some way to make this test work again. Possibly just remove it.
-# @pytest.mark.slow()
-# def test_real_rate_limit() -> None:
-#     """
-#     Tests that when the script makes many posts at once, it respects the rate limits
+@pytest.mark.slow()
+def test_real_rate_limit() -> None:
+    """When the script makes many posts at once, it respects the rate limits.
 
-#     Regression test for [01fd62b](https://github.com/mymoomin/RSStoWebhook/commit/01fd62be50918775b68bedbb71c1f4b5ec148acf)
-#     """
-#     comic: Comic = {
-#         "_id": ObjectId("111111111111111111111111"),
-#         "role_id": 1,
-#         "dailies": [],
-#         "feed_hash": b"hello!",
-#         "title": "Test Webcomic",
-#         "feed_url": "https://example.com/",
-#         "last_entries": [],
-#     }
-#     entries: list[Entry] = [
-#         {"title": str(i), "link": f"https://example.com/{i}/"}
-#         for i in range(59)  # Sleeps once and stops just before sleep 2
-#     ]
-#     state = RateLimitState(1, time.time())
-#     post(WEBHOOK_URL, comic, entries, state)
+    Regression test for [01fd62b](https://github.com/mymoomin/RSStoWebhook/commit/01fd62be50918775b68bedbb71c1f4b5ec148acf)
+    """
+    rate_limiter = RateLimiter()
+    for i in range(60):
+        body: Message = {
+            "embeds": [
+                {
+                    "color": 0x5C64F4,
+                    "title": f"**Page {i}**",
+                    "url": "https://example.com/page/1",
+                    "description": "New Test Webcomic!",
+                },
+            ],
+        }
+        rate_limiter.post(WEBHOOK_URL, body)
