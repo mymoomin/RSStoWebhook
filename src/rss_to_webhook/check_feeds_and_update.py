@@ -113,7 +113,7 @@ async def _get_changed_feeds(
             _get_feed_changes(session, comic, hash_seed, comics, **kwargs)
             for comic in comic_list
         ]
-        feeds = await asyncio.gather(*tasks, return_exceptions=False)
+        feeds = await asyncio.gather(*tasks)
         print("All feeds checked")
         return filter(None, feeds)
 
