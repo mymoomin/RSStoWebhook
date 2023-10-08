@@ -96,7 +96,7 @@ select = [
 
     # Some extra flake-8 plugins
     "ANN",          # flake8-annotations # checks everything has type annotations
-    # "D",          # pydocstyle # a million errors because I don't have any docstrings
+    "D",            # pydocstyle # a million errors because I don't have any docstrings
     "A",            # flake8-builtins # caught shadowing `hash()` with a variable called `hash`
     "DTZ",          # flake8-datetimez # found that I was using datetime in the first place (mistake)
     "PYI",          # flake8-pyi
@@ -118,3 +118,6 @@ ignore = [
 ]
 per-file-ignores = {"tests/*" = ["S101", "ARG001", "FBT001", "D1"]}
 src = ["src"]
+
+[tool.ruff.pydocstyle]
+convention = "google"
