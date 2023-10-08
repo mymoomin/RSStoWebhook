@@ -21,7 +21,7 @@ from rss_to_webhook.db_types import Comic
 load_dotenv()
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
-THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
+THREAD_WEBHOOK_URL = "https://discord.com/api/webhooks/webhook_id/webhook_token"
 
 
 @pytest.fixture()
@@ -363,13 +363,50 @@ def test_handles_errors(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
 
 @responses.activate()
 @pytest.mark.usefixtures("_no_sleep")
-def test_thread_comic(comic: Comic, rss: aioresponses) -> None:
+def test_thread_comic_new_entry(comic: Comic, rss: aioresponses) -> None:
     """Comics with a thread_id are posted in the appropriate thread."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comic["last_entries"].pop()  # One new entry
     comic["thread_id"] = 932666606000164965
-    # Normal
+    normal_webhook = responses.post(
+        WEBHOOK_URL,
+        status=204,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "4",
+            "x-ratelimit-reset-after": "0.399",
+        },
+    )
+    thread_webhook = responses.post(
+        THREAD_WEBHOOK_URL,
+        status=204,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "4",
+            "x-ratelimit-reset-after": "0.399",
+        },
+        match=[
+            matchers.query_param_matcher(
+                {"thread_id": 932666606000164965},
+                strict_match=False,
+            )
+        ],
+    )
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert normal_webhook.call_count == 1
+    assert thread_webhook.call_count == 1
+
+
+@responses.activate()
+@pytest.mark.usefixtures("_no_sleep")
+def test_thread_comic_body(comic: Comic, rss: aioresponses) -> None:
+    """Comics with a thread_id have the correct body. In particular, no content."""
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One new entry
+    comic["thread_id"] = 932666606000164965
     responses.post(
         WEBHOOK_URL,
         status=204,
@@ -379,7 +416,6 @@ def test_thread_comic(comic: Comic, rss: aioresponses) -> None:
             "x-ratelimit-reset-after": "0.399",
         },
     )
-    # Thread
     responses.post(
         THREAD_WEBHOOK_URL,
         status=204,
@@ -397,6 +433,19 @@ def test_thread_comic(comic: Comic, rss: aioresponses) -> None:
     )
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    # The second `post` was to the thread
+    assert json.loads(responses.calls[1].request.body) == {
+        "avatar_url": "https://i.imgur.com/XYbqy7f.png",
+        "embeds": [
+            {
+                "color": 11240119,
+                "description": "New Sleepless Domain!",
+                "title": "**Sleepless Domain - Chapter 22 - Page 2**",
+                "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+            }
+        ],
+        "username": "KiwiFlea",
+    }
 
 
 def test_daily_two_updates(
