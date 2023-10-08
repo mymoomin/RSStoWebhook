@@ -320,6 +320,10 @@ class RateLimiter:
             if window_start is None:
                 rate_limit_state.window_start = time.time()
 
+        # Setting `stream=True` fixed a heisenbug that would sometimes cause
+        # "connection closed" errors in tests. It might be unnecessary, but on
+        # the other hand removing it might look fine for months until the error
+        # pops up again, so I'm leaving it for now.
         response = requests.post(url, json=body, timeout=10, stream=True)
         headers = response.headers
         remaining = headers.get("x-ratelimit-remaining")
