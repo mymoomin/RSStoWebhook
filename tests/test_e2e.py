@@ -641,8 +641,9 @@ def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     comics.insert_one(comic2)
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
+    num_comics = 2
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert len(webhook.calls) == 2
+    assert len(webhook.calls) == num_comics
     assert (
         json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
@@ -653,7 +654,7 @@ def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     )
     webhook.calls.reset()
     daily_checks(comics, WEBHOOK_URL)
-    assert len(webhook.calls) == 2
+    assert len(webhook.calls) == num_comics
     assert (
         json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
