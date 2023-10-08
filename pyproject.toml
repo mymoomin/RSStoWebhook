@@ -114,9 +114,16 @@ exclude = [
     "__init__.py"
 ]
 ignore = [
-    "PLW0120", "TRY300", "B008", "B905", "S101", "ANN101", "RET505"
+    "PLW0120", "RET505", # Forbid else after return in if/loop, which I often feel is more readable
+    "TRY300", # Forbids returning at the end of a try statement, but I think that looks better
+    "S101", # Forbids use of `assert`, necessary both for tests and certain type system featuress
+    "ANN101", # Forbids inferring type of `self`, which both mypy and pyright do automatically
 ]
-per-file-ignores = {"tests/*" = ["S101", "ARG001", "FBT001", "D1"]}
+per-file-ignores = {"tests/*" = [
+    "ARG001", # Forbids unused function arguments, which pytest can use as fixtures
+    "FBT001", # Forbids boolean positional arguments, which come up when using parameterised tests
+    "D1", # Forbids public functions without docstrings, but also thinks that tests are part of the public api for some reason
+]}
 src = ["src"]
 
 [tool.ruff.pydocstyle]
