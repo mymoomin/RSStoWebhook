@@ -207,7 +207,9 @@ def test_hash_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> N
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_one_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+def test_post_one_update(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
     """The script posts the correct information when one new update is found."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -230,25 +232,65 @@ def test_one_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> N
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_two_updates(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
-    """The script posts twice in the correct order when two new updates are found.
+def test_store_one_update(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
+    """When one new update is found, it is stored in the database."""
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One "new" entry
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    updated_comic = comics.find_one({"_id": comic["_id"]})
+    assert updated_comic
+    assert updated_comic["last_entries"][-1] == {
+        "title": "Sleepless Domain - Chapter 22 - Page 2",
+        "link": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+        "published": "Tue, 26 Sep 2023 01:39:48 -0400",
+        "id": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+    }
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_post_two_updates(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
+    """When two new updates are found, they are both posted, from oldest to newest.
 
     Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
     """
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
-    comic["last_entries"].pop()  # One "new" entry
-    comic["last_entries"].pop()  # Two "new" entries
+    num_new_entries = 2
+    # Remove the last two entries from the list
+    del comic["last_entries"][-num_new_entries:]
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert (
-        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
-        == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
-    )
-    assert (
-        json.loads(webhook.calls[0].request.body)["embeds"][1]["url"]
-        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
-    )
+    embeds = json.loads(webhook.calls[0].request.body)["embeds"]
+    assert embeds
+    assert len(embeds) == num_new_entries
+    assert embeds[0]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
+    assert embeds[1]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_store_two_updates(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
+    """When there are two new updates, they are stored in the database."""
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    num_new_entries = 2
+    # Remove the last two entries from the list
+    del comic["last_entries"][-num_new_entries:]
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    updated_comic = comics.find_one({"_id": comic["_id"]})
+    assert updated_comic
+    assert [entry["link"] for entry in updated_comic["last_entries"][-2:]] == [
+        "https://www.sleeplessdomain.com/comic/chapter-22-page-1",
+        "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+    ]
 
 
 @pytest.mark.usefixtures("_no_sleep")
@@ -265,7 +307,7 @@ def test_idempotency(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_all_new_updates(
+def test_post_all_new_updates(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
     """The script works when all updates are new and there are many of them.
@@ -286,6 +328,35 @@ def test_all_new_updates(
     assert len(embeds) == 20  # noqa: PLR2004
     assert (
         embeds[-1]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+    )
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_store_all_new_updates(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
+    """When there are many new updates, they are all stored in the database.
+
+    Regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    # No seen entries in feed
+    comic["last_entries"] = []
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    updated_comic = comics.find_one({"_id": comic["_id"]})
+    assert updated_comic
+    last_entries = updated_comic["last_entries"]
+    assert (
+        last_entries[0]["link"]
+        == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
+    )
+    # Check that all 20 items in the RSS feed were posted
+    assert len(last_entries) == 20  # noqa: PLR2004
+    assert (
+        last_entries[-1]["link"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
 
 
