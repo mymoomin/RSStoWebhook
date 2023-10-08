@@ -183,13 +183,42 @@ def test_mongo_mock(comic: Comic) -> None:
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+def test_post_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """The script doesn't post to the webhook when no new updates are found."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 0
+
+
+@pytest.mark.usefixtures("_no_sleep")
+def test_store_no_update(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
+    """Only caching information is updated when no new updates are found."""
+    rss.get(
+        "http://www.sleeplessdomain.com/comic/rss_with_headers",
+        status=200,
+        body=example_feed,
+        headers={
+            "ETag": '"f56-6062f676a7367-gzip"',
+            "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
+        },
+    )
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["feed_url"] = "http://www.sleeplessdomain.com/comic/rss_with_headers"
+    caching_info = {
+        "feed_hash": mmh3.hash_bytes(example_feed, HASH_SEED),
+        "etag": '"f56-6062f676a7367-gzip"',
+        "last_modified": "Wed, 27 Sep 2023 20:10:14 GMT",
+    }
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    updated_comic = comics.find_one({"_id": comic["_id"]})
+    assert updated_comic
+    assert comic | caching_info == updated_comic
 
 
 @pytest.mark.usefixtures("_no_sleep")
