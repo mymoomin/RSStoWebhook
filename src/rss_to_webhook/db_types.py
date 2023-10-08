@@ -73,6 +73,8 @@ class Comic(TypedDict):
     - `last_entries`, `feed_hash`, `etag`, and `last_modified` are caching
         information, used to quickly find new updates when checking the comic's
         RSS feed
+    - `error_count` and `errors` track the number and type of errors that have
+        happened when connecting to the comic's RSS feed
 
     Attributes:
         _id: The id of the record in the database.
@@ -105,6 +107,10 @@ class Comic(TypedDict):
             specific format, it sometimes isn't, and in any case we only use it
             as an opaque string, so it's treated as a string here.
 
+        error_count: The number of errors that have occured connecting to this RSS feed.
+            Missing if there have never been any.
+        errors: A list of the errors that have occured, from oldest to newest.
+            Missing if there have never been any.
     """
 
     _id: ObjectId
@@ -124,3 +130,6 @@ class Comic(TypedDict):
     feed_hash: bytes
     etag: NotRequired[str]
     last_modified: NotRequired[str]
+
+    error_count: NotRequired[int]
+    errors: NotRequired[list[str]]

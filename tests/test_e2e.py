@@ -345,7 +345,9 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_handles_errors(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+def test_handles_rss_errors(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
     """If one feed has a connection error, other feeds work as normal."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -359,6 +361,29 @@ def test_handles_errors(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     comics.insert_many([bad_comic, comic])
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1
+
+
+def test_updates_error_count(comic: Comic, rss: aioresponses) -> None:
+    """If there is an error connecting to an RSS feed, it is tracked."""
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    bad_comic = deepcopy(comic)
+    bad_comic["feed_url"] = "http://does.not.exist/nowhere"
+    bad_comic["_id"] = ObjectId("6129798080ead12f9ac5dbbc")
+    rss.get("http://does.not.exist/nowhere", status=404)
+    comics.insert_many([bad_comic, comic])
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    updated_good_comic = comics.find_one({"_id": comic["_id"]})
+    assert updated_good_comic
+    assert updated_good_comic.get("error_count") in {0, None}
+    updated_bad_comic = comics.find_one({"_id": bad_comic["_id"]})
+    assert updated_bad_comic
+    assert "error_count" in updated_bad_comic
+    assert updated_bad_comic["error_count"] == 1
+    errors = updated_bad_comic.get("errors")
+    assert errors
+    assert len(errors) == 1
+    assert "ClientResponseError: 404" in errors[0]
 
 
 @responses.activate()

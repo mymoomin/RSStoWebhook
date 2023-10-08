@@ -171,7 +171,13 @@ async def _get_feed_changes(
         return (comic, new_entries, caching_info)
     except Exception as e:
         print(f"{comic['title']}: Problem connecting. {type(e).__name__}: {e} ")
-        comics.update_one({"_id": comic["_id"]}, {"$inc": {"error_count": 1}})
+        comics.update_one(
+            {"_id": comic["_id"]},
+            {
+                "$inc": {"error_count": 1},
+                "$push": {"errors": f"{type(e).__name__}: {e}"},
+            },
+        )
         return None
 
 
