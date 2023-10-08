@@ -604,7 +604,8 @@ def test_pauses_at_hidden_rate_limit(
     end = time.time()
     main_duration = end - start
     assert len(measure_sleep) == 1
-    assert main_duration + measure_sleep[0] > RateLimiter.fuzzed_window
+    assert measure_sleep[0] <= RateLimiter.fuzzed_window
+    assert main_duration + measure_sleep[0] >= RateLimiter.fuzzed_window
     assert main_duration + measure_sleep[0] < RateLimiter.fuzzed_window + 1
 
 
