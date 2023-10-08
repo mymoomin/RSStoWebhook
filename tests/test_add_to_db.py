@@ -84,9 +84,6 @@ def collection_with_sd() -> Collection[Comic]:
 
 
 def test_add_valid_comic(rss: RequestsMock) -> None:
-    """Tests that when a comic with a valid RSS feed is added to the database,
-    it is inserted and the state of the rss feed is updated.
-    """
     client: MongoClient[Comic] = MongoClient()
     collection = client.db.collection
     comic_data: DiscordComic = {
@@ -136,9 +133,7 @@ def test_add_valid_comic(rss: RequestsMock) -> None:
 
 
 def test_no_changes(collection_with_sd: Collection[Comic], rss: RequestsMock) -> None:
-    """Tests that when a comic that is already in the database is inserted again,
-    with no change in any of the data, nothing is done.
-    """
+    """When a pre-existing comic is added, no changes are made."""
     comic_data: DiscordComic = {
         "title": "Sleepless Domain",
         "feed_url": "http://www.sleeplessdomain.com/comic/rss",
@@ -154,9 +149,7 @@ def test_no_changes(collection_with_sd: Collection[Comic], rss: RequestsMock) ->
 
 
 def test_update(collection_with_sd: Collection[Comic], rss: RequestsMock) -> None:
-    """Tests that when a comic that is already in the database is inserted again
-    with different key values, those are updated, and the RSS state is preserved.
-    """
+    """When a modified pre-existing comic is added, the comic is updated."""
     comic_data: DiscordComic = {
         "title": "Sleepless Domain",
         "feed_url": "https://test-site.com/rss",

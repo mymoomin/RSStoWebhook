@@ -38,9 +38,7 @@ def relay_request(
 @pytest.mark.slow()
 @responses.activate()
 def test_fully() -> None:
-    """Test asserts that when called in a production environment, everything
-    behaves as expected.
-    """
+    """When called in a production environment, everything behaves as expected."""
     responses.add_passthru(WEBHOOK_URL)
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)
     # Not the actual comics
@@ -83,7 +81,7 @@ def test_fully() -> None:
 #     """
 #     Tests that when the script makes many posts at once, it respects the rate limits
 
-#     This is a regression test for [01fd62b](https://github.com/mymoomin/RSStoWebhook/commit/01fd62be50918775b68bedbb71c1f4b5ec148acf)
+#     Regression test for [01fd62b](https://github.com/mymoomin/RSStoWebhook/commit/01fd62be50918775b68bedbb71c1f4b5ec148acf)
 #     """
 #     comic: Comic = {
 #         "_id": ObjectId("111111111111111111111111"),

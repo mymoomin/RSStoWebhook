@@ -11,10 +11,7 @@ if TYPE_CHECKING:
 
 
 def test_no_changes() -> None:
-    """This is just the normal usage.
-
-    Test asserts that `get_new_entries` functions when nothing has changed
-    since the last check
+    """When nothing has changed since the last check, nothing is returned.
 
     Partial regression test for [#1](https://github.com/mymoomin/RSStoWebhook/issues/1)
     """
@@ -25,9 +22,7 @@ def test_no_changes() -> None:
 
 
 def test_missing_entry() -> None:
-    """Test asserts that `get_new_entries` functions when it can't find the last
-    entry in the feed.
-    """
+    """When there is one entry and all entries are new, it is returned."""
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = []
     new_entries = _get_new_entries(last_seen, feed_entries)
@@ -35,7 +30,7 @@ def test_missing_entry() -> None:
 
 
 def test_new_update() -> None:
-    """Test asserts that when there is one new update, it is posted."""
+    """When there is one new update, it is posted."""
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
     feed_entries: list[Entry] = [
         {"link": "https://example.com/page/2"},
@@ -46,8 +41,7 @@ def test_new_update() -> None:
 
 
 def test_new_updates() -> None:
-    """Test asserts that when there are two new updates, they are returned in the
-    correct order (oldest to newest).
+    """When there are two new updates, they are returned from oldest to newest.
 
     Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
     """
@@ -65,8 +59,7 @@ def test_new_updates() -> None:
 
 
 def test_yanked_update() -> None:
-    """Test asserts that when the most recent update is pulled but the one before
-    has been seen already, nothing is done.
+    """`get_new_entries` can recognise older updates as having been seen before.
 
     Partial regression test for [#1](https://github.com/mymoomin/RSStoWebhook/issues/1)
     """
@@ -82,8 +75,7 @@ def test_yanked_update() -> None:
 
 
 def test_all_new_feed() -> None:
-    """Test asserts that when the last-seen entry isn't found in the feed, all
-    entries are returned in chronological order.
+    """When the last-seen entry isn't in the feed, the newest entries are returned.
 
     Regression test for [#3](https://github.com/mymoomin/RSStoWebhook/issues/3)
     """
@@ -100,10 +92,9 @@ def test_all_new_feed() -> None:
 
 
 def test_many_updates_found() -> None:
-    """Test asserts that when there are many new updates and the last-seen update
-    is still in the feed, all the new updates are returned in order.
+    """When there are many new updates, all the new updates are returned in order.
 
-    Partial regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
+    Regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
     """
     all_entries: list[Entry] = [
         {"link": f"https://example.com/page/{i}"} for i in range(1, 101)
@@ -114,38 +105,21 @@ def test_many_updates_found() -> None:
     assert new_entries == all_entries[1:]
 
 
-def test_many_updates_not_found() -> None:
-    """Test asserts that when there are many new updates and the last-seen update
-    is not in the feed, all the new updates are returned.
-
-    Partial regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
-    """
-    all_entries: list[Entry] = [
-        {"link": f"https://example.com/page/{i}"} for i in range(1, 51)
-    ]
-    last_seen: list[EntrySubset] = []
-    feed_entries: list[Entry] = list(reversed(all_entries))
-    new_entries = _get_new_entries(last_seen, feed_entries)
-    assert new_entries == all_entries
-
-
 def test_minor_url_change() -> None:
-    """Tests that when the URL for an entry changes in a semantically-equivalent
-    way, it is recognised as the same URL.
+    """When a URL changes in a minor way, it is treated as the same URL.
 
-    Regression test for [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2)
+    Regression test for [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2).
     """
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
-    feed_entries: list[Entry] = [{"link": "http://example.com/page/1/"}]
+    feed_entries: list[Entry] = [{"link": "http://example.com/page/1/?"}]
     new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == []
 
 
 def test_major_url_change() -> None:
-    """Tests that when the URL for an entry changes in a semantically-inequivalent
-    way, it is correctly not recognised as the same URL.
+    """When a URL changes to a close-but-different URL, it is seen as a different URL.
 
-    Regression test for [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2)
+    Regression test for [e22f170](https://github.com/mymoomin/RSStoWebhook/commit/e22f17071a57331d26e5b62ea7e5a3f1949660a9).
     """
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1?v=1"}]
     feed_entries: list[Entry] = [{"link": "https://example.com/page/1?v=2"}]
