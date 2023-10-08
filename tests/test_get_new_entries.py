@@ -125,3 +125,158 @@ def test_major_url_change() -> None:
     feed_entries: list[Entry] = [{"link": "https://example.com/page/1?v=2"}]
     new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == [{"link": "https://example.com/page/1?v=2"}]
+
+
+def test_new_by_id() -> None:
+    """When an entry differs only by id, it is still detected as new.
+
+    This allows us to track comics like [Freefall](https://crosstimecafe.com/Webcomics/Feeds/Freefall.xml),
+    where every entry has the same <link>.
+    """
+    last_seen: list[EntrySubset] = [
+        {"id": "page1", "link": "https://example.com/default"}
+    ]
+    feed_entries: list[Entry] = [
+        {"id": "page2", "link": "https://example.com/default"},
+        {"id": "page1", "link": "https://example.com/default"},
+    ]
+    new_entries = _get_new_entries(last_seen, feed_entries)
+    assert new_entries == [{"id": "page2", "link": "https://example.com/default"}]
+
+
+def test_same_by_id() -> None:
+    """When two entries have the same ID, they are treated as one entry.
+
+    This means that if the <link>s in an RSS feed are all changed but the IDS
+    aren't, then the script can avoid posting the whole RSS feed again.
+    """
+    last_seen: list[EntrySubset] = [
+        {"id": "page1", "link": "https://example.com/page/1"}
+    ]
+    feed_entries: list[Entry] = [
+        {"id": "page1", "link": "https://example.com/page/1?tracking=true"},
+    ]
+    new_entries = _get_new_entries(last_seen, feed_entries)
+    assert new_entries == []
+
+
+def test_new_by_date() -> None:
+    """When an entry differs only by pubdate, it is still detected as new.
+
+    I'm not 100% sure this is desired behaviour. If a change breaks this test, it
+    might be best to just remove the test.
+    """
+    last_seen: list[EntrySubset] = [
+        {
+            "published": "Wed, 04 Oct 2023 01:40:51 -0400",
+            "id": "https://example.com/page/1",
+            "link": "https://example.com/page/1",
+        }
+    ]
+    feed_entries: list[Entry] = [
+        {
+            "published": "Thu, 05 Oct 2023 01:40:51 -0400",
+            "id": "https://example.com/page/1",
+            "link": "https://example.com/page/1",
+        }
+    ]
+    new_entries = _get_new_entries(last_seen, feed_entries)
+    assert new_entries == [
+        {
+            "published": "Thu, 05 Oct 2023 01:40:51 -0400",
+            "id": "https://example.com/page/1",
+            "link": "https://example.com/page/1",
+        }
+    ]
+
+
+def test_same_by_date() -> None:
+    """When two entries have the same pubdate, they are treated as the same entry.
+
+    This allows us to handle cases where all a feed's URLs and IDs change to URLs that
+    are the same but potentially different, but the dates are unchanged.
+    """
+    last_seen: list[EntrySubset] = [
+        {
+            "published": "Wed, 04 Oct 2023 01:40:51 -0400",
+            "id": "https://example.com/page/1",
+            "link": "https://example.com/page/1",
+        }
+    ]
+    feed_entries: list[Entry] = [
+        {
+            "published": "Wed, 04 Oct 2023 01:40:51 -0400",
+            "id": "https://example.com?page=1",
+            "link": "https://example.com?page=1",
+        },
+    ]
+    new_entries = _get_new_entries(last_seen, feed_entries)
+    assert new_entries == []
+
+
+def test_suddenly_date_and_id() -> None:
+    """When a pubdate is added to an entry, it is still treated as the same entry.
+
+    When an RSS feed adds pubdates or IDs, it tends to add them to all entries
+    at once, including old entries. We want to make sure we don't repost the
+    ones we've already seen. We do, however, want to return any new entries.
+    """
+    last_seen: list[EntrySubset] = [
+        {
+            "link": "https://example.com/page/1",
+        }
+    ]
+    feed_entries: list[Entry] = [
+        {
+            "published": "Thu, 05 Oct 2023 01:40:51 -0400",
+            "id": "https://example.com/page/2",
+            "link": "https://example.com/page/2",
+        },
+        {
+            "published": "Wed, 04 Oct 2023 01:40:51 -0400",
+            "id": "https://example.com/page/1",
+            "link": "https://example.com/page/1",
+        },
+    ]
+    new_entries = _get_new_entries(last_seen, feed_entries)
+    assert new_entries == [
+        {
+            "published": "Thu, 05 Oct 2023 01:40:51 -0400",
+            "id": "https://example.com/page/2",
+            "link": "https://example.com/page/2",
+        }
+    ]
+
+
+def test_skip_bad_entries() -> None:
+    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
+    # This is an intentionally-wrong feed entry. It causes a type error here but
+    # because we don't check that every feed pulled from the internet has a link
+    # on all entries, this can still happen in the real world.
+    feed_entries: list[Entry] = [
+        {"link": "https://example.com/page/2"},
+        # the missing link
+        {"title": "Hello!"},  # type: ignore [reportGeneralTypeIssues, typeddict-item]
+        {"link": "https://example.com/page/1"},
+    ]
+    new_entries = _get_new_entries(last_seen, feed_entries)
+    assert new_entries == [{"link": "https://example.com/page/2"}]
+
+
+def test_new_entry_in_middle() -> None:
+    """When a new entry appears in the middle of an RSS feed, it is still found.
+
+    This allows us to check RSS feeds like The Property of Hate's or Freefall's, where
+    new entries appear in the middle or at the end of the feed.
+    """
+    last_entries: list[EntrySubset] = [
+        {"link": "https://examples.com/track1/1"},
+        {"link": "https://examples.com/track3/1"},
+    ]
+    feed_entries: list[Entry] = [
+        {"link": "https://examples.com/track3/1"},
+        {"link": "https://examples.com/track2/1"},
+        {"link": "https://examples.com/track1/1"},
+    ]
+    new_entries = _get_new_entries(last_entries, feed_entries)
+    assert new_entries == [{"link": "https://examples.com/track2/1"}]
