@@ -237,8 +237,7 @@ def _make_body(comic: Comic, entries: list[Entry]) -> Message:
         "username": comic.get("username"),
         "avatar_url": comic.get("avatar_url"),
     }
-    if role_id := comic.get("role_id"):
-        extras["content"] = f"<@&{role_id}>"
+    extras["content"] = f"<@&{comic['role_id']}>"
     embeds = []
     for entry in entries:
         if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
