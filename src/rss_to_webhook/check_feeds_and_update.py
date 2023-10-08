@@ -210,11 +210,11 @@ def _get_new_entries(
         # comparison, if not use id, if not use link
         match entry:
             case {"published": date}:
-                if date not in last_pubdates:
+                if date not in last_pubdates and last_pubdates != {None}:
                     print("new date", date)
                     new_entries.append(entry)
             case {"id": id}:
-                if id not in last_ids:
+                if id not in last_ids and last_ids != {None}:
                     print("new id", id)
                     new_entries.append(entry)
             case {"link": link}:
