@@ -110,8 +110,16 @@ def test_minor_url_change() -> None:
 
     Regression test for [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2).
     """
-    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
-    feed_entries: list[Entry] = [{"link": "http://example.com/page/1/?"}]
+    last_seen: list[EntrySubset] = [{"link": "http://example.com/page/1"}]
+    feed_entries: list[Entry] = [
+        {"link": "http://example.com/page/1"},  # Same
+        {"link": "https://example.com/page/1"},  # New scheme
+        {"link": "http://example.com/page/1/"},  # Trailing slash
+        {"link": "http://example.com/page/1?"},  # Trailing ?
+        {"link": "http://example.com/page/1/?"},  # Both
+        {"link": "http://exaple.com/page/1"},  # New netloc (might want this to fail)
+        {"link": "https://exaple.com/page/1/?"},  # All changes
+    ]
     new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == []
 
@@ -122,9 +130,17 @@ def test_major_url_change() -> None:
     Regression test for [e22f170](https://github.com/mymoomin/RSStoWebhook/commit/e22f17071a57331d26e5b62ea7e5a3f1949660a9).
     """
     last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1?v=1"}]
-    feed_entries: list[Entry] = [{"link": "https://example.com/page/1?v=2"}]
+    feed_entries: list[Entry] = [
+        {"link": "https://example.com/page/1?v=2"},  # Change in query parameter
+        {"link": "https://example.com/page/1"},  # Removal of query parameter
+        {"link": "https://example.com/pge/1?v=1"},  # Small change in path
+    ]
     new_entries = _get_new_entries(last_seen, feed_entries)
-    assert new_entries == [{"link": "https://example.com/page/1?v=2"}]
+    assert new_entries == [
+        {"link": "https://example.com/pge/1?v=1"},
+        {"link": "https://example.com/page/1"},
+        {"link": "https://example.com/page/1?v=2"},
+    ]
 
 
 def test_new_by_id() -> None:
