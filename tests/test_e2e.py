@@ -15,7 +15,7 @@ from requests import HTTPError
 from responses import RequestsMock, matchers
 from yarl import URL
 
-from rss_to_webhook.check_feeds_and_update import daily_checks, main
+from rss_to_webhook.check_feeds_and_update import RateLimiter, daily_checks, main
 from rss_to_webhook.db_types import Comic
 
 load_dotenv()
@@ -502,7 +502,10 @@ def test_pauses_at_rate_limit(
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
-    comics.insert_one(comic)
+    # We need to post twice in order to sleep
+    comic2 = deepcopy(comic)
+    comic2["_id"] = ObjectId("222222222222222222222222")
+    comics.insert_many([comic, comic2])
     responses.post(
         WEBHOOK_URL,
         status=200,
@@ -515,6 +518,55 @@ def test_pauses_at_rate_limit(
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(measure_sleep) == 1
     assert measure_sleep[0] == 1
+
+
+@responses.activate()
+def test_pauses_at_hidden_rate_limit(
+    comic: Comic, rss: aioresponses, measure_sleep: list[float]
+) -> None:
+    """The script avoids Discord's hidden webhook rate limit.
+
+    Discord has a hidden rate limit of 30 messages to a webhook every 60
+    seconds, as documented in [this tweet](https://twitter.com/lolpython/status/967621046277820416).
+
+    Regression test for [99880a0](https://github.com/mymoomin/RSStoWebhook/commit/99880a040f5a3f365951836298555c06ea65a034).
+    """
+    # webhook.post(
+    #     WEBHOOK_URL,
+    #     status=200,
+    #     headers={
+    #         "x-ratelimit-limit": "5",
+    #         "x-ratelimit-remaining": "4",
+    #         "x-ratelimit-reset-after": "0.399",
+    #     },
+    # )
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One "new" entry
+    # We need to post 30 times to hit the hidden ratelimit and sleep
+    duplicate_comics: list[Comic] = []
+    for i in range(31):
+        new_comic = deepcopy(comic)
+        new_comic["_id"] = ObjectId(f"{i:0>24}")  # `ObjectId`s are 24 characters
+        duplicate_comics.append(new_comic)
+    comics.insert_many(duplicate_comics)
+    responses.post(
+        WEBHOOK_URL,
+        status=200,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "1",
+            "x-ratelimit-reset-after": "1",
+        },
+    )
+    print(responses.registered())
+    start = time.time()
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    end = time.time()
+    main_duration = end - start
+    assert len(measure_sleep) == 1
+    assert main_duration + measure_sleep[0] > RateLimiter.window_length
+    assert main_duration + measure_sleep[0] < 1.5 * RateLimiter.window_length
 
 
 @responses.activate()

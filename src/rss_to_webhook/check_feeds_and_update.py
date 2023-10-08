@@ -17,6 +17,7 @@ import asyncio
 import os
 import sys
 import time
+from dataclasses import astuple, dataclass
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
@@ -81,23 +82,17 @@ def main(
         if entries:
             body = _make_body(comic, entries)
             print(body)
-            response = requests.post(
-                f"{webhook_url}?wait=true", json=body, timeout=10, stream=True
-            )
+            response = rate_limiter.post(f"{webhook_url}?wait=true", body)
             print(
                 f"{comic['title']}, {body['embeds'][0]['title']},"
                 f" {body['embeds'][0]['url']}: {response.status_code}:"
                 f" {response.reason}"
             )
-            rate_limiter.limit_rate(webhook_url, response)
             if thread_id := comic.get("thread_id"):
                 del body["content"]
-                response = requests.post(
-                    f"{thread_webhook_url}?wait=true&thread_id={thread_id}",
-                    json=body,
-                    timeout=10,
+                response = rate_limiter.post(
+                    f"{thread_webhook_url}?wait=true&thread_id={thread_id}", body
                 )
-                rate_limiter.limit_rate(thread_webhook_url, response)
         _update(comics, comic, entries, headers)
 
     time_taken = time.time() - start
@@ -257,6 +252,21 @@ def _make_body(comic: Comic, entries: list[Entry]) -> Message:
     # mypy can't understand this assignment, but it is valid
 
 
+@dataclass(slots=True)
+class RateLimitState:
+    """Stores state for rate limiting.
+
+    Attributes:
+        delay: The number of seconds to sleep for.
+        counter: How many requests have been made in the last rate-limiting window.
+        window_start: When the last window started. `None` if the last window has ended.
+    """
+
+    delay: float
+    counter: int
+    window_start: float | None
+
+
 class RateLimiter:
     """Limit rates to match Discord's API.
 
@@ -265,41 +275,46 @@ class RateLimiter:
     is documented in [this tweet](https://twitter.com/lolpython/status/967621046277820416).
 
     Attributes:
-        counter: Number of posts made in the current rate-limiting window.
-        window_start: Timestamp of the start of the current window
-        window_length: Length of the window, sourced from the tweet
+        window_length: Length of the window, sourced from the tweet.
         fuzz_factor: Additional safety margin.
             I know this margin is safe because I've tested it by posting 500
             messages to one webhook at this rate multiple times.
-        fuzzed_window: The window plus the safety factor
+        fuzzed_window: The window plus the safety factor.
         max_in_window: Maximum number of posts that can be made in each window.
             Sourced from the tweet again.
+        buckets: State for each rate-limiting bucket, indexed by webhook URL.
     """
 
     window_length: int = 60
     fuzz_factor: int = 1
     fuzzed_window: int = window_length + fuzz_factor
     max_in_window: int = 30
-    buckets: dict[str, tuple[int, float]]
+    buckets: dict[str, RateLimitState]
 
     def __init__(self) -> None:
-        """Sets up rate-limiting buckets."""
+        """Sets up rate-limiting buckets by url."""
         self.buckets = {}
 
-    def limit_rate(self, bucket: str, response: Response) -> None:
-        """Limits the rate on webhook posts per-webhook.
+    def post(self, url: str, body: Message) -> Response:
+        """Posts to a webhook while respecting rate limits.
 
         This method will both respect explicit "X-RateLimit" headers in the
         response, and Discord's hidden rate limits.
         """
-        if bucket not in self.buckets:
-            self.buckets[bucket] = (1, time.time())
-        counter, window_start = self.buckets[bucket]
-        if counter == 0:
-            window_time = time.time() - window_start
-            print(f"Sleeping {self.fuzzed_window - window_time:.3} seconds")
-            time.sleep(self.fuzzed_window - window_time)
-            window_start = time.time()
+        if url not in self.buckets:
+            self.buckets[url] = RateLimitState(
+                delay=0, counter=1, window_start=time.time()
+            )
+        rate_limit_state = self.buckets[url]
+        delay, counter, window_start = astuple(rate_limit_state)
+        if delay != 0:
+            print(f"Sleeping {delay} seconds")
+            time.sleep(delay)
+            rate_limit_state.delay = 0
+            if window_start is None:
+                rate_limit_state.window_start = time.time()
+
+        response = requests.post(url, json=body, timeout=10, stream=True)
         headers = response.headers
         remaining = headers.get("x-ratelimit-remaining")
         reset_after = headers.get("x-ratelimit-reset-after")
@@ -313,9 +328,16 @@ class RateLimiter:
             response.raise_for_status()
         if remaining == "0" and reset_after is not None:
             print(f"Exhausted rate limit bucket. Retrying in {reset_after}")
-            time.sleep(float(reset_after))
-        counter = (counter + 1) % self.max_in_window
-        self.buckets[bucket] = (counter, window_start)
+            rate_limit_state.delay = float(reset_after)
+        rate_limit_state.counter = (counter + 1) % self.max_in_window
+        print(counter)
+        if counter == 0:
+            print("Made 30 posts")
+            window_time = time.time() - window_start
+            rate_limit_state.delay = self.fuzzed_window - window_time
+            rate_limit_state.window_start = None
+
+        return response
 
 
 def _update(
@@ -387,8 +409,7 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
         body = _make_body(comic, comic["dailies"])  # type: ignore [arg-type]
         # The type is fine because `entries`` is only read, so it's
         # covariant, and so list[EntrySubset] is a subtype of list[Entry]
-        response = requests.post(f"{webhook_url}?wait=true", json=body, timeout=10)
-        rate_limiter.limit_rate(webhook_url, response)
+        rate_limiter.post(f"{webhook_url}?wait=true", body)
         updates = len(comic["dailies"])
         word = "entry" if updates == 1 else "entries"
         print(f"{comic['title']} daily: Posted {len(comic['dailies'])} new {word}")
