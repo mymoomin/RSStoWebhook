@@ -85,6 +85,30 @@ def test_bad_url_scheme(comic: Comic) -> None:
     }
 
 
+def test_good_url_scheme(comic: Comic) -> None:
+    """`http://` and `https://` url schemes are left unchanged."""
+    entry1: Entry = {"link": "http://example.com/page/1", "title": "Page 1!"}
+    entry2: Entry = {"link": "https://example.com/page/1", "title": "Page 1!"}
+    body = _make_body(comic, [entry1, entry2])
+    assert filter_nones(body) == {
+        "embeds": [
+            {
+                "color": 0x5C64F4,
+                "title": "**Page 1!**",
+                "url": "http://example.com/page/1",
+                "description": "New Test Webcomic!",
+            },
+            {
+                "color": 0x5C64F4,
+                "title": "**Page 1!**",
+                "url": "https://example.com/page/1",
+                "description": "New Test Webcomic!",
+            },
+        ],
+        "content": "<@&1>",
+    }
+
+
 def test_no_title(comic: Comic) -> None:
     """When the RSS feed entry has no <title>, the name of the comic is used.
 
