@@ -607,6 +607,63 @@ def test_daily_two_updates(
     )
 
 
+def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+    """Comics are checking in alphabetical order."""
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic2 = deepcopy(comic)
+    comic2["_id"] = ObjectId("222222222222222222222222")
+    comic2["title"] = "xkcd"
+    comic2["last_entries"] = []
+    comic2["feed_url"] = "https://xkcd.com/atom.xml"
+    rss.get(
+        "https://xkcd.com/atom.xml",
+        status=200,
+        headers={
+            "ETag": '"f56-6062f676a7367-gzip"',
+            "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
+        },
+        body="""
+        <feed xml:lang="en">
+            <title>xkcd.com</title>
+            <link href="https://xkcd.com/" rel="alternate"/>
+            <id>https://xkcd.com/</id>
+            <updated>2023-09-27T00:00:00Z</updated>
+            <entry>
+                <title>Book Podcasts</title>
+                <link href="https://xkcd.com/2834/" rel="alternate"/>
+                <updated>2023-09-27T00:00:00Z</updated>
+                <id>https://xkcd.com/2834/</id>
+            </entry>
+        </feed>
+        """,
+    )
+    comics.insert_one(comic2)
+    comic["last_entries"].pop()  # One "new" entry
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert len(webhook.calls) == 2
+    assert (
+        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+    )
+    assert (
+        json.loads(webhook.calls[1].request.body)["embeds"][0]["url"]
+        == "https://xkcd.com/2834/"
+    )
+    webhook.calls.reset()
+    daily_checks(comics, WEBHOOK_URL)
+    assert len(webhook.calls) == 2
+    assert (
+        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+    )
+    assert (
+        json.loads(webhook.calls[1].request.body)["embeds"][0]["url"]
+        == "https://xkcd.com/2834/"
+    )
+
+
 def test_daily_idempotent(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
