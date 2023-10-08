@@ -192,6 +192,7 @@ def _get_headers(comic: Comic) -> dict[str, str]:
 def _get_new_entries(
     last_entries: list[EntrySubset], current_entries: list[Entry]
 ) -> list[Entry]:
+    empty_set = set()
     last_urls = {entry["link"] for entry in last_entries}
     last_paths = {
         urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query for url in last_urls
@@ -209,19 +210,19 @@ def _get_new_entries(
         # The logic for this is that if an entry has a pubdate, use that for
         # comparison, if not use id, if not use link
         match entry:
-            case {"published": date}:
-                if date not in last_pubdates and last_pubdates != {None}:
+            case {"published": date} if last_pubdates not in (empty_set, {None}):
+                if date not in last_pubdates:
                     print("new date", date)
                     new_entries.append(entry)
-            case {"id": id}:
-                if id not in last_ids and last_ids != {None}:
+            case {"id": id} if last_ids not in (empty_set, {None}):
+                if id not in last_ids:
                     print("new id", id)
                     new_entries.append(entry)
             case {"link": link}:
                 if (
                     urlsplit(link).path.rstrip("/") + "?" + urlsplit(link).query
                 ) not in last_paths:
-                    print("new link")
+                    print("new link", link)
                     new_entries.append(entry)
             case _:
                 print(f"malformed entry: {entry}")
