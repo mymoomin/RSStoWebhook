@@ -526,10 +526,12 @@ def test_daily_idempotent(
 
 
 @responses.activate()
-def test_pauses_at_rate_limit(
+def test_pauses_only_at_rate_limit(
     comic: Comic, rss: aioresponses, measure_sleep: list[float]
 ) -> None:
     """The script sleeps until the rate-limiting window is over when it is exhausted.
+
+    Also tests that the script doesn't sleep when the rate-limiting window has space.
 
     Regression test for [99880a0](https://github.com/mymoomin/RSStoWebhook/commit/99880a040f5a3f365951836298555c06ea65a034)
     """
@@ -539,13 +541,25 @@ def test_pauses_at_rate_limit(
     # We need to post twice in order to sleep
     comic2 = deepcopy(comic)
     comic2["_id"] = ObjectId("222222222222222222222222")
-    comics.insert_many([comic, comic2])
+    # The third time shouldn't sleep at all
+    comic3 = deepcopy(comic)
+    comic3["_id"] = ObjectId("333333333333333333333333")
+    comics.insert_many([comic, comic2, comic3])
     responses.post(
         WEBHOOK_URL,
         status=200,
         headers={
             "x-ratelimit-limit": "5",
             "x-ratelimit-remaining": "0",
+            "x-ratelimit-reset-after": "1",
+        },
+    )
+    responses.post(
+        WEBHOOK_URL,
+        status=200,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "1",
             "x-ratelimit-reset-after": "1",
         },
     )
