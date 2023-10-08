@@ -653,6 +653,26 @@ def test_pauses_at_hidden_rate_limit(
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
+    comic["feed_url"] = "http://www.sleeplessdomain.com/comic/short_rss"
+    short_feed = """
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <rss version="2.0"><channel><title>Sleepless Domain</title>
+    <link>https://www.sleeplessdomain.com/</link><description></description>
+    <item>
+        <title><![CDATA[Sleepless Domain - Chapter 22 - Page 2]]></title>
+        <link>https://www.sleeplessdomain.com/comic/chapter-22-page-2</link>
+        <pubDate>Tue, 26 Sep 2023 01:39:48 -0400</pubDate>
+        <guid>https://www.sleeplessdomain.com/comic/chapter-22-page-2</guid>
+    </item>
+    </channel>
+    </rss>
+    """
+    rss.get(
+        "http://www.sleeplessdomain.com/comic/short_rss",
+        status=200,
+        body=short_feed,
+        repeat=True,
+    )
     # We need to post 30 times to hit the hidden ratelimit, and one more time to sleep
     duplicate_comics: list[Comic] = []
     for i in range(31):
