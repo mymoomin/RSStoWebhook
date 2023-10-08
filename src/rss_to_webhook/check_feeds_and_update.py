@@ -192,7 +192,7 @@ def _get_headers(comic: Comic) -> dict[str, str]:
 def _get_new_entries(
     last_entries: list[EntrySubset], current_entries: list[Entry]
 ) -> list[Entry]:
-    empty_set = set()
+    empty_set: set[Any] = set()  # Any type so it can be compared to any set
     last_urls = {entry["link"] for entry in last_entries}
     last_paths = {
         urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query for url in last_urls
