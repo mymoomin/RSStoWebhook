@@ -336,6 +336,30 @@ def test_idempotency(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
     assert len(webhook.calls) == 1  # Still one post
 
 
+@pytest.mark.xfail(strict=True)
+@pytest.mark.usefixtures("_no_sleep")
+def test_suddenly_pubdates(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
+    """When an RSS feed adds <pubDate>s to all entries, old entries are not reposted.
+
+    There is a logic error where this currently appears to work until the check
+    one after a new entry is found and posted, at which point every old entry
+    is posted.
+    """
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"].pop()  # One "new" entry
+    comic["last_entries"] = [{"link": entry["link"]} for entry in comic["last_entries"]]
+    comics.insert_one(comic)
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert len(webhook.calls) == 1  # One post
+    assert len(json.loads(webhook.calls[0].request.body)["embeds"]) == 1
+    comics.update_one({"_id": comic["_id"]}, {"$set": {"feed_hash": b"hi!"}})
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert len(webhook.calls) == 1  # Still one post
+
+
 @pytest.mark.usefixtures("_no_sleep")
 def test_post_all_new_updates(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
