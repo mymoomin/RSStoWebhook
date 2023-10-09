@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING
 
+from rss_to_webhook import constants
 from rss_to_webhook.check_feeds_and_update import _get_new_entries
 
 if TYPE_CHECKING:
@@ -294,3 +296,51 @@ def test_new_entry_in_middle() -> None:
     ]
     new_entries = _get_new_entries(last_entries, feed_entries)
     assert new_entries == [{"link": "https://examples.com/track2/1"}]
+
+
+def test_performance() -> None:
+    """The function takes a negligible amount of time (less than 0.01 seconds).
+
+    According to [Usability Engineering](https://www.nngroup.com/articles/response-times-3-important-limits/),
+    less than 0.1 seconds feels like instantaneous, so less than 0.01 seconds is
+    essentially no time at all.
+
+    Tests in multiple scenarios in the hopes that if slow cases exist this will
+    hit at least one of them.
+    """
+    num_entries = constants.MAX_CACHED_ENTRIES
+    negligible_time = 0.01  # Less than 0.1 seconds is perceived as instantaneous
+    entries: Sequence[Entry] = [
+        {
+            "published": f"Thu, 05 Oct 2{i:0>3} 01:40:51 -0400",
+            "id": f"https://examples.com/page/{i}",
+            "link": f"https://examples.com/page/{i}",
+        }
+        for i in range(num_entries + 1)
+    ]
+    last_entries: Sequence[EntrySubset] = entries[:-1]
+
+    feed_entries_all_values: Sequence[Entry] = entries[-100:]
+    start_all_values = time.time()
+    new_entries_all_values = _get_new_entries(last_entries, feed_entries_all_values)
+    end_all_values = time.time()
+    assert new_entries_all_values == [
+        {
+            "published": f"Thu, 05 Oct 2{num_entries:0>3} 01:40:51 -0400",
+            "id": f"https://examples.com/page/{num_entries}",
+            "link": f"https://examples.com/page/{num_entries}",
+        }
+    ]
+    print(end_all_values - start_all_values)
+    assert end_all_values - start_all_values < negligible_time
+
+    feed_entries_just_link: Sequence[Entry] = [
+        {"link": entry["link"]} for entry in feed_entries_all_values
+    ]
+    start_just_link = time.time()
+    new_entries_just_link = _get_new_entries(last_entries, feed_entries_just_link)
+    end_just_link = time.time()
+    assert new_entries_just_link == [
+        {"link": f"https://examples.com/page/{num_entries}"}
+    ]
+    assert end_just_link - start_just_link < negligible_time
