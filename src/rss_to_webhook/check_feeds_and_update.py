@@ -37,7 +37,7 @@ from rss_to_webhook.constants import (
 )
 
 if TYPE_CHECKING:  # pragma no cover
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
     from feedparser.util import Entry
     from pymongo.collection import Collection
@@ -191,7 +191,7 @@ def _get_headers(comic: Comic) -> dict[str, str]:
 
 
 def _get_new_entries(
-    last_entries: list[EntrySubset], current_entries: list[Entry]
+    last_entries: Sequence[EntrySubset], current_entries: Sequence[Entry]
 ) -> list[Entry]:
     empty_set: set[Any] = set()  # Any type so it can be compared to any set
     last_urls = {entry["link"] for entry in last_entries}

@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from rss_to_webhook.check_feeds_and_update import _get_new_entries
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from feedparser.util import Entry
 
     from rss_to_webhook.db_types import EntrySubset
@@ -15,24 +17,24 @@ def test_no_changes() -> None:
 
     Partial regression test for [#1](https://github.com/mymoomin/RSStoWebhook/issues/1)
     """
-    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
-    feed_entries: list[Entry] = [{"link": "https://example.com/page/1"}]
+    last_seen: Sequence[EntrySubset] = [{"link": "https://example.com/page/1"}]
+    feed_entries: Sequence[Entry] = [{"link": "https://example.com/page/1"}]
     new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == []
 
 
 def test_missing_entry() -> None:
     """When there is one entry and all entries are new, it is returned."""
-    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
-    feed_entries: list[Entry] = []
+    last_seen: Sequence[EntrySubset] = [{"link": "https://example.com/page/1"}]
+    feed_entries: Sequence[Entry] = []
     new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == []
 
 
 def test_new_update() -> None:
     """When there is one new update, it is posted."""
-    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
-    feed_entries: list[Entry] = [
+    last_seen: Sequence[EntrySubset] = [{"link": "https://example.com/page/1"}]
+    feed_entries: Sequence[Entry] = [
         {"link": "https://example.com/page/2"},
         {"link": "https://example.com/page/1"},
     ]
@@ -45,8 +47,8 @@ def test_new_updates() -> None:
 
     Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
     """
-    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
-    feed_entries: list[Entry] = [
+    last_seen: Sequence[EntrySubset] = [{"link": "https://example.com/page/1"}]
+    feed_entries: Sequence[Entry] = [
         {"link": "https://example.com/page/3"},
         {"link": "https://example.com/page/2"},
         {"link": "https://example.com/page/1"},
@@ -63,11 +65,11 @@ def test_yanked_update() -> None:
 
     Partial regression test for [#1](https://github.com/mymoomin/RSStoWebhook/issues/1)
     """
-    last_seen: list[EntrySubset] = [
+    last_seen: Sequence[EntrySubset] = [
         {"link": "https://example.com/page/1"},
         {"link": "https://example.com/page/2"},
     ]
-    feed_entries: list[Entry] = [
+    feed_entries: Sequence[Entry] = [
         {"link": "https://example.com/page/1"},
     ]
     new_entries = _get_new_entries(last_seen, feed_entries)
@@ -79,8 +81,8 @@ def test_all_new_feed() -> None:
 
     Regression test for [#3](https://github.com/mymoomin/RSStoWebhook/issues/3)
     """
-    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/11"}]
-    feed_entries: list[Entry] = [
+    last_seen: Sequence[EntrySubset] = [{"link": "https://example.com/page/11"}]
+    feed_entries: Sequence[Entry] = [
         {"link": "https://example.com/page/2"},
         {"link": "https://example.com/page/1"},
     ]
@@ -96,11 +98,11 @@ def test_many_updates_found() -> None:
 
     Regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
     """
-    all_entries: list[Entry] = [
+    all_entries: Sequence[Entry] = [
         {"link": f"https://example.com/page/{i}"} for i in range(1, 101)
     ]
-    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
-    feed_entries: list[Entry] = list(reversed(all_entries))
+    last_seen: Sequence[EntrySubset] = [{"link": "https://example.com/page/1"}]
+    feed_entries: Sequence[Entry] = list(reversed(all_entries))
     new_entries = _get_new_entries(last_seen, feed_entries)
     assert new_entries == all_entries[1:]
 
@@ -110,8 +112,8 @@ def test_minor_url_change() -> None:
 
     Regression test for [d2e8203](https://github.com/mymoomin/RSStoWebhook/commit/d2e82035639559aa25ec4ccfb79e8bf551e0d5d2).
     """
-    last_seen: list[EntrySubset] = [{"link": "http://example.com/page/1"}]
-    feed_entries: list[Entry] = [
+    last_seen: Sequence[EntrySubset] = [{"link": "http://example.com/page/1"}]
+    feed_entries: Sequence[Entry] = [
         {"link": "http://example.com/page/1"},  # Same
         {"link": "https://example.com/page/1"},  # New scheme
         {"link": "http://example.com/page/1/"},  # Trailing slash
@@ -129,8 +131,8 @@ def test_major_url_change() -> None:
 
     Regression test for [e22f170](https://github.com/mymoomin/RSStoWebhook/commit/e22f17071a57331d26e5b62ea7e5a3f1949660a9).
     """
-    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1?v=1"}]
-    feed_entries: list[Entry] = [
+    last_seen: Sequence[EntrySubset] = [{"link": "https://example.com/page/1?v=1"}]
+    feed_entries: Sequence[Entry] = [
         {"link": "https://example.com/page/1?v=2"},  # Change in query parameter
         {"link": "https://example.com/page/1"},  # Removal of query parameter
         {"link": "https://example.com/pge/1?v=1"},  # Small change in path
@@ -149,10 +151,10 @@ def test_new_by_id() -> None:
     This allows us to track comics like [Freefall](https://crosstimecafe.com/Webcomics/Feeds/Freefall.xml),
     where every entry has the same <link>.
     """
-    last_seen: list[EntrySubset] = [
+    last_seen: Sequence[EntrySubset] = [
         {"id": "page1", "link": "https://example.com/default"}
     ]
-    feed_entries: list[Entry] = [
+    feed_entries: Sequence[Entry] = [
         {"id": "page2", "link": "https://example.com/default"},
         {"id": "page1", "link": "https://example.com/default"},
     ]
@@ -166,10 +168,10 @@ def test_same_by_id() -> None:
     This means that if the <link>s in an RSS feed are all changed but the IDS
     aren't, then the script can avoid posting the whole RSS feed again.
     """
-    last_seen: list[EntrySubset] = [
+    last_seen: Sequence[EntrySubset] = [
         {"id": "page1", "link": "https://example.com/page/1"}
     ]
-    feed_entries: list[Entry] = [
+    feed_entries: Sequence[Entry] = [
         {"id": "page1", "link": "https://example.com/page/1?tracking=true"},
     ]
     new_entries = _get_new_entries(last_seen, feed_entries)
@@ -182,14 +184,14 @@ def test_new_by_date() -> None:
     I'm not 100% sure this is desired behaviour. If a change breaks this test, it
     might be best to just remove the test.
     """
-    last_seen: list[EntrySubset] = [
+    last_seen: Sequence[EntrySubset] = [
         {
             "published": "Wed, 04 Oct 2023 01:40:51 -0400",
             "id": "https://example.com/page/1",
             "link": "https://example.com/page/1",
         }
     ]
-    feed_entries: list[Entry] = [
+    feed_entries: Sequence[Entry] = [
         {
             "published": "Thu, 05 Oct 2023 01:40:51 -0400",
             "id": "https://example.com/page/1",
@@ -212,14 +214,14 @@ def test_same_by_date() -> None:
     This allows us to handle cases where all a feed's URLs and IDs change to URLs that
     are the same but potentially different, but the dates are unchanged.
     """
-    last_seen: list[EntrySubset] = [
+    last_seen: Sequence[EntrySubset] = [
         {
             "published": "Wed, 04 Oct 2023 01:40:51 -0400",
             "id": "https://example.com/page/1",
             "link": "https://example.com/page/1",
         }
     ]
-    feed_entries: list[Entry] = [
+    feed_entries: Sequence[Entry] = [
         {
             "published": "Wed, 04 Oct 2023 01:40:51 -0400",
             "id": "https://example.com?page=1",
@@ -237,12 +239,8 @@ def test_suddenly_date_and_id() -> None:
     at once, including old entries. We want to make sure we don't repost the
     ones we've already seen. We do, however, want to return any new entries.
     """
-    last_seen: list[EntrySubset] = [
-        {
-            "link": "https://example.com/page/1",
-        }
-    ]
-    feed_entries: list[Entry] = [
+    last_seen: Sequence[EntrySubset] = [{"link": "https://example.com/page/1"}]
+    feed_entries: Sequence[Entry] = [
         {
             "published": "Thu, 05 Oct 2023 01:40:51 -0400",
             "id": "https://example.com/page/2",
@@ -265,11 +263,11 @@ def test_suddenly_date_and_id() -> None:
 
 
 def test_skip_bad_entries() -> None:
-    last_seen: list[EntrySubset] = [{"link": "https://example.com/page/1"}]
+    last_seen: Sequence[EntrySubset] = [{"link": "https://example.com/page/1"}]
     # This is an intentionally-wrong feed entry. It causes a type error here but
     # because we don't check that every feed pulled from the internet has a link
     # on all entries, this can still happen in the real world.
-    feed_entries: list[Entry] = [
+    feed_entries: Sequence[Entry] = [
         {"link": "https://example.com/page/2"},
         # the missing link
         {"title": "Hello!"},  # type: ignore [reportGeneralTypeIssues, typeddict-item]
@@ -285,11 +283,11 @@ def test_new_entry_in_middle() -> None:
     This allows us to check RSS feeds like The Property of Hate's or Freefall's, where
     new entries appear in the middle or at the end of the feed.
     """
-    last_entries: list[EntrySubset] = [
+    last_entries: Sequence[EntrySubset] = [
         {"link": "https://examples.com/track1/1"},
         {"link": "https://examples.com/track3/1"},
     ]
-    feed_entries: list[Entry] = [
+    feed_entries: Sequence[Entry] = [
         {"link": "https://examples.com/track3/1"},
         {"link": "https://examples.com/track2/1"},
         {"link": "https://examples.com/track1/1"},
