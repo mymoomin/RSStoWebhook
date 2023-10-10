@@ -120,6 +120,7 @@ ignore = [
     "TRY300", # Forbids returning at the end of a try statement, but I think that looks better
     "S101", # Forbids use of `assert`, necessary both for tests and certain type system featuress
     "ANN101", # Forbids inferring type of `self`, which both mypy and pyright do automatically
+    "EM101", # Forbids putting short string literals in exception constructors, but this is normal.
 ]
 per-file-ignores = {"tests/*" = [
     "ARG001", # Forbids unused function arguments, which pytest can use as fixtures
