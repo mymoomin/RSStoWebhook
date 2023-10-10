@@ -68,7 +68,7 @@ source = ["rss-to-webhook"]
 omit = ["src/rss_to_webhook/scripts/*"]
 
 [tool.coverage.report]
-fail_under = 0.95
+fail_under = 95
 branch = true
 show_missing = true
 skip_covered = true
