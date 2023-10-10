@@ -12,7 +12,7 @@ from pymongo.results import UpdateResult
 from requests import HTTPError
 from responses import RequestsMock
 
-from rss_to_webhook.add_comic_to_database import add_to_collection
+from rss_to_webhook.db_operations import add_to_collection
 
 if TYPE_CHECKING:
     from collections.abc import Generator
