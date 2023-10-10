@@ -1,4 +1,4 @@
-"""Adds comics to the database."""
+"""Tools for modifiying the database."""
 
 import json
 import os
