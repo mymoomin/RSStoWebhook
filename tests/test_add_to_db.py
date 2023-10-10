@@ -8,6 +8,8 @@ import pytest
 from bson import Int64, ObjectId
 from dotenv import load_dotenv
 from mongomock import Collection, MongoClient
+from pymongo.results import UpdateResult
+from requests import HTTPError
 from responses import RequestsMock
 
 from rss_to_webhook.add_comic_to_database import add_to_collection
@@ -39,7 +41,9 @@ def comic() -> DiscordComic:
 def rss() -> Generator[RequestsMock, None, None]:
     with RequestsMock(assert_all_requests_are_fired=False) as responses:
         responses.get(
-            "http://www.sleeplessdomain.com/comic/rss", status=200, body=example_feed
+            "http://www.sleeplessdomain.com/comic/rss",
+            status=200,
+            body=example_feed,
         )
         yield responses
 
@@ -132,6 +136,66 @@ def test_add_valid_comic(rss: RequestsMock) -> None:
     }
 
 
+def test_sets_caching_headers(rss: RequestsMock) -> None:
+    client: MongoClient[Comic] = MongoClient()
+    collection = client.db.collection
+    comic_data: DiscordComic = {
+        "title": "Sleepless Domain",
+        "feed_url": "http://www.sleeplessdomain.com/comic/rss+caching",
+        "role_id": 581531863127031868,
+        "color": 11240119,
+        "username": "KiwiFlea",
+        "avatar_url": "https://i.imgur.com/XYbqy7f.png",
+    }
+    rss.get(
+        "http://www.sleeplessdomain.com/comic/rss+caching",
+        status=200,
+        body=example_feed,
+        headers={
+            "ETag": '"f56-6062f676a7367-gzip"',
+            "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
+        },
+    )
+    add_to_collection(comic_data, collection, HASH_SEED)
+    comic = collection.find_one({"title": comic_data["title"]})
+    assert comic
+    assert "_id" in comic
+    comic_less_id = dict(comic)
+    del comic_less_id["_id"]
+    assert comic_less_id == {
+        "title": "Sleepless Domain",
+        "feed_url": "http://www.sleeplessdomain.com/comic/rss+caching",
+        "role_id": Int64("581531863127031868"),
+        "color": 11240119,
+        "username": "KiwiFlea",
+        "avatar_url": "https://i.imgur.com/XYbqy7f.png",
+        "feed_hash": mmh3.hash_bytes(example_feed, HASH_SEED),
+        "etag": '"f56-6062f676a7367-gzip"',
+        "last_modified": "Wed, 27 Sep 2023 20:10:14 GMT",
+        "dailies": [],
+        "last_entries": [
+            {
+                "title": "Sleepless Domain - Chapter 21 - Interstitial",
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-33",
+                "published": "Mon, 11 Sep 2023 15:01:54 -0400",
+                "id": "https://www.sleeplessdomain.com/comic/chapter-21-page-33",
+            },
+            {
+                "title": "Sleepless Domain - Chapter 22 - Page 1",
+                "link": "https://www.sleeplessdomain.com/comic/chapter-22-page-1",
+                "published": "Tue, 19 Sep 2023 15:12:58 -0400",
+                "id": "https://www.sleeplessdomain.com/comic/chapter-22-page-1",
+            },
+            {
+                "title": "Sleepless Domain - Chapter 22 - Page 2",
+                "link": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+                "published": "Tue, 26 Sep 2023 01:39:48 -0400",
+                "id": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+            },
+        ],
+    }
+
+
 def test_no_changes(collection_with_sd: Collection[Comic], rss: RequestsMock) -> None:
     """When a pre-existing comic is added, no changes are made."""
     comic_data: DiscordComic = {
@@ -143,6 +207,7 @@ def test_no_changes(collection_with_sd: Collection[Comic], rss: RequestsMock) ->
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
     }
     update_result = add_to_collection(comic_data, collection_with_sd, HASH_SEED)
+    assert isinstance(update_result, UpdateResult)
     assert update_result.matched_count == 1
     assert update_result.modified_count == 0
     assert len(rss.calls) == 0
@@ -159,6 +224,7 @@ def test_update(collection_with_sd: Collection[Comic], rss: RequestsMock) -> Non
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
     }
     update_result = add_to_collection(comic_data, collection_with_sd, HASH_SEED)
+    assert isinstance(update_result, UpdateResult)
     assert update_result.matched_count == 1
     assert update_result.modified_count == 1
     assert len(rss.calls) == 0
@@ -166,6 +232,64 @@ def test_update(collection_with_sd: Collection[Comic], rss: RequestsMock) -> Non
     assert len(results) == 1
     assert results[0]["feed_url"] == "https://test-site.com/rss"
     assert "last_entries" in results[0]
+
+
+def test_invalid_rss(rss: RequestsMock) -> None:
+    comic_data: DiscordComic = {
+        "title": "Google",
+        "feed_url": "https://google.com",
+        "role_id": 581531863127031868,
+        "color": 11240119,
+        "username": "KiwiFlea",
+        "avatar_url": "https://i.imgur.com/XYbqy7f.png",
+    }
+    rss.get(
+        "https://google.com",
+        status=200,
+        body="""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"/><title>Google</title></head>
+        <body>
+            <h1>It's Google!</h1>
+        </body>
+        </html>
+        """,
+    )
+    client: MongoClient[Comic] = MongoClient()
+    collection = client.db.collection
+    add_to_collection(comic_data, collection, HASH_SEED)
+    comic = collection.find_one({"title": comic_data["title"]})
+    assert comic is None
+    print(comic)
+
+
+def test_http_error(rss: RequestsMock) -> None:
+    comic_data: DiscordComic = {
+        "title": "Sleepless Domain",
+        "feed_url": "https://sleeeeeeeepydomains.co/comic/rss",
+        "role_id": 581531863127031868,
+        "color": 11240119,
+        "username": "KiwiFlea",
+        "avatar_url": "https://i.imgur.com/XYbqy7f.png",
+    }
+    rss.get(
+        "https://sleeeeeeeepydomains.co/comic/rss",
+        status=404,
+        body="""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"/><title>Google</title></head>
+        <body>
+            <h1>You fucked up!</h1>
+        </body>
+        </html>
+        """,
+    )
+    client: MongoClient[Comic] = MongoClient()
+    collection = client.db.collection
+    with pytest.raises(HTTPError):
+        add_to_collection(comic_data, collection, HASH_SEED)
 
 
 example_feed = """
