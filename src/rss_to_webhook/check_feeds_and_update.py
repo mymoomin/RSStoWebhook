@@ -225,15 +225,17 @@ def _get_new_entries(
     capped_entries = list(reversed(current_entries[:100]))
     max_entries = len(capped_entries)
     last_paths = {_normalise(entry["link"]) for entry in last_entries}
+    last_pubdates = {entry.get("published") for entry in last_entries}
+    last_ids = {entry.get("id") for entry in last_entries}
 
     for entry in capped_entries:
         for old_entry in last_entries:
             if "published" in entry and "published" in old_entry:
-                if entry["published"] == old_entry["published"]:
+                if entry["published"] in last_pubdates:
                     break
                 continue
             if "id" in entry and "id" in old_entry:
-                if entry["id"] == old_entry["id"]:
+                if entry["id"] in last_ids:
                     break
                 continue
             if "link" in entry:
