@@ -58,12 +58,20 @@ build-backend = "setuptools.build_meta"
 addopts = [
     "--import-mode=importlib",
     "--cov=rss_to_webhook",
-    "--cov-branch",
-    "--cov-report=term-missing",
 ]
 testpaths = [
     "tests",
 ]
+
+[tool.coverage.run]
+source = ["rss-to-webhook"]
+omit = ["src/rss_to_webhook/scripts/*"]
+
+[tool.coverage.report]
+fail_under = 0.95
+branch = true
+show_missing = true
+skip_covered = true
 
 [tool.mypy]
 exclude = ["src/rss_to_webhook/scripts"]
