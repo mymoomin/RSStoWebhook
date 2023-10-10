@@ -406,5 +406,5 @@ def test_performance(
         new_entries = _get_new_entries(last_entries, feed_entries)
     duration = time.time() - start
     assert new_entries == expected_new_entries
-    print(f"{duration = }")
+    print(f"{duration = }")  # noqa: E251
     assert duration < max_time
