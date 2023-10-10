@@ -193,45 +193,69 @@ def _get_headers(comic: Comic) -> dict[str, str]:
 def _get_new_entries(
     last_entries: Sequence[EntrySubset], current_entries: Sequence[Entry]
 ) -> list[Entry]:
-    empty_set: set[Any] = set()  # Any type so it can be compared to any set
-    last_urls = {entry["link"] for entry in last_entries}
-    last_paths = {
-        urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query for url in last_urls
-    }
-    last_pubdates = {
-        entry["published"]  # pyright: ignore [reportTypedDictNotRequiredAccess]
-        for entry in last_entries
-        if entry.get("published") is not None  # We check that "publish" is a key here
-    }
-    last_ids = {entry.get("id") for entry in last_entries}
+    """Gets new entries from an RSS feed.
+
+    RSS provides several means of distinguishing between two feed entries.
+    The intended ones are the <id> and the <link>, with <id> taking precedence.
+    The <id> is intended as a permanent reference to an entry, to protect against
+    a site changing all of their URLs and appearing to have all new entries, which
+    happens fairly often.
+
+    However, RSS feeds often don't have <id>s, and when they do, they often change
+    their <id>s when the <link>s change, going against the intent of the <id> and
+    making it unreliable to use for identity.
+
+    On the upside, almost every RSS feed has a <pubDate> on each entry, which it
+    turns out can be used for identifying identical entries, and never changes
+    format in any case other than one from several years ago. We use this as our
+    highest-precedence identity check, giving a hierarchy of <pubDate>, <id>, <link>.
+
+    This function does a loop over the last 100 entries in the RSS feed, checking if
+    each has been seen before by looping over each of the last-seen entries and seeing
+    if any match, using the highest-precedence key that exists. This is somehow pretty
+    fast. Small n really does just mean you can do whatever.
+
+    The `if _normalise(entry["link"]) in last_paths` check is a performance optimisation
+    over the expected check, comparing against `_normalise(old_entry["link"])`. I think
+    that this is faster because checking for set membership is fairly fast, but
+    normalising the <link> is quite slow. It feels weird though, and if this ever
+    becomes an issue I'll rework this for a faster approach.
+    """
     new_entries: list[Entry] = []
     capped_entries = list(reversed(current_entries[:100]))
     max_entries = len(capped_entries)
+    last_paths = {_normalise(entry["link"]) for entry in last_entries}
+
     for entry in capped_entries:
-        # The logic for this is that if an entry has a pubdate, use that for
-        # comparison, if not use id, if not use link
-        match entry:
-            case {"published": date} if last_pubdates not in (empty_set, {None}):
-                if date not in last_pubdates:
-                    print("new date", date)
-                    new_entries.append(entry)
-            case {"id": id} if last_ids not in (empty_set, {None}):
-                if id not in last_ids:
-                    print("new id", id)
-                    new_entries.append(entry)
-            case {"link": link}:
-                if (
-                    urlsplit(link).path.rstrip("/") + "?" + urlsplit(link).query
-                ) not in last_paths:
-                    print("new link", link)
-                    new_entries.append(entry)
-            case _:
-                print(f"malformed entry: {entry}")
+        for old_entry in last_entries:
+            if "published" in entry and "published" in old_entry:
+                if entry["published"] == old_entry["published"]:
+                    break
+                continue
+            if "id" in entry and "id" in old_entry:
+                if entry["id"] == old_entry["id"]:
+                    break
+                continue
+            if "link" in entry:
+                if _normalise(entry["link"]) in last_paths:
+                    break
+                continue
+            # This can't be reached in normal execution, but real-world RSS feeds
+            # are malformatted sometimes, so this is a sanity check. In the future,
+            # this should probably be logged with log level warning.
+            print(f"entry missing link: {entry}")  # type: ignore [unreachable]
+            break
+        else:
+            new_entries.append(entry)
     if len(new_entries) == max_entries:
         print("No last entry. Returning up to 100 most recent entries")
     else:
         print("Found last entry")
     return new_entries
+
+
+def _normalise(url: str) -> str:
+    return urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
 
 
 def _make_body(comic: Comic, entries: list[Entry]) -> Message:

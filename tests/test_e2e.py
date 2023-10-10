@@ -336,7 +336,6 @@ def test_idempotency(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
     assert len(webhook.calls) == 1  # Still one post
 
 
-@pytest.mark.xfail(strict=True)
 @pytest.mark.usefixtures("_no_sleep")
 def test_suddenly_pubdates(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
