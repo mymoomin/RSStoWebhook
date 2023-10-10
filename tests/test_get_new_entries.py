@@ -323,7 +323,7 @@ def performance_generator() -> (
         }
     ]
 
-    last_entries_id: Sequence[Entry] = [
+    last_entries_id: Sequence[EntrySubset] = [
         {"id": entry["id"], "link": entry["link"]} for entry in last_entries_all
     ]
     feed_entries_id: Sequence[Entry] = [
@@ -333,7 +333,7 @@ def performance_generator() -> (
         {"id": entry["id"], "link": entry["link"]} for entry in new_entries_all
     ]
 
-    last_entries_link: Sequence[Entry] = [
+    last_entries_link: Sequence[EntrySubset] = [
         {"link": entry["link"]} for entry in last_entries_all
     ]
     feed_entries_link: Sequence[Entry] = [
@@ -344,13 +344,15 @@ def performance_generator() -> (
     ]
 
     half_entries = num_entries // 2
-    last_entries_halflink: Sequence[Entry] = (
-        last_entries_link[:half_entries] + last_entries_all[half_entries:]
-    )
+    last_entries_halflink: Sequence[EntrySubset] = [
+        *last_entries_link[:half_entries],
+        *last_entries_all[half_entries:],
+    ]
 
-    last_entries_onefull: Sequence[Entry] = (
-        last_entries_link[:-1] + last_entries_all[-1:]
-    )
+    last_entries_onefull: Sequence[EntrySubset] = [
+        *last_entries_link[:-1],
+        last_entries_all[-1],
+    ]
 
     return (
         [
