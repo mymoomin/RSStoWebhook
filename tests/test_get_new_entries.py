@@ -3,6 +3,8 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING
 
+import pytest
+
 from rss_to_webhook import constants
 from rss_to_webhook.check_feeds_and_update import _get_new_entries
 
@@ -298,18 +300,11 @@ def test_new_entry_in_middle() -> None:
     assert new_entries == [{"link": "https://examples.com/track2/1"}]
 
 
-def test_performance() -> None:
-    """The function takes a negligible amount of time (less than 0.01 seconds).
-
-    According to [Usability Engineering](https://www.nngroup.com/articles/response-times-3-important-limits/),
-    less than 0.1 seconds feels like instantaneous, so less than 0.01 seconds is
-    essentially no time at all.
-
-    Tests in multiple scenarios in the hopes that if slow cases exist this will
-    hit at least one of them.
-    """
+def performance_generator() -> (
+    tuple[list[Sequence[EntrySubset]], list[tuple[Sequence[Entry], Sequence[Entry]]]]
+):
+    """Generates test cases for `test_performance`."""
     num_entries = constants.MAX_CACHED_ENTRIES
-    negligible_time = 0.01  # Less than 0.1 seconds is perceived as instantaneous
     entries: Sequence[Entry] = [
         {
             "published": f"Thu, 05 Oct 2{i:0>3} 01:40:51 -0400",
@@ -318,29 +313,96 @@ def test_performance() -> None:
         }
         for i in range(num_entries + 1)
     ]
-    last_entries: Sequence[EntrySubset] = entries[:-1]
-
-    feed_entries_all_values: Sequence[Entry] = entries[-100:]
-    start_all_values = time.time()
-    new_entries_all_values = _get_new_entries(last_entries, feed_entries_all_values)
-    end_all_values = time.time()
-    assert new_entries_all_values == [
+    last_entries_all: Sequence[EntrySubset] = entries[:-1]
+    feed_entries_all: Sequence[Entry] = entries[-100:]
+    new_entries_all: Sequence[Entry] = [
         {
             "published": f"Thu, 05 Oct 2{num_entries:0>3} 01:40:51 -0400",
             "id": f"https://examples.com/page/{num_entries}",
             "link": f"https://examples.com/page/{num_entries}",
         }
     ]
-    print(end_all_values - start_all_values)
-    assert end_all_values - start_all_values < negligible_time
 
-    feed_entries_just_link: Sequence[Entry] = [
-        {"link": entry["link"]} for entry in feed_entries_all_values
+    last_entries_id: Sequence[Entry] = [
+        {"id": entry["id"], "link": entry["link"]} for entry in last_entries_all
     ]
-    start_just_link = time.time()
-    new_entries_just_link = _get_new_entries(last_entries, feed_entries_just_link)
-    end_just_link = time.time()
-    assert new_entries_just_link == [
-        {"link": f"https://examples.com/page/{num_entries}"}
+    feed_entries_id: Sequence[Entry] = [
+        {"id": entry["id"], "link": entry["link"]} for entry in feed_entries_all
     ]
-    assert end_just_link - start_just_link < negligible_time
+    new_entries_id: Sequence[Entry] = [
+        {"id": entry["id"], "link": entry["link"]} for entry in new_entries_all
+    ]
+
+    last_entries_link: Sequence[Entry] = [
+        {"link": entry["link"]} for entry in last_entries_all
+    ]
+    feed_entries_link: Sequence[Entry] = [
+        {"link": entry["link"]} for entry in feed_entries_all
+    ]
+    new_entries_link: Sequence[Entry] = [
+        {"link": entry["link"]} for entry in new_entries_all
+    ]
+
+    half_entries = num_entries // 2
+    last_entries_halflink: Sequence[Entry] = (
+        last_entries_link[:half_entries] + last_entries_all[half_entries:]
+    )
+
+    last_entries_onefull: Sequence[Entry] = (
+        last_entries_link[:-1] + last_entries_all[-1:]
+    )
+
+    return (
+        [
+            last_entries_all,
+            last_entries_id,
+            last_entries_link,
+            last_entries_halflink,
+            last_entries_onefull,
+        ],
+        [
+            (feed_entries_all, new_entries_all),
+            (feed_entries_id, new_entries_id),
+            (feed_entries_link, new_entries_link),
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    "last_entries",
+    performance_generator()[0],
+    ids=["all", "id", "link", "halflink", "onefull"],
+)
+@pytest.mark.parametrize(
+    ("feed_entries", "expected_new_entries"),
+    performance_generator()[1],
+    ids=["all", "id", "link"],
+)
+def test_performance(
+    last_entries: Sequence[EntrySubset],
+    feed_entries: Sequence[Entry],
+    expected_new_entries: Sequence[Entry],
+) -> None:
+    """The function takes a negligible amount of time (less than 0.01 seconds).
+
+    According to [Usability Engineering](https://www.nngroup.com/articles/response-times-3-important-limits/),
+    less than 0.1 seconds feels like instantaneous, so less than 0.01 seconds is
+    essentially no time at all.
+
+    Tests in multiple scenarios in the hopes that if slow cases exist this will
+    hit at least one of them.
+
+    Pytest displays the tests as `::test_performance[{feed_links_id}-{entry_links_id}]`
+    for some reason.
+    """
+    negligible_time = 0.01  # Less than 0.1 seconds is perceived as instantaneous
+    repeats = 10
+    max_time = repeats * negligible_time
+    new_entries = []
+    start = time.time()
+    for _i in range(repeats):
+        new_entries = _get_new_entries(last_entries, feed_entries)
+    duration = time.time() - start
+    assert new_entries == expected_new_entries
+    print(f"{duration = }")
+    assert duration < max_time
