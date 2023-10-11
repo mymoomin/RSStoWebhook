@@ -388,7 +388,7 @@ def test_performance(
     """The function takes a negligible amount of time (less than 0.01 seconds).
 
     According to [Usability Engineering](https://www.nngroup.com/articles/response-times-3-important-limits/),
-    less than 0.1 seconds feels like instantaneous, so less than 0.01 seconds is
+    less than 0.1 seconds feels instantaneous, so less than 0.01 seconds is
     essentially no time at all.
 
     Tests in multiple scenarios in the hopes that if slow cases exist this will
