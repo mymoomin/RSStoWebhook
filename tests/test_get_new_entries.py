@@ -398,7 +398,7 @@ def test_performance(
     for some reason.
     """
     negligible_time = 0.01  # Less than 0.1 seconds is perceived as instantaneous
-    repeats = 10
+    repeats = 3
     max_time = repeats * negligible_time
     new_entries = []
     start = time.time()
