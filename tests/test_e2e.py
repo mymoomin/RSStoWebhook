@@ -18,9 +18,9 @@ from yarl import URL
 from rss_to_webhook.db_types import Comic
 from rss_to_webhook.worker import RateLimitState, main
 
-load_dotenv()
+load_dotenv(".env.example")
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
-WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
+WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 
 
 @pytest.fixture()
