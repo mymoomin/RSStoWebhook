@@ -65,7 +65,7 @@ testpaths = [
 
 [tool.coverage.run]
 source = ["rss-to-webhook"]
-omit = ["src/rss_to_webhook/scripts/*"]
+omit = ["*/scripts/*"]
 
 [tool.coverage.report]
 fail_under = 95
