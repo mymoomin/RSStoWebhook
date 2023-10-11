@@ -19,10 +19,10 @@ from rss_to_webhook import constants
 from rss_to_webhook.check_feeds_and_update import RateLimiter, daily_checks, main
 from rss_to_webhook.db_types import Comic
 
-load_dotenv()
+load_dotenv(".env.example")
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
-WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
-THREAD_WEBHOOK_URL = "https://discord.com/api/webhooks/webhook_id/webhook_token"
+WEBHOOK_URL = os.environ["WEBHOOK_URL"]
+THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
 
 
 @pytest.fixture()

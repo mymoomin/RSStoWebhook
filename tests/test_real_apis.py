@@ -19,6 +19,9 @@ if TYPE_CHECKING:
     from rss_to_webhook.db_types import Comic
     from rss_to_webhook.discord_types import Message
 
+
+# This file tries to use the real environment variables, so it can't be
+# called in GitHub Actions.
 load_dotenv()
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]

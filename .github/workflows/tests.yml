@@ -12,11 +12,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ['3.11']
-    
-    env:
-      TEST_WEBHOOK_URL: ${{ secrets.TEST_WEBHOOK_URL }}
-      HASH_SEED: ${{ secrets.HASH_SEED }}
-      MONGODB_URI: ${{ secrets.MONGODB_URI }}
 
     steps:
     - uses: actions/checkout@v4

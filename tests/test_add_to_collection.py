@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from rss_to_webhook.db_types import Comic, DiscordComic
 
-load_dotenv()
+load_dotenv(".env.example")
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
