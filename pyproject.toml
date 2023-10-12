@@ -66,6 +66,7 @@ no_implicit_reexport = true
 
 [tool.ruff]
 line-length = 88
+preview = true
 select = [
     "E", "F", "W",  # default flake-8
     "I",            # isort
