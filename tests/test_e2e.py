@@ -480,7 +480,7 @@ def test_handles_rss_errors(
         comic,
         _id=ObjectId("6129798080ead12f9ac5dbbc"),
         feed_url="http://does.not.exist/nowhere",
-    )
+    )  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
     rss.get("http://does.not.exist/nowhere", status=404)
     comics.insert_many([bad_comic, comic])
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
@@ -495,7 +495,7 @@ def test_updates_error_count(comic: Comic, rss: aioresponses) -> None:
         comic,
         _id=ObjectId("6129798080ead12f9ac5dbbc"),
         feed_url="http://does.not.exist/nowhere",
-    )
+    )  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
     rss.get("http://does.not.exist/nowhere", status=404)
     comics.insert_many([bad_comic, comic])
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
@@ -644,7 +644,7 @@ def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
         title="xkcd",
         last_entries=[],
         feed_url="https://xkcd.com/atom.xml",
-    )
+    )  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
     rss.get(
         "https://xkcd.com/atom.xml",
         status=200,
@@ -726,9 +726,9 @@ def test_pauses_only_at_rate_limit(
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
     # We need to post twice in order to sleep
-    comic2 = Comic(comic, _id=ObjectId("222222222222222222222222"))
+    comic2 = Comic(comic, _id=ObjectId("222222222222222222222222"))  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
     # The third time shouldn't sleep at all
-    comic3 = Comic(comic, _id=ObjectId("333333333333333333333333"))
+    comic3 = Comic(comic, _id=ObjectId("333333333333333333333333"))  # type: ignore [misc]
     comics.insert_many([comic, comic2, comic3])
     responses.post(
         WEBHOOK_URL,
@@ -791,7 +791,7 @@ def test_pauses_at_hidden_rate_limit(
     duplicate_comics: list[Comic] = []
     for i in range(31):
         # `ObjectId`s are 24 characters
-        new_comic = Comic(comic, _id=ObjectId(f"{i:0>24}"))
+        new_comic = Comic(comic, _id=ObjectId(f"{i:0>24}"))  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
         duplicate_comics.append(new_comic)
     comics.insert_many(duplicate_comics)
     responses.post(
@@ -941,28 +941,28 @@ def test_performance(
             _id=ObjectId(f"a{i:0>23}"),  # `ObjectId`s are 24 characters
             last_entries=last_entries[:i],
             title=f"pop_new {i:0>2}",
-        )
+        )  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
         duplicate_comics.append(pop_new)
         pop_old = Comic(
             comic,
             _id=ObjectId(f"b{i:0>23}"),
             last_entries=last_entries[i + 1 :],
             title=f"pop_old {i:0>2}",
-        )
+        )  # type: ignore [misc]
         duplicate_comics.append(pop_old)
         pop_one = Comic(
             comic,
             _id=ObjectId(f"c{i:0>23}"),
             title=f"pop_one {i:0>2}",
             last_entries=last_entries[:i] + last_entries[i + 1 :],
-        )
+        )  # type: ignore [misc]
         duplicate_comics.append(pop_one)
         keep_one = Comic(
             comic,
             _id=ObjectId(f"d{i:0>23}"),
             last_entries=[last_entries[i]],
             title=f"keep_one {i:0>2}",
-        )
+        )  # type: ignore [misc]
         duplicate_comics.append(keep_one)
     comics.insert_many(duplicate_comics)
     webhook.post(
