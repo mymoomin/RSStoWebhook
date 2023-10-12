@@ -14,6 +14,7 @@ posts every update that has been marked for it to post, then clears that list.
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import sys
 import time
@@ -81,7 +82,7 @@ def main(
     for comic, entries, headers in comics_entries_headers:
         if entries:
             body = _make_body(comic, entries)
-            print(body)
+            print(f"{comic['title']}: new update {json.dumps(body)}")
             response = rate_limiter.post(f"{webhook_url}?wait=true", body)
             print(
                 f"{comic['title']}, {body['embeds'][0]['title']},"
@@ -129,7 +130,7 @@ async def _get_feed_changes(
     caching_headers = _get_headers(comic)
     print(
         f"{comic['title']}: Requesting"
-        f" {url}{f' with {caching_headers}' if caching_headers else ''}"
+        f" {url}{f' with {json.dumps(caching_headers)}' if caching_headers else ''}"
     )
     try:
         r = await session.request(
