@@ -20,7 +20,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers", "side_effects: mark test as using real APIs (has side effects)"
     )
-    config.addinivalue_line("markers", "slow_benchmark: mark benchmark as slow to run")
+    config.addinivalue_line("markers", "slow: mark test as slow to run")
 
 
 def pytest_collection_modifyitems(
