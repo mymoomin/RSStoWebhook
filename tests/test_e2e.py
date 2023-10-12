@@ -2,7 +2,6 @@ import json
 import os
 import time
 from collections.abc import Generator
-from copy import deepcopy
 
 import mmh3
 import pytest
@@ -477,11 +476,11 @@ def test_handles_rss_errors(
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comic["last_entries"].pop()  # One new entry
-    bad_comic = deepcopy(comic)
-    bad_comic["feed_url"] = "http://does.not.exist/nowhere"
-    bad_comic["_id"] = ObjectId(
-        "6129798080ead12f9ac5dbbc"
-    )  # So it doesn't conflict with the other comic
+    bad_comic = Comic(
+        comic,
+        _id=ObjectId("6129798080ead12f9ac5dbbc"),
+        feed_url="http://does.not.exist/nowhere",
+    )
     rss.get("http://does.not.exist/nowhere", status=404)
     comics.insert_many([bad_comic, comic])
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
@@ -492,9 +491,11 @@ def test_updates_error_count(comic: Comic, rss: aioresponses) -> None:
     """If there is an error connecting to an RSS feed, it is tracked."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
-    bad_comic = deepcopy(comic)
-    bad_comic["feed_url"] = "http://does.not.exist/nowhere"
-    bad_comic["_id"] = ObjectId("6129798080ead12f9ac5dbbc")
+    bad_comic = Comic(
+        comic,
+        _id=ObjectId("6129798080ead12f9ac5dbbc"),
+        feed_url="http://does.not.exist/nowhere",
+    )
     rss.get("http://does.not.exist/nowhere", status=404)
     comics.insert_many([bad_comic, comic])
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
@@ -637,11 +638,13 @@ def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     """Comics are checking in alphabetical order."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
-    comic2 = deepcopy(comic)
-    comic2["_id"] = ObjectId("222222222222222222222222")
-    comic2["title"] = "xkcd"
-    comic2["last_entries"] = []
-    comic2["feed_url"] = "https://xkcd.com/atom.xml"
+    comic2 = Comic(
+        comic,
+        _id=ObjectId("222222222222222222222222"),
+        title="xkcd",
+        last_entries=[],
+        feed_url="https://xkcd.com/atom.xml",
+    )
     rss.get(
         "https://xkcd.com/atom.xml",
         status=200,
@@ -723,11 +726,9 @@ def test_pauses_only_at_rate_limit(
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
     # We need to post twice in order to sleep
-    comic2 = deepcopy(comic)
-    comic2["_id"] = ObjectId("222222222222222222222222")
+    comic2 = Comic(comic, _id=ObjectId("222222222222222222222222"))
     # The third time shouldn't sleep at all
-    comic3 = deepcopy(comic)
-    comic3["_id"] = ObjectId("333333333333333333333333")
+    comic3 = Comic(comic, _id=ObjectId("333333333333333333333333"))
     comics.insert_many([comic, comic2, comic3])
     responses.post(
         WEBHOOK_URL,
@@ -789,8 +790,8 @@ def test_pauses_at_hidden_rate_limit(
     # We need to post 30 times to hit the hidden ratelimit, and one more time to sleep
     duplicate_comics: list[Comic] = []
     for i in range(31):
-        new_comic = deepcopy(comic)
-        new_comic["_id"] = ObjectId(f"{i:0>24}")  # `ObjectId`s are 24 characters
+        # `ObjectId`s are 24 characters
+        new_comic = Comic(comic, _id=ObjectId(f"{i:0>24}"))
         duplicate_comics.append(new_comic)
     comics.insert_many(duplicate_comics)
     responses.post(
@@ -935,21 +936,33 @@ def test_performance(
     num_entries = len(last_entries)  # Currently 20
     duplicate_comics: list[Comic] = []
     for i in range(num_entries):
-        pop_new = deepcopy(comic)
-        pop_new["_id"] = ObjectId(f"a{i:0>23}")  # `ObjectId`s are 24 characters
-        pop_new["last_entries"] = pop_new["last_entries"][:i]
+        pop_new = Comic(
+            comic,
+            _id=ObjectId(f"a{i:0>23}"),  # `ObjectId`s are 24 characters
+            last_entries=last_entries[:i],
+            title=f"pop_new {i}",
+        )
         duplicate_comics.append(pop_new)
-        pop_old = deepcopy(comic)
-        pop_old["_id"] = ObjectId(f"b{i:0>23}")  # `ObjectId`s are 24 characters
-        pop_old["last_entries"] = pop_old["last_entries"][i:]
+        pop_old = Comic(
+            comic,
+            _id=ObjectId(f"b{i:0>23}"),
+            last_entries=last_entries[i:],
+            title=f"pop_old {i}",
+        )
         duplicate_comics.append(pop_old)
-        pop_one = deepcopy(comic)
-        pop_one["_id"] = ObjectId(f"c{i:0>23}")  # `ObjectId`s are 24 characters
-        pop_one["last_entries"].pop(i)
+        pop_one = Comic(
+            comic,
+            _id=ObjectId(f"c{i:0>23}"),
+            title=f"pop_one {i}",
+            last_entries=last_entries[:i] + last_entries[i + 1 :],
+        )
         duplicate_comics.append(pop_one)
-        keep_one = deepcopy(comic)
-        keep_one["_id"] = ObjectId(f"d{i:0>23}")  # `ObjectId`s are 24 characters
-        keep_one["last_entries"] = [keep_one["last_entries"][i]]
+        keep_one = Comic(
+            comic,
+            _id=ObjectId(f"d{i:0>23}"),
+            last_entries=[last_entries[i]],
+            title=f"keep_one {i}",
+        )
         duplicate_comics.append(keep_one)
     comics.insert_many(duplicate_comics)
     webhook.post(
