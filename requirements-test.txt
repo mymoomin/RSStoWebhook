@@ -18,6 +18,8 @@ attrs==23.1.0
     # via aiohttp
 certifi==2023.7.22
     # via requests
+cffi==1.15.1
+    # via pytest-codspeed
 charset-normalizer==3.3.0
     # via
     #   aiohttp
@@ -30,6 +32,8 @@ dnspython==2.4.2
     # via pymongo
 feedparser==6.0.10
     # via rss-to-webhook (setup.py)
+filelock==3.12.4
+    # via pytest-codspeed
 frozenlist==1.4.0
     # via
     #   aiohttp
@@ -54,12 +58,17 @@ packaging==23.2
     #   pytest
 pluggy==1.3.0
     # via pytest
+pycparser==2.21
+    # via cffi
 pymongo==4.5.0
     # via rss-to-webhook (setup.py)
 pytest==7.4.2
     # via
+    #   pytest-codspeed
     #   pytest-cov
     #   rss-to-webhook (setup.py)
+pytest-codspeed==2.2.0
+    # via rss-to-webhook (setup.py)
 pytest-cov==4.1.0
     # via rss-to-webhook (setup.py)
 python-dotenv==1.0.0

@@ -380,6 +380,8 @@ def performance_generator() -> (
     performance_generator()[1],
     ids=["all", "id", "link"],
 )
+@pytest.mark.benchmark()
+@pytest.mark.slow_benchmark()
 def test_performance(
     last_entries: Sequence[EntrySubset],
     feed_entries: Sequence[Entry],
@@ -398,7 +400,7 @@ def test_performance(
     for some reason.
     """
     negligible_time = 0.01  # Less than 0.1 seconds is perceived as instantaneous
-    repeats = 3
+    repeats = 10
     max_time = repeats * negligible_time
     new_entries = []
     start = time.time()

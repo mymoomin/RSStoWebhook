@@ -337,6 +337,7 @@ def test_idempotency(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
 
 
 @pytest.mark.usefixtures("_no_sleep")
+@pytest.mark.benchmark()
 def test_suddenly_pubdates(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
@@ -630,6 +631,7 @@ def test_daily_two_updates(
     )
 
 
+@pytest.mark.benchmark()
 def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """Comics are checking in alphabetical order."""
     client: MongoClient[Comic] = MongoClient()
