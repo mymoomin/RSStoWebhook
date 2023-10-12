@@ -946,7 +946,7 @@ def test_performance(
         pop_old = Comic(
             comic,
             _id=ObjectId(f"b{i:0>23}"),
-            last_entries=last_entries[i:],
+            last_entries=last_entries[i + 1 :],
             title=f"pop_old {i}",
         )
         duplicate_comics.append(pop_old)
@@ -989,8 +989,8 @@ def test_performance(
     end = time.time()
     main_duration = end - start
     print(main_duration)
+    assert len(webhook.calls) == len(duplicate_comics)
     assert len(measure_sleep) == len(duplicate_comics) // 30
-    assert len(webhook.calls) == len(duplicate_comics) - 1
     webhook.calls.reset()
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 0
@@ -999,7 +999,7 @@ def test_performance(
     end = time.time()
     daily_duration = end - start
     print(daily_duration)
-    assert daily.call_count == len(duplicate_comics) - 1
+    assert daily.call_count == len(duplicate_comics)
     assert len(measure_sleep) == 2 * (len(duplicate_comics) // 30)
     daily.call_count = 0
     daily_checks(comics, DAILY_WEBHOOK_URL)
