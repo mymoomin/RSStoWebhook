@@ -28,8 +28,8 @@ def pytest_collection_modifyitems(
         for item in items:
             if "side_effects" in item.keywords:
                 item.add_marker(skip_real)
-    if not config.getoption("--slow-benchmarks"):
-        skip_benchmark = pytest.mark.skip(reason="need --slow-benchmarks option to run")
+    if not config.getoption("--slow"):
+        skip_slow = pytest.mark.skip(reason="need --slow option to run")
         for item in items:
-            if "slow_benchmark" in item.keywords:
-                item.add_marker(skip_benchmark)
+            if "slow" in item.keywords:
+                item.add_marker(skip_slow)
