@@ -58,7 +58,7 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
-    "--cov=rss_to_webhook",
+    # "--cov=rss_to_webhook", disabled because it breaks CodSpeed CI
 ]
 testpaths = [
     "tests",
