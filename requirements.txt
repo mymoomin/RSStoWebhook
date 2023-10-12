@@ -21,7 +21,7 @@ requests==2.31.0
 certifi==2023.7.22
 charset-normalizer==3.2.0
 idna==3.4
-urllib3==2.0.5
+urllib3==2.0.6
 
 # requests types
 types-requests==2.31.0.6
