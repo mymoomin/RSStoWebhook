@@ -93,3 +93,6 @@ urllib3==2.0.6
     #   responses
 yarl==1.9.2
     # via aiohttp
+
+-e .
+    # This installs the folder as a package (necessary for CodSpeed CI)
