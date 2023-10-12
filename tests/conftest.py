@@ -3,13 +3,16 @@ import pytest
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
-        "--side-effects", action="store_true", default=False, help="run slow tests"
-    )
-    parser.addoption(
-        "--slow-benchmarks",
+        "--side-effects",
         action="store_true",
         default=False,
-        help="run slow benchmarks",
+        help="run tests that have side effects, like posting to discord",
+    )
+    parser.addoption(
+        "--slow",
+        action="store_true",
+        default=False,
+        help="run slow tests",
     )
 
 
