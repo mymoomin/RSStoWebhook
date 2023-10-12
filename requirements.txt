@@ -44,7 +44,7 @@ requests==2.31.0
     # via rss-to-webhook (setup.py)
 sgmllib3k==1.0.0
     # via feedparser
-urllib3==2.0.5
+urllib3==2.0.6
     # via requests
 yarl==1.9.2
     # via aiohttp
