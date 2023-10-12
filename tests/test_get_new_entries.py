@@ -381,7 +381,6 @@ def performance_generator() -> (
     ids=["all", "id", "link"],
 )
 @pytest.mark.benchmark()
-@pytest.mark.slow_benchmark()
 def test_performance(
     last_entries: Sequence[EntrySubset],
     feed_entries: Sequence[Entry],
