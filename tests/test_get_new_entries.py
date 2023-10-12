@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import time
 from typing import TYPE_CHECKING
 
@@ -397,13 +396,12 @@ def test_performance(
     Tests in multiple scenarios in the hopes that if slow cases exist this will
     hit at least one of them.
 
-    CodSpeed dramatically slows down the tests, so the timer is increased on whatever
-    platform it uses.
+    CodSpeed's CI dramatically slows down the tests, so the time limit is higher there.
 
     Pytest displays the tests as `::test_performance[{feed_links_id}-{entry_links_id}]`
     for some reason.
     """
-    negligible_time = 0.01  # Less than 0.1 seconds is perceived as instantaneous
+    negligible_time = 0.01 if "CODSPEED_ENV" not in os.environ else 10
     repeats = 10
     max_time = repeats * negligible_time
     new_entries = []
@@ -413,6 +411,4 @@ def test_performance(
     duration = time.time() - start
     assert new_entries == expected_new_entries
     print(f"{duration = }")  # noqa: E251
-    print(sys.platform)
-    print(os.environ)
     assert duration < max_time
