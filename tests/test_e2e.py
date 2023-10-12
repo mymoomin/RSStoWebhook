@@ -23,6 +23,7 @@ load_dotenv(".env.example")
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
 WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
+DAILY_WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
 
 
 @pytest.fixture()
@@ -921,6 +922,75 @@ def test_user_agent(comic: Comic, rss: aioresponses) -> None:
     assert request
     headers = request.kwargs["headers"]
     assert headers["User-Agent"] == constants.CUSTOM_USER_AGENT
+
+
+@pytest.mark.benchmark()
+@pytest.mark.slow()
+def test_performance(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock, measure_sleep: list[float]
+) -> None:
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    last_entries = comic["last_entries"]
+    num_entries = len(last_entries)  # Currently 20
+    duplicate_comics: list[Comic] = []
+    for i in range(num_entries):
+        pop_new = deepcopy(comic)
+        pop_new["_id"] = ObjectId(f"a{i:0>23}")  # `ObjectId`s are 24 characters
+        pop_new["last_entries"] = pop_new["last_entries"][:i]
+        duplicate_comics.append(pop_new)
+        pop_old = deepcopy(comic)
+        pop_old["_id"] = ObjectId(f"b{i:0>23}")  # `ObjectId`s are 24 characters
+        pop_old["last_entries"] = pop_old["last_entries"][i:]
+        duplicate_comics.append(pop_old)
+        pop_one = deepcopy(comic)
+        pop_one["_id"] = ObjectId(f"c{i:0>23}")  # `ObjectId`s are 24 characters
+        pop_one["last_entries"].pop(i)
+        duplicate_comics.append(pop_one)
+        keep_one = deepcopy(comic)
+        keep_one["_id"] = ObjectId(f"d{i:0>23}")  # `ObjectId`s are 24 characters
+        keep_one["last_entries"] = [keep_one["last_entries"][i]]
+        duplicate_comics.append(keep_one)
+    comics.insert_many(duplicate_comics)
+    webhook.post(
+        THREAD_WEBHOOK_URL,
+        status=200,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "2",
+            "x-ratelimit-reset-after": "1",
+        },
+    )
+    daily = webhook.post(
+        DAILY_WEBHOOK_URL,
+        status=200,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "2",
+            "x-ratelimit-reset-after": "1",
+        },
+    )
+    print(responses.registered())
+    start = time.time()
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    end = time.time()
+    main_duration = end - start
+    print(main_duration)
+    assert len(measure_sleep) == len(duplicate_comics) // 30
+    assert len(webhook.calls) == len(duplicate_comics) - 1
+    webhook.calls.reset()
+    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert len(webhook.calls) == 0
+    start = time.time()
+    daily_checks(comics, DAILY_WEBHOOK_URL)
+    end = time.time()
+    daily_duration = end - start
+    print(daily_duration)
+    assert daily.call_count == len(duplicate_comics) - 1
+    assert len(measure_sleep) == 2 * (len(duplicate_comics) // 30)
+    daily.call_count = 0
+    daily_checks(comics, DAILY_WEBHOOK_URL)
+    assert daily.call_count == 0
 
 
 example_feed = """
