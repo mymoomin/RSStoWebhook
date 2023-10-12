@@ -940,20 +940,20 @@ def test_performance(
             comic,
             _id=ObjectId(f"a{i:0>23}"),  # `ObjectId`s are 24 characters
             last_entries=last_entries[:i],
-            title=f"pop_new {i}",
+            title=f"pop_new {i:0>2}",
         )
         duplicate_comics.append(pop_new)
         pop_old = Comic(
             comic,
             _id=ObjectId(f"b{i:0>23}"),
             last_entries=last_entries[i + 1 :],
-            title=f"pop_old {i}",
+            title=f"pop_old {i:0>2}",
         )
         duplicate_comics.append(pop_old)
         pop_one = Comic(
             comic,
             _id=ObjectId(f"c{i:0>23}"),
-            title=f"pop_one {i}",
+            title=f"pop_one {i:0>2}",
             last_entries=last_entries[:i] + last_entries[i + 1 :],
         )
         duplicate_comics.append(pop_one)
@@ -961,7 +961,7 @@ def test_performance(
             comic,
             _id=ObjectId(f"d{i:0>23}"),
             last_entries=[last_entries[i]],
-            title=f"keep_one {i}",
+            title=f"keep_one {i:0>2}",
         )
         duplicate_comics.append(keep_one)
     comics.insert_many(duplicate_comics)
