@@ -106,8 +106,8 @@ I would consider this successful if any one of these proposed features were succ
   - Even without that, it might be good to be able to publish this on PyPI, possibly so that a Discord bot could use the important parts as a library
 - Possibly libarify the code
   - Things like the rate limiter or some of the various database-poking tools might be usable in other contexts
-  - It's weird that the logic for [adding new comics to the database](src/rss_to_webhook/db_operations.py) doesn't reuse anything I've already written
-- Move everything in the current `/scripts` folder to somewhere public and testable (possibly `src/rss_to_webhook/db_operations.py`)
+  - It's weird that the logic for [adding new comics to the database](/src/rss_to_webhook/db_operations.py) doesn't reuse anything I've already written
+- Move everything in the current `/src/rss_to_webhook/scripts` folder to somewhere public and testable (possibly [`/src/rss_to_webhook/db_operations.py`](/src/rss_to_webhook/db_operations.py))
 - Think about adding a `__main__.py` at the package route, and possibly adding [entry points](https://packaging.python.org/en/latest/specifications/entry-points/). This should help with logging and also making the code cleaner and easier to use.
 - Think about performance, but not too hard. This is fun and easy to make progress/get stuck on, but for now the scripts are high-performance enough that the server is entirely free to run even on Heroku's paid tier, and the tests take 1.62 seconds to run.
   - Request only a subset of properties from MongoDB. For regular checks, we don't need to actually see the values of `dailies`, `error_count`, or `errors`, and for daily checks we don't need to see `thread_id`, `last_entries`, `feed_hash`, `etag`, `last_modified`, `error_count`, or `errors`.
