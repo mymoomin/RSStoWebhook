@@ -32,19 +32,19 @@ People can add a comic by asking me to do so.
 
 ### Functional
 
-- Let people add comics easily, and let people other than me approve them.
-- (tentative) Let people add roles through a website that is automatically synced with the available comics.
-- Check RSS feeds for new items by recency and not by order.
-- Detect broken RSS feeds.
+- [ ] Let people add comics easily, and let people other than me approve them.
+- [ ] (tentative) Let people add roles through a website that is automatically synced with the available comics.
+- [x] Check RSS feeds for new items at any position in the feed.
+- [ ] Detect broken RSS feeds.
 
 ### Architectural
 
-- Add automated tests
-- Possibly refactor to personal taste
-- Link the comics collections/databases in some way
-- Add better logging, whether through tracing or just refactoring
-- Think about transactions and state and when to recover from errors
-- Check the current rate-limiting rules
+- [x] Add automated tests
+- [x] Possibly refactor to personal taste
+- [x] Link the comics collections/databases in some way
+- [ ] Add better logging, whether through tracing or just refactoring
+- [ ] Think about transactions and state and when to recover from errors
+- [x] Check the current rate-limiting rules
 
 ## Progress
 
@@ -57,7 +57,7 @@ People can add a comic by asking me to do so.
 
 ### Architectural
 
-- Added a lot of automated tests, and regression tests for almost all of of the old bugs
+- Added a lot of automated tests, with 100% branch coverage, and regression tests for almost all of of the old bugs
 - Fully reworked checking for new updates, and tracking updates to post to the daily webhook
 - Checked the rate-limiting rules, might rework how the script rate limits to better conform to them but at the moment it looks like it just about does already
 - There is now one combined collection for regular, thread, and daily comic tracking
