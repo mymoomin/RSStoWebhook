@@ -365,7 +365,7 @@ class RateLimiter:
             f" {headers.get('x-ratelimit-limit')} requests left in the next"
             f" {reset_after} seconds"
         )
-        if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:  # 429
+        if response.status_code >= 400:  # noqa: PLR2004 # In the HTTP error range
             print(response.json())
             response.raise_for_status()
         if remaining == "0" and reset_after is not None:
