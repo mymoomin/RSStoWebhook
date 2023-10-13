@@ -76,6 +76,11 @@ def main(
     comics_entries_headers = asyncio.get_event_loop().run_until_complete(
         _get_changed_feeds(comic_list, hash_seed, comics, timeout=timeout)
     )
+    print(
+        f"{len(comics_entries_headers)} changed comics and"
+        f" {len([1 for _, entries, _ in comics_entries_headers if len(entries) > 0])}"
+        " updated comics"
+    )
 
     rate_limiter = RateLimiter()
 
@@ -108,7 +113,7 @@ async def _get_changed_feeds(
     hash_seed: int,
     comics: Collection[Comic],
     **kwargs: Any,  # noqa: ANN401, RUF100
-) -> Iterable[tuple[Comic, list[Entry], CachingInfo]]:
+) -> list[tuple[Comic, list[Entry], CachingInfo]]:
     async with aiohttp.ClientSession() as session:
         tasks = [
             _get_feed_changes(session, comic, hash_seed, comics, **kwargs)
@@ -116,7 +121,7 @@ async def _get_changed_feeds(
         ]
         feeds = await asyncio.gather(*tasks)
         print("All feeds checked")
-        return filter(None, feeds)
+        return list(filter(None, feeds))
 
 
 async def _get_feed_changes(
@@ -439,17 +444,18 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
     """
     start = time.time()
     comic_list: list[Comic] = list(comics.find({"dailies": {"$ne": []}}).sort("title"))
+    print(f"Daily: {len(comic_list)} updated comics")
 
     rate_limiter = RateLimiter()
     for comic in comic_list:
-        print(f"{comic['title']} daily: Posting")
+        print(f"Daily {comic['title']}: Posting")
         body = _make_body(comic, comic["dailies"])  # type: ignore [arg-type]
         # The type is fine because `entries`` is only read, so it's
         # covariant, and so list[EntrySubset] is a subtype of list[Entry]
         rate_limiter.post(f"{webhook_url}?wait=true", body)
         updates = len(comic["dailies"])
         word = "entry" if updates == 1 else "entries"
-        print(f"{comic['title']} daily: Posted {len(comic['dailies'])} new {word}")
+        print(f"Daily {comic['title']}: Posted {len(comic['dailies'])} new {word}")
         comics.update_one({"_id": comic["_id"]}, {"$set": {"dailies": []}})
 
     time_taken = time.time() - start
