@@ -38,7 +38,7 @@ from rss_to_webhook.constants import (
 )
 
 if TYPE_CHECKING:  # pragma no cover
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Sequence
 
     from feedparser.util import Entry
     from pymongo.collection import Collection
