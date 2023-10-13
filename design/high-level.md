@@ -51,9 +51,15 @@ People can add a comic by asking me to do so.
 ### Functional
 
 - Decided that the goal is to let people add comics through a discord bot, since that'll be easier to implement and also less of a context-shift for users
+- Wrote a bot that would let people add roles with a slash command, but haven't yet deployed it anywhere (possibly AWS Lambda?)
+- Changed how RSS feeds are checked to work with comics that add entries in different places, and also that give every entry the same link
+- Added tracking in the database for connection errors, but haven't yet added automatic reporting when errors reach a certain limit
 
 ### Architectural
 
-- Added a lot of automated tests, and regression tests for half of the old bugs
-- Superficially cleaned up the code a lot but no deeper refactorings yet
+- Added a lot of automated tests, and regression tests for almost all of of the old bugs
+- Fully reworked checking for new updates, and tracking updates to post to the daily webhook
 - Checked the rate-limiting rules, might rework how the script rate limits to better conform to them but at the moment it looks like it just about does already
+- There is now one combined collection for regular, thread, and daily comic tracking
+- The DB is now only updated if all new entries for a comic are successfully posted. I should think about if I want to handle that differently though - perhaps mark entries that fail in case I need to handle them somehow?
+- Updated code to use the correct rate-limiting rules, and also combined all new entries for each comic into one longer message, which means that I never hit the 30 messages/minute rate-limit in practice
