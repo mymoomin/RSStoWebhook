@@ -26,5 +26,3 @@ jobs:
           command: check
       - name: test end
         run: echo Ended
-
-
