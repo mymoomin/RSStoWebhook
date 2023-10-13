@@ -46,7 +46,7 @@ def test_fully() -> None:
     responses.add_passthru(WEBHOOK_URL)
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)
     # Not the actual comics
-    comics = client["test-database"]["test-comics"]
+    comics = client["discord-rss"]["test-comics"]
     # Get everything up to date
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     # Place every comic one entry behind present

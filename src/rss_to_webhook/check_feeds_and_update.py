@@ -475,17 +475,17 @@ if __name__ == "__main__":  # pragma no cover
     if "--daily" in opts:
         print("Running daily checks")
         WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
-        comics = client["test-database"]["comics"]
+        comics = client["discord-rss"]["comics"]
         daily_checks(comics, WEBHOOK_URL)
     else:
         if "--test" in opts:
             print("testing testing")
             WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
             THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
-            comics = client["test-database"]["test-comics"]
+            comics = client["discord-rss"]["test-comics"]
         else:
             print("Running regular checks")
             WEBHOOK_URL = os.environ["WEBHOOK_URL"]
             THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
-            comics = client["test-database"]["comics"]
+            comics = client["discord-rss"]["comics"]
         main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)

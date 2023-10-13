@@ -29,7 +29,7 @@ client: MongoClient[Comic] = MongoClient(MONGODB_URI)
 
 class TestCollection:
     def __init__(self: Self, collection_name: str = "test-comics") -> None:
-        self.collection: Collection[Comic] = client["test-database"][collection_name]
+        self.collection: Collection[Comic] = client["discord-rss"][collection_name]
 
     def pop_last_update(self: Self) -> int:
         result = self.collection.update_many(
