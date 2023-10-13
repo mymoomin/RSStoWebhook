@@ -63,3 +63,52 @@ People can add a comic by asking me to do so.
 - There is now one combined collection for regular, thread, and daily comic tracking
 - The DB is now only updated if all new entries for a comic are successfully posted. I should think about if I want to handle that differently though - perhaps mark entries that fail in case I need to handle them somehow?
 - Updated code to use the correct rate-limiting rules, and also combined all new entries for each comic into one longer message, which means that I never hit the 30 messages/minute rate-limit in practice
+
+## Future work (next sprint/branch)
+
+Writen on 2023-10-13
+
+I would consider this successful if any one of these proposed features were successfully implemented, and that would probably be a good point at which to merge from `dev` to `main`, if the feature is implemented atomically. Ideally 100% test coverage would be maintained the whole way.
+
+- Implement actual logging,
+  - Use either the `logging` module or some kind of tracing solution (OpenTelemetry and Sentry both seem cool)
+  - Use one of the several logging handlers that post to Discord. This is necessary to enable mods on the RSS server to see critical events.
+  - Possibly use `ContextVar`s to track which comic is being checked at any point? This might require re-architecturing to put checking each comic in one async task
+  - Possibly start adding JSON metadata to log messages to help Logtail understand things better, maybe even enabling a dashboard with alerts for certain events (questionable)
+- Actually work on integrating things into Discord.
+  - Users should be able to:
+    - Propose new comics
+    - Subscribe and unsubscribe from comics
+    - Switch to daily/possibly other modes
+  - Server mods should be able to:
+    - Add new comics
+    - Update or remove existing comics
+    - See important failures (broken RSS feeds, broken RSS entries, rate-limiting issues)
+    - Reset the error count/list of errors, if I keep using that approach
+  - The bot should automatically
+    - Put all comics we track in an alphabetised list, possibly with markdown links to each comic's site
+    - Keep the list and the options in the subscribe/unsubscibe command in sync with the database
+- Consider using the RSS feeds to update information about them. Each RSS feed almost always (with the main exception of Awful Hospital) has an up-to-date record of:
+  - The comic's homepage URL
+  - The name of the comic (sometimes inaccurate because it's "[Name of Comic] Updates")
+  - The RSS feed's own URL (this one is less common)
+  - Often a favicon or other picture that is a logo for the comic (less common)
+- Work out what architecture to use for the bot, and how to integrate it into the rest of the code
+  - Should it be in the same codebase?
+  - If so, should it be in the same package or just the same repository?
+  - Should it be a long-running process or a lambda?
+  - Should it depend on Discord.py?
+  - Should it depend on any web framework at all?
+- Possibly add better documentation
+  - At minimum, everything relevant from the `/scripts` directory of the original implementation should be here
+  - Probably the archive of 700 RSS feeds from 100 comics should not be on GitHub
+  - It probably isn't a goal for any randomer to be able to read the docs and set up their own working version of this service, but it might be neat?
+  - Even without that, it might be good to be able to publish this on PyPI, possibly so that a Discord bot could use the important parts as a library
+- Possibly libarify the code
+  - Things like the rate limiter or some of the various database-poking tools might be usable in other contexts
+  - It's weird that the logic for [adding new comics to the database](src/rss_to_webhook/db_operations.py) doesn't reuse anything I've already written
+- Move everything in the current `/scripts` folder to somewhere public and testable (possibly `src/rss_to_webhook/db_operations.py`)
+- Think about adding a `__main__.py` at the package route, and possibly adding [entry points](https://packaging.python.org/en/latest/specifications/entry-points/). This should help with logging and also making the code cleaner and easier to use.
+- Think about performance, but not too hard. This is fun and easy to make progress/get stuck on, but for now the scripts are high-performance enough that the server is entirely free to run even on Heroku's paid tier, and the tests take 1.62 seconds to run.
+  - Request only a subset of properties from MongoDB. For regular checks, we don't need to actually see the values of `dailies`, `error_count`, or `errors`, and for daily checks we don't need to see `thread_id`, `last_entries`, `feed_hash`, `etag`, `last_modified`, `error_count`, or `errors`.
+  - Speed up the tests and remove low-value ones. This is very possible and easy, even while maintaining 100% code coverage, but for now it is also unnecessary.
