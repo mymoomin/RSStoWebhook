@@ -68,8 +68,10 @@ People can add a comic by asking me to do so.
 
 Writen on 2023-10-13
 
-I would consider this successful if any one of these proposed features were successfully implemented, and that would probably be a good point at which to merge from `dev` to `main`, if the feature is implemented atomically. Ideally 100% test coverage would be maintained the whole way.
+Error handling has to be improved. Beyond that I would consider this successful if any one of these proposed features were successfully implemented, and that would probably be a good point at which to merge from `dev` to `main`, if the feature is implemented atomically. Ideally 100% test coverage would be maintained the whole way.
 
+- Really think about how to handle errors
+  - Had an error earlier today where a comic had a bad `thread_id` so it would just attempt to post every 10 minutes, holding up 25 further pages for a While. Probably that should be handled better.
 - Implement actual logging,
   - Use either the `logging` module or some kind of tracing solution (OpenTelemetry and Sentry both seem cool)
   - Use one of the several logging handlers that post to Discord. This is necessary to enable mods on the RSS server to see critical events.
