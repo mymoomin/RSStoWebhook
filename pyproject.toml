@@ -130,6 +130,7 @@ ignore = [
     "S101", # Forbids use of `assert`, necessary both for tests and certain type system featuress
     "ANN101", # Forbids inferring type of `self`, which both mypy and pyright do automatically
     "EM101", # Forbids putting short string literals in exception constructors, but this is normal.
+    "TRY003", # Forbids putting medium string literals in exception constructors, which gives errors on some code from the Python docs.
     "E203", # Forbids spaces around the colon in array slicing, which conflicts with Black
 ]
 per-file-ignores = {"tests/*" = [
