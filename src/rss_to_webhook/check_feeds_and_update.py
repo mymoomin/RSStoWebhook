@@ -289,8 +289,8 @@ def _make_messages(comic: Comic, entries: list[Entry]) -> list[Message]:
             }
         )
     return [
-        {"embeds": list(embed_chunk)} | extras for embed_chunk in batched(embeds, 10)
-    ]  # type: ignore[return-value]
+        {"embeds": list(embed_chunk)} | extras for embed_chunk in batched(embeds, 10)  # type: ignore[misc]
+    ]
     # No typechecker can understand this assignment, but it is valid
 
 
