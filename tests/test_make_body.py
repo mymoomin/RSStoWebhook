@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 import pytest
 from bson import ObjectId
 
-from rss_to_webhook.check_feeds_and_update import _make_body
+from rss_to_webhook.check_feeds_and_update import _make_messages
 from rss_to_webhook.db_types import Comic
 from rss_to_webhook.discord_types import Message
 
@@ -44,7 +45,7 @@ def test_happy_path(comic: Comic) -> None:
     This is just the normal usage.
     """
     entry: Entry = {"link": "https://example.com/page/1", "title": "Page 1!"}
-    body = _make_body(comic, [entry])
+    body = _make_messages(comic, [entry])[0]
     # The Message() is just for show (underhanded cheats to increase our code coverage)
     assert filter_nones(body) == Message(
         {
@@ -71,7 +72,7 @@ def test_bad_url_scheme(comic: Comic) -> None:
     Test asserts that `make_body` will correct bad url schemes.
     """
     entry: Entry = {"link": "hps://example.com/page/1", "title": "Page 1!"}
-    body = _make_body(comic, [entry])
+    body = _make_messages(comic, [entry])[0]
     assert filter_nones(body) == {
         "embeds": [
             {
@@ -89,7 +90,7 @@ def test_good_url_scheme(comic: Comic) -> None:
     """`http://` and `https://` url schemes are left unchanged."""
     entry1: Entry = {"link": "http://example.com/page/1", "title": "Page 1!"}
     entry2: Entry = {"link": "https://example.com/page/1", "title": "Page 1!"}
-    body = _make_body(comic, [entry1, entry2])
+    body = _make_messages(comic, [entry1, entry2])[0]
     assert filter_nones(body) == {
         "embeds": [
             {
@@ -117,7 +118,7 @@ def test_no_title(comic: Comic) -> None:
     where a missing entry title caused the embed to not have a title.
     """
     entry: Entry = {"link": "hps://example.com/page/1"}
-    body = _make_body(comic, [entry])
+    body = _make_messages(comic, [entry])[0]
     assert filter_nones(body) == {
         "embeds": [
             {
@@ -129,3 +130,22 @@ def test_no_title(comic: Comic) -> None:
         ],
         "content": "<@&1>",
     }
+
+
+def test_splits_big_updates(comic: Comic) -> None:
+    num_entries = 32
+    max_embeds_per_message = 10
+    entries: list[Entry] = [
+        {"link": f"hps://example.com/page/{i}"} for i in range(num_entries)
+    ]
+    messages = _make_messages(comic, entries)
+    embeds_by_message = [message["embeds"] for message in messages]
+    all_embeds = [embed for embeds in embeds_by_message for embed in embeds]
+
+    assert len(messages) == math.ceil(num_entries / max_embeds_per_message)
+    assert all(len(embeds) <= max_embeds_per_message for embeds in embeds_by_message)
+    if len(embeds_by_message) > 1:
+        assert all(
+            len(embeds) == max_embeds_per_message for embeds in embeds_by_message[:-1]
+        )
+    assert len(all_embeds) == num_entries

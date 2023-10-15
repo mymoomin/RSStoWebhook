@@ -36,6 +36,7 @@ from rss_to_webhook.constants import (
     DEFAULT_GET_HEADERS,
     MAX_CACHED_ENTRIES,
 )
+from rss_to_webhook.utils import batched
 
 if TYPE_CHECKING:  # pragma no cover
     from collections.abc import Sequence
@@ -44,7 +45,7 @@ if TYPE_CHECKING:  # pragma no cover
     from pymongo.collection import Collection
 
     from rss_to_webhook.db_types import CachingInfo, Comic, EntrySubset
-    from rss_to_webhook.discord_types import Extras, Message
+    from rss_to_webhook.discord_types import Embed, Extras, Message
 
 
 def main(
@@ -86,19 +87,20 @@ def main(
 
     for comic, entries, headers in comics_entries_headers:
         if entries:
-            body = _make_body(comic, entries)
-            print(f"{comic['title']}: new update {json.dumps(body)}")
-            response = rate_limiter.post(f"{webhook_url}?wait=true", body)
-            print(
-                f"{comic['title']}, {body['embeds'][0]['title']},"
-                f" {body['embeds'][0]['url']}: {response.status_code}:"
-                f" {response.reason}"
-            )
-            if thread_id := comic.get("thread_id"):
-                del body["content"]
-                response = rate_limiter.post(
-                    f"{thread_webhook_url}?wait=true&thread_id={thread_id}", body
+            messages = _make_messages(comic, entries)
+            for message in messages:
+                print(f"{comic['title']}: new update {json.dumps(message)}")
+                response = rate_limiter.post(f"{webhook_url}?wait=true", message)
+                print(
+                    f"{comic['title']}, {message['embeds'][0]['title']},"
+                    f" {message['embeds'][0]['url']}: {response.status_code}:"
+                    f" {response.reason}"
                 )
+                if thread_id := comic.get("thread_id"):
+                    del message["content"]
+                    response = rate_limiter.post(
+                        f"{thread_webhook_url}?wait=true&thread_id={thread_id}", message
+                    )
         _update(comics, comic, entries, headers)
 
     time_taken = time.time() - start
@@ -266,13 +268,13 @@ def _normalise(url: str) -> str:
     return urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
 
 
-def _make_body(comic: Comic, entries: list[Entry]) -> Message:
+def _make_messages(comic: Comic, entries: list[Entry]) -> list[Message]:
     extras: Extras = {
         "username": comic.get("username"),
         "avatar_url": comic.get("avatar_url"),
     }
     extras["content"] = f"<@&{comic['role_id']}>"
-    embeds = []
+    embeds: list[Embed] = []
     for entry in entries:
         if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
             print(f"{comic['title']}: bad url {entry['link']}")
@@ -286,8 +288,10 @@ def _make_body(comic: Comic, entries: list[Entry]) -> Message:
                 "description": f"New {comic['title']}!",
             }
         )
-    return {"embeds": embeds} | extras  # type: ignore[return-value]
-    # mypy can't understand this assignment, but it is valid
+    return [
+        {"embeds": list(embed_chunk)} | extras for embed_chunk in batched(embeds, 10)
+    ]  # type: ignore[return-value]
+    # No typechecker can understand this assignment, but it is valid
 
 
 @dataclass(slots=True)
@@ -449,10 +453,11 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
     rate_limiter = RateLimiter()
     for comic in comic_list:
         print(f"Daily {comic['title']}: Posting")
-        body = _make_body(comic, comic["dailies"])  # type: ignore [arg-type]
+        messages = _make_messages(comic, comic["dailies"])  # type: ignore [arg-type]
         # The type is fine because `entries`` is only read, so it's
         # covariant, and so list[EntrySubset] is a subtype of list[Entry]
-        rate_limiter.post(f"{webhook_url}?wait=true", body)
+        for message in messages:
+            rate_limiter.post(f"{webhook_url}?wait=true", message)
         updates = len(comic["dailies"])
         word = "entry" if updates == 1 else "entries"
         print(f"Daily {comic['title']}: Posted {len(comic['dailies'])} new {word}")

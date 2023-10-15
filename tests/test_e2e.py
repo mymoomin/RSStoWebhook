@@ -372,16 +372,29 @@ def test_post_all_new_updates(
     comics = client.db.collection
     # No seen entries in feed
     comic["last_entries"] = [{"link": "https://comic.com/not-a-page"}]
+    # The number of entries in the RSS feed
+    num_new_entries = 20
+    max_embeds_per_message = 10
     comics.insert_one(comic)
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    embeds = json.loads(webhook.calls[0].request.body)["embeds"]
+    embeds_by_message = [
+        json.loads(call.request.body)["embeds"] for call in webhook.calls
+    ]
+    if len(embeds_by_message) > 1:
+        assert all(
+            len(embeds) == max_embeds_per_message for embeds in embeds_by_message[:-1]
+        )
+    assert all(len(embeds) <= max_embeds_per_message for embeds in embeds_by_message)
+    all_embeds = [embed for embeds in embeds_by_message for embed in embeds]
     assert (
-        embeds[0]["url"] == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
+        all_embeds[0]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
     )
     # Check that all 20 items in the RSS feed were posted
-    assert len(embeds) == 20  # noqa: PLR2004
+    assert len(all_embeds) == num_new_entries
     assert (
-        embeds[-1]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
+        all_embeds[-1]["url"]
+        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
 
 
