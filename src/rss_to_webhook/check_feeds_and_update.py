@@ -350,7 +350,7 @@ class RateLimiter:
         rate_limit_state = self.buckets[url]
         delay, counter, window_start = astuple(rate_limit_state)
         if delay != 0:
-            print(f"Sleeping {delay} seconds")
+            print(f"Sleeping {round(delay, 2)} seconds")
             time.sleep(delay)
             rate_limit_state.delay = 0
             if window_start is None:
@@ -378,8 +378,8 @@ class RateLimiter:
         rate_limit_state.counter = (counter + 1) % self.max_in_window
         print(counter)
         if counter == 0:
-            print("Made 30 posts")
             window_time = time.time() - window_start
+            print(f"Made {self.max_in_window} posts in {round(window_time, 2)}")
             rate_limit_state.delay = self.fuzzed_window - window_time
             rate_limit_state.window_start = None
 
