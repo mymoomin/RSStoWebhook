@@ -72,6 +72,20 @@ Error handling has to be improved. Beyond that I would consider this successful 
 
 - Really think about how to handle errors
   - Had an error earlier today where a comic had a bad `thread_id` so it would just attempt to post every 10 minutes, holding up 25 further pages for a While. Probably that should be handled better.
+- Better testing
+  - Possibly add a flag to run all tests against the actual APIs (or a subset of tests?). This ensures we don't make mistakes as to what e.g. Discord accepts (like the 10 embeds/message limit)
+  - Definitely add more tests against the real APIs, and make the fast ones run by default
+  - Possibly make my own mocking library for Discord webhooks
+    - This could replace `Responses`
+    - This could be implemented as an HTTP server, which would help in a bunch of ways I think
+  - Possibly re-architect so that `RateLimiter` becomes some kinda webhook class
+  - Possibly pass in the `RateLimiter` to `main` so that I can run multiple tests without hitting the rate limits
+  - Maybe switch to asyncio for making the requests
+  - Definitely go through all the tests and make sure they hit all the interesting edge cases/add value in some ways
+  - Maybe make certain repeated tests functions? or parameterise some of them
+  - Start using GitHub Issues properly. For now should probably make issues for
+    - Missing the 10 embeds/message issue, raising the spectre of other API things
+    - Something about error handling, maybe use the bad `thread_id` issue as an example
 - Implement actual logging,
   - Use either the `logging` module or some kind of tracing solution (OpenTelemetry and Sentry both seem cool)
   - Use one of the several logging handlers that post to Discord. This is necessary to enable mods on the RSS server to see critical events.
