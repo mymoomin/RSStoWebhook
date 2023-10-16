@@ -371,7 +371,10 @@ class RateLimiter:
             f" {reset_after} seconds"
         )
         if response.status_code >= 400:  # noqa: PLR2004 # In the HTTP error range
-            print(response.json())
+            print(
+                f"Error posting: {response.status_code} {response.reason}:"
+                f" {response.json()}"
+            )
             response.raise_for_status()
         if remaining == "0" and reset_after is not None:
             print(f"Exhausted rate limit bucket. Retrying in {reset_after}")
