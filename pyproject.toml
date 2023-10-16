@@ -1,5 +1,5 @@
 [project]
-name = "rss_to_webhook"
+name = "rss-to-webhook"
 version = "0.0.1"
 authors = [
     {name = "mymoomin"}
@@ -21,15 +21,30 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = [
-    "mypy>=1.5.1",
-    "ruff>=0.0.291",
+lint = [
+    "ruff>=0.0.292",
     "black>=23.9.1",
+]
+test = [
     "pytest>=7.3.2",
     "pytest-cov>=4.1.0",
+    "pytest-codspeed>=2.2.0",
     "mongomock>=4.1.2",
     "aioresponses>=0.7.4",
     "responses>=0.23.3",
+]
+type = [
+    "rss_to_webhook[test]",
+    "mypy>=1.5.1",
+    "pyright>=1.1.329",
+    "types-requests>=2.31.0.6",
+    "types-urllib3>=1.26.25.14",
+]
+dev = [
+    "rss_to_webhook[lint,test,type]",
+    "tox>=4.11.3",
+    "tox-gh-actions>=3.1.3",
+    "pip-tools>=7.3.0",
 ]
 
 [project.urls]
@@ -37,20 +52,30 @@ test = [
 "Bug Tracker" = "https://github.com/mymoomin/RSStoWebhook/issues"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
-    "--cov=rss_to_webhook",
-    "--cov-report=term-missing",
+    # "--cov=rss_to_webhook", disabled because it breaks CodSpeed CI
 ]
 testpaths = [
     "tests",
 ]
 
+[tool.coverage.run]
+source = ["rss-to-webhook"]
+omit = ["*/scripts/*"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 95
+show_missing = true
+skip_covered = true
+
 [tool.mypy]
+exclude = ["src/rss_to_webhook/scripts"]
 mypy_path="$MYPY_CONFIG_FILE_DIR/typings"
 check_untyped_defs = true
 disallow_any_generics = true
@@ -63,6 +88,10 @@ warn_return_any = true
 warn_unreachable = true
 warn_unused_configs = true
 no_implicit_reexport = true
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["src/rss_to_webhook/scripts"]
 
 [tool.ruff]
 line-length = 88
@@ -77,8 +106,8 @@ select = [
     "N",            # naming # no new errors
 
     # Some extra flake-8 plugins
-    "ANN",        # flake8-annotations # checks everything has type annotations
-    # "D",          # pydocstyle # a million errors because I don't have any docstrings
+    "ANN",          # flake8-annotations # checks everything has type annotations
+    "D",            # pydocstyle # a million errors because I don't have any docstrings
     "A",            # flake8-builtins # caught shadowing `hash()` with a variable called `hash`
     "DTZ",          # flake8-datetimez # found that I was using datetime in the first place (mistake)
     "PYI",          # flake8-pyi
@@ -87,11 +116,29 @@ select = [
     # "T20",        # Detects use of `print` rather than logging. One day I'll add it
     # Let's just add everything that works
     "ASYNC", "C4", "T10", "EM", "FA", "ISC", "ICN", "G", "INP", "PIE",  "PYI",
-    "Q", "RSE", "RET", "SLF", "SIM", "TID", "PTH", "TD", "FIX", "ERA", "PL",
+    "Q", "RSE", "RET", "SLF", "SIM", "TID", "PTH", "ERA", "PL",
     "TRY", "FLY", "PERF", "FURB", "LOG","FBT", "S", "ARG", "B",
+    # "TD", "FIX" # These disallow "# Todo" comments unless you jump through hoops, so I'm disabling
+    # them for now
+]
+exclude = [
+    "__init__.py"
 ]
 ignore = [
-    "PLW0120", "TRY300", "B008", "B905"
+    "PLW0120", "RET505", # Forbid else after return in if/loop, which I often feel is more readable
+    "TRY300", # Forbids returning at the end of a try statement, but I think that looks better
+    "S101", # Forbids use of `assert`, necessary both for tests and certain type system featuress
+    "ANN101", # Forbids inferring type of `self`, which both mypy and pyright do automatically
+    "EM101", # Forbids putting short string literals in exception constructors, but this is normal.
+    "TRY003", # Forbids putting medium string literals in exception constructors, which gives errors on some code from the Python docs.
+    "E203", # Forbids spaces around the colon in array slicing, which conflicts with Black
 ]
-per-file-ignores = {"tests/*" = ["S101", "ARG001", "FBT001"]}
+per-file-ignores = {"tests/*" = [
+    "ARG001", # Forbids unused function arguments, which pytest can use as fixtures
+    "FBT001", # Forbids boolean positional arguments, which come up when using parameterised tests
+    "D1", # Forbids public functions without docstrings, but also thinks that tests are part of the public api for some reason
+]}
 src = ["src"]
+
+[tool.ruff.pydocstyle]
+convention = "google"

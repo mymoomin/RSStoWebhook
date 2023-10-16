@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Self
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-from rss_to_webhook.worker import main
+from rss_to_webhook.check_feeds_and_update import main
 
 if TYPE_CHECKING:
     from pymongo.collection import Collection
@@ -21,14 +21,16 @@ start = time.time()
 # called in GitHub Actions.
 load_dotenv()
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
+THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 MONGODB_URI = os.environ["MONGODB_URI"]
+DB_NAME = os.environ["DB_NAME"]
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
 client: MongoClient[Comic] = MongoClient(MONGODB_URI)
 
 
 class TestCollection:
-    def __init__(self: Self, collection_name: str = "test_comics") -> None:
-        self.collection: Collection[Comic] = client["discord_rss"][collection_name]
+    def __init__(self: Self, collection_name: str = "test-comics") -> None:
+        self.collection: Collection[Comic] = client[DB_NAME][collection_name]
 
     def pop_last_update(self: Self) -> int:
         result = self.collection.update_many(
@@ -53,7 +55,7 @@ class TestCollection:
         return result.modified_count
 
     def reset_caching(self: Self) -> int:
-        modified_count = self.reset("hash")
+        modified_count = self.reset("feed_hash")
         self.reset("last_modified")
         self.reset("etag")
         return modified_count
@@ -75,14 +77,14 @@ class TestCollection:
         self.reset_caching()
         self.pop_last_update()
         print("test starts")
-        main(self.collection, HASH_SEED, WEBHOOK_URL)
+        main(self.collection, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
         # Nothing more should be sent
-        main(self.collection, HASH_SEED, WEBHOOK_URL)
+        main(self.collection, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
 
 
 if __name__ == "__main__":
     print("start")
-    comics = TestCollection("test_comics")
+    comics = TestCollection("test-comics")
     print("clearing caches")
     comics.end_to_end_test()
     # No goal value so can't say if succeeded or failed
