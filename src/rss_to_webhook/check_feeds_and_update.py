@@ -138,7 +138,7 @@ async def _get_feed_changes(
     caching_headers = _get_headers(comic)
     print(
         f"{comic['title']}: Requesting"
-        f" {url}{f' with {json.dumps(caching_headers)}' if caching_headers else ''}"
+        f" {url}{f' with {json.dumps(caching_headers)}.' if caching_headers else ''}"
     )
     try:
         r = await session.request(
