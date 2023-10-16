@@ -129,7 +129,7 @@ All further errors give the status `400 Bad Request` and have the body `{'messag
   
     The things that I have worked out aren't allowed are:
     - No dot in netloc
-    - Any component of the netloc longer than 63 character
+    - Any component of the netloc longer than 63 characters
     - 2 consecutive dots in netloc
     - spaces in the URL
     Any futher things that arent' allowed will be added as time passes.
