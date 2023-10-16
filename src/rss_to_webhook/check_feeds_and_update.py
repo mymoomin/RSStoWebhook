@@ -33,6 +33,7 @@ from requests import Response
 
 from rss_to_webhook.constants import (
     DEFAULT_AIOHTTP_TIMEOUT,
+    DEFAULT_COLOR,
     DEFAULT_GET_HEADERS,
     MAX_CACHED_ENTRIES,
 )
@@ -282,7 +283,7 @@ def _make_messages(comic: Comic, entries: list[Entry]) -> list[Message]:
             link = urlunsplit(parts._replace(scheme="https"))
         embeds.append(
             {
-                "color": comic.get("color", 0x5C64F4),
+                "color": comic.get("color", DEFAULT_COLOR),
                 "title": f"**{entry.get('title', comic['title'])}**",
                 "url": link,
                 "description": f"New {comic['title']}!",

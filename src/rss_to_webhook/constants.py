@@ -39,3 +39,7 @@ DEFAULT_AIOHTTP_TIMEOUT = aiohttp.ClientTimeout(sock_connect=15, sock_read=10)
 
 #: Entries older than this will be removed from the database
 MAX_CACHED_ENTRIES = 400
+
+
+#: Discord Blurple™, used as a fallback embed colour
+DEFAULT_COLOR = 0x5C64F4
