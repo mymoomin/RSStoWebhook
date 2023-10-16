@@ -93,7 +93,7 @@ def main(
                 print(f"{comic['title']}: new update {json.dumps(message)}")
                 response = rate_limiter.post(f"{webhook_url}?wait=true", message)
                 print(
-                    f"{comic['title']}, {message['embeds'][0]['title']},"
+                    f"{comic['title']} new post:, {message['embeds'][0]['title']},"
                     f" {message['embeds'][0]['url']}: {response.status_code}:"
                     f" {response.reason}"
                 )
