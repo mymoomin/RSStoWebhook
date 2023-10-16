@@ -475,23 +475,24 @@ if __name__ == "__main__":  # pragma no cover
     load_dotenv()
     HASH_SEED = int(os.environ["HASH_SEED"], 16)
     MONGODB_URI = os.environ["MONGODB_URI"]
+    DB_NAME = os.environ["DB_NAME"]
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)
     opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
     args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
     if "--daily" in opts:
         print("Running daily checks")
         WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
-        comics = client["discord-rss"]["comics"]
+        comics = client[DB_NAME]["comics"]
         daily_checks(comics, WEBHOOK_URL)
     else:
         if "--test" in opts:
             print("testing testing")
             WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
             THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
-            comics = client["discord-rss"]["test-comics"]
+            comics = client[DB_NAME]["test-comics"]
         else:
             print("Running regular checks")
             WEBHOOK_URL = os.environ["WEBHOOK_URL"]
             THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
-            comics = client["discord-rss"]["comics"]
+            comics = client[DB_NAME]["comics"]
         main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)

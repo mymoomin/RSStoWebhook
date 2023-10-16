@@ -26,6 +26,7 @@ load_dotenv()
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 MONGODB_URI = os.environ["MONGODB_URI"]
+DB_NAME = os.environ["DB_NAME"]
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
 
 
@@ -47,7 +48,7 @@ def test_fully() -> None:
     responses.add_passthru(WEBHOOK_URL)
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)
     # Not the actual comics
-    comics = client["discord-rss"]["test-comics"]
+    comics = client[DB_NAME]["test-comics"]
     # Get everything up to date
     main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     # Place every comic one entry behind present

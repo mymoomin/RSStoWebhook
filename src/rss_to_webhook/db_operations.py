@@ -75,8 +75,9 @@ if __name__ == "__main__":  # pragma: no cover
     load_dotenv()
     HASH_SEED = int(os.environ["HASH_SEED"], 16)
     MONGODB_URI = os.environ["MONGODB_URI"]
+    DB_NAME = os.environ["DB_NAME"]
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)
-    collection = client["discord-rss"]["comics"]
+    collection = client[DB_NAME]["comics"]
     comic_list: list[DiscordComic] = json.loads(
         Path("./src/rss_to_webhook/scripts/new_comics.json").read_text()
     )

@@ -23,13 +23,14 @@ load_dotenv()
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 MONGODB_URI = os.environ["MONGODB_URI"]
+DB_NAME = os.environ["DB_NAME"]
 HASH_SEED = int(os.environ["HASH_SEED"], 16)
 client: MongoClient[Comic] = MongoClient(MONGODB_URI)
 
 
 class TestCollection:
     def __init__(self: Self, collection_name: str = "test-comics") -> None:
-        self.collection: Collection[Comic] = client["discord-rss"][collection_name]
+        self.collection: Collection[Comic] = client[DB_NAME][collection_name]
 
     def pop_last_update(self: Self) -> int:
         result = self.collection.update_many(

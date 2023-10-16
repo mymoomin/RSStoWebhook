@@ -3,8 +3,7 @@
 This program was designed to use MongoDB Atlas, a decision made after a thorough technical consideration of its many benefits, such as not costing any money and also being free.
 It should however work with any MongoDB instance with a URL.
 
-The program does everything from a database called "discord-rss", using a collection called "comics" for most things, and one called "test-comics" for some testing.
-This is currently unconfigurable.
+The program does everything from a database with the name of the `DB_NAME` environment variable, using a collection called "comics" for most things, and one called "test-comics" for some testing.
 
 The schema is as described in [db_types.py](/src/rss_to_webhook/db_types.py), reproduced here as TypeScript:
 
