@@ -39,6 +39,7 @@ def relay_request(
     return (r.status_code, r.headers, r.text)
 
 
+@pytest.mark.slow()
 @pytest.mark.side_effects()
 @responses.activate()
 def test_fully() -> None:
@@ -79,6 +80,7 @@ def test_fully() -> None:
     assert comics.find_one({"last_modified": {"$exists": True}})
 
 
+@pytest.mark.slow()
 @pytest.mark.side_effects()
 def test_real_rate_limit() -> None:
     """When the script makes many posts at once, it respects the rate limits.
