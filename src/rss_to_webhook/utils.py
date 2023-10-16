@@ -21,8 +21,15 @@ def batched(
     The last batch may be shorter than n.
 
     A reimplementation of [itertools.batched](https://docs.python.org/3.12/library/itertools.html#itertools.batched).
+
+    >>> list(batched('ABCDEFG', 3))
+    [('A', 'B', 'C'), ('D', 'E', 'F'), ('G',)]
+
+    >>> list(batched('ABCDEFG', 0))
+    Traceback (most recent call last):
+        ...
+    ValueError: n must be at least one
     """
-    # batched('ABCDEFG', 3) --> 'ABC' 'DEF' 'G'
     if n < 1:
         raise ValueError("n must be at least one")
     it = iter(iterable)
