@@ -68,7 +68,7 @@ def test_pauses_at_hidden_rate_limit(
         rate_limiter.post(WEBHOOK_URL, message)
     duration = time.time() - start
     # At this point, the sleep is cued for the next iteration
-    assert len(measure_sleep) == 0
+    assert not measure_sleep
     rate_limiter.post(WEBHOOK_URL, message)
     # And here the sleep has taken place
     assert len(measure_sleep) == 1
@@ -96,7 +96,7 @@ def test_only_pauses_when_rate_limited(
 ) -> None:
     rate_limiter = RateLimiter()
     rate_limiter.post(WEBHOOK_URL, message)
-    assert len(measure_sleep) == 0
+    assert not measure_sleep
     webhook.post(
         WEBHOOK_URL,
         status=200,
@@ -141,7 +141,7 @@ def test_buckets_rate_limits_by_url(
     )
     rate_limiter.post(WEBHOOK_URL, message)
     rate_limiter.post(WEBHOOK_URL, message)
-    assert len(measure_sleep) == 0
+    assert not measure_sleep
     rate_limiter.post(SD_WEBHOOK_URL, message)
     rate_limiter.post(SD_WEBHOOK_URL, message)
     assert len(measure_sleep) == 1
