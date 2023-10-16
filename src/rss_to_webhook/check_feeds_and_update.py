@@ -269,7 +269,7 @@ def _normalise(url: str) -> str:
     return urlsplit(url).path.rstrip("/") + "?" + urlsplit(url).query
 
 
-def _make_messages(comic: Comic, entries: list[Entry]) -> list[Message]:
+def _make_messages(comic: Comic, entries: Sequence[EntrySubset]) -> list[Message]:
     extras: Extras = {
         "username": comic.get("username"),
         "avatar_url": comic.get("avatar_url"),
@@ -457,9 +457,7 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
     rate_limiter = RateLimiter()
     for comic in comic_list:
         print(f"Daily {comic['title']}: Posting")
-        messages = _make_messages(comic, comic["dailies"])  # type: ignore [arg-type]
-        # The type is fine because `entries`` is only read, so it's
-        # covariant, and so list[EntrySubset] is a subtype of list[Entry]
+        messages = _make_messages(comic, comic["dailies"])
         for message in messages:
             rate_limiter.post(f"{webhook_url}?wait=true", message)
         updates = len(comic["dailies"])
