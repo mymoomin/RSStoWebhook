@@ -128,3 +128,8 @@ Error handling has to be improved. Beyond that I would consider this successful 
 - Think about performance, but not too hard. This is fun and easy to make progress/get stuck on, but for now the scripts are high-performance enough that the server is entirely free to run even on Heroku's paid tier, and the tests take 1.62 seconds to run.
   - Request only a subset of properties from MongoDB. For regular checks, we don't need to actually see the values of `dailies`, `error_count`, or `errors`, and for daily checks we don't need to see `thread_id`, `last_entries`, `feed_hash`, `etag`, `last_modified`, `error_count`, or `errors`.
   - Speed up the tests and remove low-value ones. This is very possible and easy, even while maintaining 100% code coverage, but for now it is also unnecessary.
+
+## Current work
+
+- ~~[ ] Add basic tracing~~
+  - Reverted this. Can add it later when I think it adds value
