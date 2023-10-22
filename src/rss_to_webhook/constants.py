@@ -43,3 +43,6 @@ MAX_CACHED_ENTRIES = 400
 
 #: Discord Blurple™, used as a fallback embed colour
 DEFAULT_COLOR = 0x5C64F4
+
+#: Makes hashing deterministic, meaning we can use it for de-duplication
+HASH_SEED = 0xBEFFE

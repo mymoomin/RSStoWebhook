@@ -13,7 +13,7 @@ from pymongo.collection import Collection
 from pymongo.results import InsertOneResult, UpdateResult
 
 from rss_to_webhook.check_feeds_and_update import strip_extra_data
-from rss_to_webhook.constants import DEFAULT_GET_HEADERS
+from rss_to_webhook.constants import DEFAULT_GET_HEADERS, HASH_SEED
 from rss_to_webhook.db_types import CachingInfo, Comic, DiscordComic
 
 
@@ -73,7 +73,6 @@ def add_to_collection(
 
 if __name__ == "__main__":  # pragma: no cover
     load_dotenv()
-    HASH_SEED = int(os.environ["HASH_SEED"], 16)
     MONGODB_URI = os.environ["MONGODB_URI"]
     DB_NAME = os.environ["DB_NAME"]
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)

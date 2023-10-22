@@ -16,10 +16,10 @@ from yarl import URL
 
 from rss_to_webhook import constants
 from rss_to_webhook.check_feeds_and_update import RateLimiter, daily_checks, main
+from rss_to_webhook.constants import HASH_SEED
 from rss_to_webhook.db_types import Comic
 
 load_dotenv(".env.example")
-HASH_SEED = int(os.environ["HASH_SEED"], 16)
 WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
 DAILY_WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
@@ -189,7 +189,7 @@ def test_post_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    main(comics, constants.HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 0
 
 

@@ -35,6 +35,7 @@ from rss_to_webhook.constants import (
     DEFAULT_AIOHTTP_TIMEOUT,
     DEFAULT_COLOR,
     DEFAULT_GET_HEADERS,
+    HASH_SEED,
     MAX_CACHED_ENTRIES,
 )
 from rss_to_webhook.utils import batched
@@ -474,7 +475,6 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
 
 if __name__ == "__main__":  # pragma no cover
     load_dotenv()
-    HASH_SEED = int(os.environ["HASH_SEED"], 16)
     MONGODB_URI = os.environ["MONGODB_URI"]
     DB_NAME = os.environ["DB_NAME"]
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)

@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 from rss_to_webhook.check_feeds_and_update import main
+from rss_to_webhook.constants import HASH_SEED
 
 if TYPE_CHECKING:
     from pymongo.collection import Collection
@@ -24,7 +25,6 @@ WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 MONGODB_URI = os.environ["MONGODB_URI"]
 DB_NAME = os.environ["DB_NAME"]
-HASH_SEED = int(os.environ["HASH_SEED"], 16)
 client: MongoClient[Comic] = MongoClient(MONGODB_URI)
 
 
