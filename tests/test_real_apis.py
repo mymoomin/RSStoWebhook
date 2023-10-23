@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import PreparedRequest
 
-from rss_to_webhook.check_feeds_and_update import RateLimiter, main
+from rss_to_webhook.check_feeds_and_update import RateLimiter, regular_checks
 from rss_to_webhook.constants import HASH_SEED
 
 if TYPE_CHECKING:
@@ -50,7 +50,7 @@ def test_fully() -> None:
     # Not the actual comics
     comics = client[DB_NAME]["test-comics"]
     # Get everything up to date
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     # Place every comic one entry behind present
     res = comics.update_many({}, {"$pop": {"last_entries": 1}})
     num_comics = res.modified_count
@@ -64,13 +64,13 @@ def test_fully() -> None:
     fake_url = "https://discord.com/api/v8/webhooks/837330400841826375/testing"
     responses.add_callback(responses.POST, fake_url, callback=relay_request)
     print("added callback")
-    main(comics, HASH_SEED, fake_url, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, fake_url, THREAD_WEBHOOK_URL)
     print("redone checks")
     # One update posted per comic
     assert len(responses.calls) == num_comics
     # All posted correctly
     assert all(call.response.status_code == HTTPStatus.OK for call in responses.calls)
-    main(comics, HASH_SEED, fake_url, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, fake_url, THREAD_WEBHOOK_URL)
     assert len(responses.calls) == num_comics  # Nothing changed, so no new updates
     # All our fake values have been changed
     assert (

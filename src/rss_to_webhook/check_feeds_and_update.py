@@ -50,7 +50,44 @@ if TYPE_CHECKING:  # pragma no cover
     from rss_to_webhook.discord_types import Embed, Extras, Message
 
 
-def main(
+def main(argv: list[str] | None = None) -> None:
+    """Checks feeds for updates and posts them to Discord.
+
+    Determines which checks to run based on options.
+        - with no options, runs regular checks
+        - with `--daily`, runs daily checks
+        - with `--test`, runs test checks, which post on a testing server
+
+    Doesn't current use arguments, but might in the future.
+    """
+    if argv is None:  # pragma: no cover # In tests values will always be passed in
+        argv = sys.argv[1:]
+    opts = [opt for opt in argv if opt.startswith("-")]
+    _args = [arg for arg in argv if not arg.startswith("-")]
+    load_dotenv()
+    mongodb_uri = os.environ["MONGODB_URI"]
+    db_name = os.environ["DB_NAME"]
+    client: MongoClient[Comic] = MongoClient(mongodb_uri)
+    if "--daily" in opts:
+        print("Running daily checks")
+        webhook_url = os.environ["DAILY_WEBHOOK_URL"]
+        comics = client[db_name]["comics"]
+        daily_checks(comics, webhook_url)
+    else:
+        if "--test" in opts:
+            print("testing testing")
+            webhook_url = os.environ["TEST_WEBHOOK_URL"]
+            thread_webhook_url = os.environ["TEST_WEBHOOK_URL"]
+            comics = client[db_name]["test-comics"]
+        else:
+            print("Running regular checks")
+            webhook_url = os.environ["WEBHOOK_URL"]
+            thread_webhook_url = os.environ["SD_WEBHOOK_URL"]
+            comics = client[db_name]["comics"]
+        regular_checks(comics, HASH_SEED, webhook_url, thread_webhook_url)
+
+
+def regular_checks(
     comics: Collection[Comic],
     hash_seed: int,
     webhook_url: str,
@@ -474,26 +511,4 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
 
 
 if __name__ == "__main__":  # pragma no cover
-    load_dotenv()
-    MONGODB_URI = os.environ["MONGODB_URI"]
-    DB_NAME = os.environ["DB_NAME"]
-    client: MongoClient[Comic] = MongoClient(MONGODB_URI)
-    opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
-    args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
-    if "--daily" in opts:
-        print("Running daily checks")
-        WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
-        comics = client[DB_NAME]["comics"]
-        daily_checks(comics, WEBHOOK_URL)
-    else:
-        if "--test" in opts:
-            print("testing testing")
-            WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
-            THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
-            comics = client[DB_NAME]["test-comics"]
-        else:
-            print("Running regular checks")
-            WEBHOOK_URL = os.environ["WEBHOOK_URL"]
-            THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
-            comics = client[DB_NAME]["comics"]
-        main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    main()

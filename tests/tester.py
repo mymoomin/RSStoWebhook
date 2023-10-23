@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Self
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-from rss_to_webhook.check_feeds_and_update import main
+from rss_to_webhook.check_feeds_and_update import regular_checks
 from rss_to_webhook.constants import HASH_SEED
 
 if TYPE_CHECKING:
@@ -77,9 +77,9 @@ class TestCollection:
         self.reset_caching()
         self.pop_last_update()
         print("test starts")
-        main(self.collection, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+        regular_checks(self.collection, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
         # Nothing more should be sent
-        main(self.collection, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+        regular_checks(self.collection, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
 
 
 if __name__ == "__main__":

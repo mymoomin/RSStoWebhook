@@ -15,7 +15,11 @@ from responses import RequestsMock, matchers
 from yarl import URL
 
 from rss_to_webhook import constants
-from rss_to_webhook.check_feeds_and_update import RateLimiter, daily_checks, main
+from rss_to_webhook.check_feeds_and_update import (
+    RateLimiter,
+    daily_checks,
+    regular_checks,
+)
 from rss_to_webhook.constants import HASH_SEED
 from rss_to_webhook.db_types import Comic
 
@@ -189,7 +193,7 @@ def test_post_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comics.insert_one(comic)
-    main(comics, constants.HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, constants.HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 0
 
 
@@ -216,7 +220,7 @@ def test_store_no_update(
         "last_modified": "Wed, 27 Sep 2023 20:10:14 GMT",
     }
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     updated_comic = comics.find_one({"_id": comic["_id"]})
     assert updated_comic
     assert comic | caching_info == updated_comic
@@ -232,7 +236,7 @@ def test_hash_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> N
         example_feed, HASH_SEED
     )  # But the hash is the same
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 0
 
 
@@ -245,7 +249,7 @@ def test_post_one_update(
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert json.loads(webhook.calls[0].request.body) == {
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
         "content": "<@&581531863127031868>",
@@ -270,7 +274,7 @@ def test_store_one_update(
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     updated_comic = comics.find_one({"_id": comic["_id"]})
     assert updated_comic
     assert updated_comic["last_entries"][-1] == {
@@ -295,7 +299,7 @@ def test_post_two_updates(
     # Remove the last two entries from the list
     del comic["last_entries"][-num_new_entries:]
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert embeds
     assert len(embeds) == num_new_entries
@@ -314,7 +318,7 @@ def test_store_two_updates(
     # Remove the last two entries from the list
     del comic["last_entries"][-num_new_entries:]
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     updated_comic = comics.find_one({"_id": comic["_id"]})
     assert updated_comic
     assert [entry["link"] for entry in updated_comic["last_entries"][-2:]] == [
@@ -330,9 +334,9 @@ def test_idempotency(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1  # One post
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1  # Still one post
 
 
@@ -352,11 +356,11 @@ def test_suddenly_pubdates(
     comic["last_entries"].pop()  # One "new" entry
     comic["last_entries"] = [{"link": entry["link"]} for entry in comic["last_entries"]]
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1  # One post
     assert len(json.loads(webhook.calls[0].request.body)["embeds"]) == 1
     comics.update_one({"_id": comic["_id"]}, {"$set": {"feed_hash": b"hi!"}})
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1  # Still one post
 
 
@@ -376,7 +380,7 @@ def test_post_all_new_updates(
     num_new_entries = 20
     max_embeds_per_message = 10
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     embeds_by_message = [
         json.loads(call.request.body)["embeds"] for call in webhook.calls
     ]
@@ -411,7 +415,7 @@ def test_store_all_new_updates(
     # No seen entries in feed
     comic["last_entries"] = []
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     updated_comic = comics.find_one({"_id": comic["_id"]})
     assert updated_comic
     last_entries = updated_comic["last_entries"]
@@ -458,7 +462,7 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -
         </feed>
         """,
     )
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     new_comic = comics.find_one({"title": "xkcd"})
     assert new_comic
     assert "etag" in new_comic
@@ -471,7 +475,7 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -
             "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
         },
     )
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     print(list(rss.requests.keys()))
     req = rss.requests[("GET", URL("https://xkcd.com/atom.xml"))][-1]
     h = req.kwargs["headers"]
@@ -496,7 +500,7 @@ def test_handles_rss_errors(
     )  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
     rss.get("http://does.not.exist/nowhere", status=404)
     comics.insert_many([bad_comic, comic])
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1
 
 
@@ -511,7 +515,7 @@ def test_updates_error_count(comic: Comic, rss: aioresponses) -> None:
     )  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
     rss.get("http://does.not.exist/nowhere", status=404)
     comics.insert_many([bad_comic, comic])
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     updated_good_comic = comics.find_one({"_id": comic["_id"]})
     assert updated_good_comic
     assert updated_good_comic.get("error_count") in {0, None}
@@ -558,7 +562,7 @@ def test_thread_comic_new_entry(comic: Comic, rss: aioresponses) -> None:
         ],
     )
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert normal_webhook.call_count == 1
     assert thread_webhook.call_count == 1
 
@@ -596,7 +600,7 @@ def test_thread_comic_body(comic: Comic, rss: aioresponses) -> None:
         ],
     )
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     # The second `post` was to the thread
     assert json.loads(responses.calls[1].request.body) == {
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
@@ -624,7 +628,7 @@ def test_daily_two_updates(
     comic["last_entries"].pop()  # One "new" entry
     comic["last_entries"].pop()  # Two "new" entries
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     regular_embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert (
         regular_embeds[0]["url"]
@@ -684,7 +688,7 @@ def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
     num_comics = 2
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == num_comics
     assert (
         json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
@@ -761,7 +765,7 @@ def test_pauses_only_at_rate_limit(
             "x-ratelimit-reset-after": "1",
         },
     )
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(measure_sleep) == 1
     assert measure_sleep[0] == 1
 
@@ -818,7 +822,7 @@ def test_pauses_at_hidden_rate_limit(
     )
     print(responses.registered())
     start = time.time()
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     end = time.time()
     main_duration = end - start
     assert len(measure_sleep) == 1
@@ -855,7 +859,7 @@ def test_fails_on_429(comic: Comic, rss: aioresponses) -> None:
         },
     )
     with pytest.raises(HTTPError) as e:
-        main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+        regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert "429" in str(e.value)
 
 
@@ -897,7 +901,7 @@ def test_no_update_on_failure(comic: Comic, rss: aioresponses) -> None:
         },
     )
     with pytest.raises(HTTPError):
-        main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+        regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     new_comic = comics.find_one({"_id": comic["_id"]})
     assert new_comic
     assert "last_modified" not in new_comic
@@ -918,7 +922,7 @@ def test_no_crash_on_missing_headers(comic: Comic, rss: aioresponses) -> None:
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
     responses.post(WEBHOOK_URL, status=200, headers={})
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
 
 
 @pytest.mark.usefixtures("_no_sleep")
@@ -931,7 +935,7 @@ def test_user_agent(comic: Comic, rss: aioresponses) -> None:
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comics.insert_one(comic)
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     request = rss.requests[("GET", URL(comic["feed_url"]))][0]
     assert request
     headers = request.kwargs["headers"]
@@ -998,13 +1002,13 @@ def test_performance(
     )
     print(responses.registered())
     start = time.time()
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     end = time.time()
     main_duration = end - start
     print(main_duration)
     assert len(measure_sleep) == (len(webhook.calls) - 1) // 30
     webhook.calls.reset()
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 0
     start = time.time()
     daily_checks(comics, DAILY_WEBHOOK_URL)
