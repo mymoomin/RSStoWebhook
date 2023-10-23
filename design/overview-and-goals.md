@@ -92,6 +92,10 @@ Error handling has to be improved. Beyond that I would consider this successful 
   - Possibly use `ContextVar`s to track which comic is being checked at any point? This might require re-architecturing to put checking each comic in one async task
   - Possibly start adding JSON metadata to log messages to help Logtail understand things better, maybe even enabling a dashboard with alerts for certain events (questionable)
 - Actually work on integrating things into Discord.
+  - Work out what how to do this technically
+    - Could use AWS Lambdas somehow, but I think some of the options need a bot token, which some people say makes serverless annoying
+    - Could use a web framework, like FastAPI or the stdlib `http.server`, directly. This is probably making more work for myself for no reason. It would also mean keeping the Heroku dyno running at all times even though it'll only get used once every few days, which feels bad on some level
+    - Could just use discord.py. This is the natural option, but it feels wrong to me to pull in a whole framework just for a few commands that shouldn't be too much work to implement manually. This is the kind of thing people say before creating far too much work for themselves for no reason, so I'm a little hesitant to believe it. Probably I can start off with discord.py, then change if problems occur.
   - Users should be able to:
     - Propose new comics
     - Subscribe and unsubscribe from comics
@@ -133,3 +137,5 @@ Error handling has to be improved. Beyond that I would consider this successful 
 
 - ~~[ ] Add basic tracing~~
   - Reverted this. Can add it later when I think it adds value
+- [x] Add tests against the real Discord API
+- [ ] Implement admin bot commands as CLI commands, to get a sense for how easy they are to implement ignoring `discord.py`, or whatever bot framework we end up using
