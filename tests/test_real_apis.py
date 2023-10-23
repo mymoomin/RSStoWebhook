@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 # This file tries to use the real environment variables, so it can't be
 # called in GitHub Actions.
-load_dotenv()
+load_dotenv(override=True)
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 MONGODB_URI = os.environ["MONGODB_URI"]
