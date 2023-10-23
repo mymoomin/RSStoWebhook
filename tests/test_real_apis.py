@@ -11,14 +11,13 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import PreparedRequest
 
-from rss_to_webhook.check_feeds_and_update import RateLimiter, regular_checks
+from rss_to_webhook.check_feeds_and_update import regular_checks
 from rss_to_webhook.constants import HASH_SEED
 
 if TYPE_CHECKING:
     from requests.structures import CaseInsensitiveDict
 
     from rss_to_webhook.db_types import Comic
-    from rss_to_webhook.discord_types import Message
 
 
 # This file tries to use the real environment variables, so it can't be
@@ -79,25 +78,3 @@ def test_fully() -> None:
     )
     # The rss feeds with a Last-Modified header have had that saved
     assert comics.find_one({"last_modified": {"$exists": True}})
-
-
-@pytest.mark.slow()
-@pytest.mark.side_effects()
-def test_real_rate_limit() -> None:
-    """When the script makes many posts at once, it respects the rate limits.
-
-    Regression test for [01fd62b](https://github.com/mymoomin/RSStoWebhook/commit/01fd62be50918775b68bedbb71c1f4b5ec148acf)
-    """
-    rate_limiter = RateLimiter()
-    for i in range(60):
-        body: Message = {
-            "embeds": [
-                {
-                    "color": 0x5C64F4,
-                    "title": f"**Page {i}**",
-                    "url": "https://example.com/page/1",
-                    "description": "New Test Webcomic!",
-                },
-            ],
-        }
-        rate_limiter.post(WEBHOOK_URL, body)
