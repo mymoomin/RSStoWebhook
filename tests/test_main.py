@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING
 import mongomock
 import pytest
 from dotenv import load_dotenv
+from typer.testing import CliRunner
 
 from rss_to_webhook import check_feeds_and_update
-from rss_to_webhook.check_feeds_and_update import main
 from rss_to_webhook.constants import DEFAULT_AIOHTTP_TIMEOUT, HASH_SEED
+from rss_to_webhook.main import app
 
 if TYPE_CHECKING:
     from aiohttp import ClientTimeout
@@ -25,26 +26,24 @@ TEST_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 DB_NAME = os.environ["DB_NAME"]
 
 
+runner = CliRunner()
+
+
 @pytest.fixture()
 def _fake_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    print("_fake_env")
     real_load = load_dotenv
 
     def load_example_env() -> None:
-        print("called load_example_env")
         real_load(".env.example")
 
     monkeypatch.setattr(check_feeds_and_update, "load_dotenv", load_example_env)
-    print("set _fake_env")
 
 
 @pytest.fixture()
 def fake_db(monkeypatch: pytest.MonkeyPatch) -> mongomock.MongoClient[Comic]:
-    print("hiiiii")
     client: mongomock.MongoClient[Comic] = mongomock.MongoClient()
 
     def dummy_client(_url: str) -> mongomock.MongoClient[Comic]:
-        print("Called!")
         return client
 
     monkeypatch.setattr(check_feeds_and_update, "MongoClient", dummy_client)
@@ -94,9 +93,17 @@ def report_daily_checks(monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
 def test_runs_regular_checks(
     report_regular_checks: dict[str, object], fake_db: mongomock.MongoClient[Comic]
 ) -> None:
-    print("step1")
+    default_result = runner.invoke(app, ["post-updates"])
+    assert default_result.exit_code == 0
+    assert report_regular_checks == {
+        "hash_seed": HASH_SEED,
+        "comics": fake_db[DB_NAME]["comics"],
+        "thread_webhook_url": THREAD_WEBHOOK_URL,
+        "webhook_url": WEBHOOK_URL,
+    }
 
-    main([])
+    regular_result = runner.invoke(app, ["post-updates", "regular"])
+    assert regular_result.exit_code == 0
     assert report_regular_checks == {
         "hash_seed": HASH_SEED,
         "comics": fake_db[DB_NAME]["comics"],
@@ -109,9 +116,8 @@ def test_runs_regular_checks(
 def test_runs_test_checks(
     report_regular_checks: dict[str, object], fake_db: mongomock.MongoClient[Comic]
 ) -> None:
-    print("step1")
-
-    main(["--test"])
+    result = runner.invoke(app, ["post-updates", "test"])
+    assert result.exit_code == 0
     assert report_regular_checks == {
         "hash_seed": HASH_SEED,
         "comics": fake_db[DB_NAME]["test-comics"],
@@ -124,9 +130,8 @@ def test_runs_test_checks(
 def test_runs_daily_checks(
     report_daily_checks: dict[str, object], fake_db: mongomock.MongoClient[Comic]
 ) -> None:
-    print("step1")
-
-    main(["--daily"])
+    result = runner.invoke(app, ["post-updates", "daily"])
+    assert result.exit_code == 0
     assert report_daily_checks == {
         "comics": fake_db[DB_NAME]["comics"],
         "webhook_url": DAILY_WEBHOOK_URL,

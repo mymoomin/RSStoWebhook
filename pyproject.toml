@@ -21,6 +21,9 @@ dependencies = [
     "typer>=0.9.0",
 ]
 
+[project.scripts]
+rss-to-webhook = "rss_to_webhook.main:app"
+
 [project.optional-dependencies]
 lint = [
     "ruff>=0.0.292",
@@ -67,7 +70,10 @@ testpaths = [
 
 [tool.coverage.run]
 source = ["rss-to-webhook"]
-omit = ["*/scripts/*"]
+omit = [
+    "*/scripts/*",
+    "__main__.py"
+]
 branch = true
 
 [tool.coverage.report]

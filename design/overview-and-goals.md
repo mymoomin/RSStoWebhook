@@ -139,3 +139,4 @@ Error handling has to be improved. Beyond that I would consider this successful 
   - Reverted this. Can add it later when I think it adds value
 - [x] Add tests against the real Discord API
 - [ ] Implement admin bot commands as CLI commands, to get a sense for how easy they are to implement ignoring `discord.py`, or whatever bot framework we end up using
+  - [x] Convert `check_feeds_and_update` to a command

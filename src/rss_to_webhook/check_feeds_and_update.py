@@ -16,9 +16,9 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import sys
 import time
 from dataclasses import astuple, dataclass
+from enum import Enum
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
@@ -27,6 +27,7 @@ import aiohttp
 import feedparser
 import mmh3
 import requests
+import typer
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import Response
@@ -50,31 +51,39 @@ if TYPE_CHECKING:  # pragma no cover
     from rss_to_webhook.discord_types import Embed, Extras, Message
 
 
-def main(argv: list[str] | None = None) -> None:
-    """Checks feeds for updates and posts them to Discord.
+class CheckType(str, Enum):
+    """Types for `check_feeds_and_update`."""
 
-    Determines which checks to run based on options.
-        - with no options, runs regular checks
-        - with `--daily`, runs daily checks
-        - with `--test`, runs test checks, which post on a testing server
+    regular = "regular"
+    daily = "daily"
+    test = "test"
 
-    Doesn't currently use arguments, but might in the future.
-    """
-    if argv is None:  # pragma: no cover # In tests values will always be passed in
-        argv = sys.argv[1:]
-    opts = [opt for opt in argv if opt.startswith("-")]
-    _args = [arg for arg in argv if not arg.startswith("-")]
+
+# We can't use the `Annotate[CheckType, typer.Argument()]` form here because we
+# use `from future import __annotations__`, which delays annotation evaluation
+# and so breaks meaningful `Annotate` types.
+def main(
+    check_type: CheckType = typer.Argument(
+        CheckType.regular,
+        help=(
+            "Use `regular` for normal checks, `daily` for daily, and `test` to run"
+            " in testing mode."
+        ),
+    ),
+) -> None:
+    """Checks feeds for updates and posts them to Discord."""
+    print("Running checks")
     load_dotenv()
     mongodb_uri = os.environ["MONGODB_URI"]
     db_name = os.environ["DB_NAME"]
     client: MongoClient[Comic] = MongoClient(mongodb_uri)
-    if "--daily" in opts:
+    if check_type == CheckType.daily:
         print("Running daily checks")
         webhook_url = os.environ["DAILY_WEBHOOK_URL"]
         comics = client[db_name]["comics"]
         daily_checks(comics, webhook_url)
     else:
-        if "--test" in opts:
+        if check_type == CheckType.test:
             print("testing testing")
             webhook_url = os.environ["TEST_WEBHOOK_URL"]
             thread_webhook_url = os.environ["TEST_WEBHOOK_URL"]
@@ -511,4 +520,4 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
 
 
 if __name__ == "__main__":  # pragma no cover
-    main()
+    typer.run(main)
