@@ -58,7 +58,7 @@ def main(argv: list[str] | None = None) -> None:
         - with `--daily`, runs daily checks
         - with `--test`, runs test checks, which post on a testing server
 
-    Doesn't current use arguments, but might in the future.
+    Doesn't currently use arguments, but might in the future.
     """
     if argv is None:  # pragma: no cover # In tests values will always be passed in
         argv = sys.argv[1:]
