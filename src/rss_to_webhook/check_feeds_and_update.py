@@ -321,7 +321,6 @@ def _make_messages(comic: Comic, entries: Sequence[EntrySubset]) -> list[Message
         "username": comic.get("username"),
         "avatar_url": comic.get("avatar_url"),
     }
-    extras["content"] = f"<@&{comic['role_id']}>"
     embeds: list[Embed] = []
     for entry in entries:
         if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
@@ -336,10 +335,12 @@ def _make_messages(comic: Comic, entries: Sequence[EntrySubset]) -> list[Message
                 "description": f"New {comic['title']}!",
             }
         )
-    return [
+    # No typechecker can understand this assignment, but it is valid
+    messages: list[Message] = [
         {"embeds": list(embed_chunk)} | extras for embed_chunk in batched(embeds, 10)  # type: ignore[misc]
     ]
-    # No typechecker can understand this assignment, but it is valid
+    messages[0]["content"] = f"<@&{comic['role_id']}>"
+    return messages
 
 
 @dataclass(slots=True)

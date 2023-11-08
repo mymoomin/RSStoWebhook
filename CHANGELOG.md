@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 ### Added
 
 - Package now executeable as a script. Try `rss-to-webhook --help` or `py -m rss_to_webhook --help`
+  
+### Fixed
+
+- When an update for a comic is split across multiple messages, only the first message will ping the update role
 
 ## [0.0.3] - 2023-10-29
 

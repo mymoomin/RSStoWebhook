@@ -149,3 +149,16 @@ def test_splits_big_updates(comic: Comic) -> None:
             len(embeds) == max_embeds_per_message for embeds in embeds_by_message[:-1]
         )
     assert len(all_embeds) == num_entries
+
+
+def test_first_has_ping(comic: Comic) -> None:
+    """When a group of entries is split, only the first message should ping."""
+    max_embeds_per_message = 10
+    num_entries = 11
+    entries: list[Entry] = [
+        {"link": f"hps://example.com/page/{i}"} for i in range(num_entries)
+    ]
+    messages = _make_messages(comic, entries)
+    assert len(messages) == math.ceil(num_entries / max_embeds_per_message)
+    assert messages[0].get("content") == f"<@&{comic['role_id']}>"
+    assert "content" not in messages[1]
