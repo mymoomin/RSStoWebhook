@@ -37,6 +37,7 @@ from rss_to_webhook.constants import (
     DEFAULT_COLOR,
     DEFAULT_GET_HEADERS,
     HASH_SEED,
+    LOOKBACK_LIMIT,
     MAX_CACHED_ENTRIES,
 )
 from rss_to_webhook.utils import batched
@@ -266,10 +267,10 @@ def _get_new_entries(
     format in any case other than one from several years ago. We use this as our
     highest-precedence identity check, giving a hierarchy of <pubDate>, <id>, <link>.
 
-    This function does a loop over the last 100 entries in the RSS feed, checking if
-    each has been seen before by looping over each of the last-seen entries and seeing
-    if any match, using the highest-precedence key that exists. This is somehow pretty
-    fast. Small n really does just mean you can do whatever.
+    This function does a loop over the last `LOOKBACK_LIMIT` entries in the RSS feed,
+    checking if each has been seen before by looping over each of the last-seen
+    entries and seeing if any match, using the highest-precedence key that exists.
+    This is somehow pretty fast. Small n really does just mean you can do whatever.
 
     The `if _normalise(entry["link"]) in last_paths` check is a performance optimisation
     over the expected check, comparing against `_normalise(old_entry["link"])`. I think
@@ -278,7 +279,7 @@ def _get_new_entries(
     becomes an issue I'll rework this for a faster approach.
     """
     new_entries: list[Entry] = []
-    capped_entries = list(reversed(current_entries[:100]))
+    capped_entries = list(reversed(current_entries[:LOOKBACK_LIMIT]))
     max_entries = len(capped_entries)
     last_paths = {_normalise(entry["link"]) for entry in last_entries}
     last_pubdates = {entry.get("published") for entry in last_entries}
@@ -306,7 +307,7 @@ def _get_new_entries(
         else:
             new_entries.append(entry)
     if len(new_entries) == max_entries:
-        print("No last entry. Returning up to 100 most recent entries")
+        print(f"No last entry. Returning up to {LOOKBACK_LIMIT} most recent entries")
     else:
         print("Found last entry")
     return new_entries
