@@ -4,15 +4,16 @@ All notable changes to the extension will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.0.4] - 2024-10-15
 
 ### Added
 
-- Package now executeable as a script. Try `rss-to-webhook --help` or `py -m rss_to_webhook --help`
+- Package now executable as a script. Try `rss-to-webhook --help` or `py -m rss_to_webhook --help`
   
 ### Fixed
 
 - When an update for a comic is split across multiple messages, only the first message will ping the update role
+- When an entry's title is very long, it is automatically shortened to avoid Discord's length limits
 
 ## [0.0.3] - 2023-10-29
 
