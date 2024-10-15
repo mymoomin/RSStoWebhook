@@ -331,7 +331,7 @@ def _make_messages(comic: Comic, entries: Sequence[EntrySubset]) -> list[Message
             link = urlunsplit(parts._replace(scheme="https"))
         embeds.append({
             "color": comic.get("color", DEFAULT_COLOR),
-            "title": f"**{entry.get('title', comic['title'])}**",
+            "title": _process_title(entry.get("title", comic["title"])),
             "url": link,
             "description": f"New {comic['title']}!",
         })
@@ -341,6 +341,11 @@ def _make_messages(comic: Comic, entries: Sequence[EntrySubset]) -> list[Message
     ]
     messages[0]["content"] = f"<@&{comic['role_id']}>"
     return messages
+
+
+def _process_title(title: str) -> str:
+    cropped_title = title[:252]
+    return f"**{cropped_title}**"
 
 
 @dataclass(slots=True)

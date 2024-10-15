@@ -163,3 +163,15 @@ def test_first_has_ping(comic: Comic) -> None:
     assert len(messages) == math.ceil(num_entries / max_embeds_per_message)
     assert messages[0].get("content") == f"<@&{comic['role_id']}>"
     assert "content" not in messages[1]
+
+
+def test_limit_title(comic: Comic) -> None:
+    """When a title is too long, it is shortened."""
+    entry: Entry = {"link": "https://example.com/page/1", "title": "a" * 300}
+    body = _make_messages(comic, [entry])[0]
+    assert len(body["embeds"][0]["title"]) == 256  # noqa: PLR2004
+
+
+# You could argue that other fields should also have tests like this,
+# but embed title and url are the only fields that come from the RSS feed
+# rather than the database, so I think this is fair for now
