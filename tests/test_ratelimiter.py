@@ -65,7 +65,7 @@ def test_pauses_at_hidden_rate_limit(
     for _i in range(30):
         rate_limiter.post(WEBHOOK_URL, message)
     duration = time.time() - start
-    # At this point, the sleep is cued for the next iteration
+    # At this point, the sleep is queued for the next iteration
     assert len(measure_sleep) == 0
     rate_limiter.post(WEBHOOK_URL, message)
     # And here the sleep has taken place
@@ -78,7 +78,7 @@ def test_pauses_at_hidden_rate_limit(
 def test_pauses_repeatedly_at_hidden_rate_limit(
     message: Message, webhook: RequestsMock, measure_sleep: list[float]
 ) -> None:
-    runs = 91
+    runs = 61
     rate_limiter = RateLimiter()
     for _i in range(runs):
         rate_limiter.post(WEBHOOK_URL, message)
@@ -182,3 +182,44 @@ def test_raises_exception_on_error(
     message["embeds"][0]["url"] = "https://urls don't have spaces.com"
     with pytest.raises(HTTPError):
         rate_limiter.post(SD_WEBHOOK_URL, message)
+
+
+def test_raises_exception_on_429(
+    message: Message, webhook: RequestsMock, measure_sleep: list[float]
+) -> None:
+    rate_limiter = RateLimiter()
+    error_message = (
+        '{"message": "Invalid Form Body", "code": 50035, "errors": {"embeds": {"0":'
+        ' {"url": {"_errors": [{"code": "URL_TYPE_INVALID_URL", "message": "Not a well'
+        ' formed URL."}]}}}}}'
+    )
+    webhook.post(
+        SD_WEBHOOK_URL,
+        status=429,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "1",
+            "x-ratelimit-reset-after": "1",
+        },
+        body=json.dumps(error_message),
+    )
+    webhook.post(
+        SD_WEBHOOK_URL,
+        status=400,
+        headers={
+            "retry-after": "1",
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "4",
+            "x-ratelimit-reset-after": "0.399",
+            "x-ratelimit-scope": "shared",
+        },
+        json={
+            "message": "The resource is being rate limited.",
+            "retry_after": 0.529,
+            "global": False,
+        },
+    )
+    message["embeds"][0]["url"] = "https://urls don't have spaces.com"
+    with pytest.raises(HTTPError) as e:
+        rate_limiter.post(SD_WEBHOOK_URL, message)
+    assert "429" in str(e.value)

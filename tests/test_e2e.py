@@ -779,6 +779,7 @@ def test_daily_idempotent(
 
 
 @responses.activate()
+@pytest.mark.slow  # This is already tested in test_ratelimiter.py
 def test_pauses_only_at_rate_limit(
     comic: Comic, rss: aioresponses, measure_sleep: list[float]
 ) -> None:
@@ -820,6 +821,7 @@ def test_pauses_only_at_rate_limit(
 
 
 @responses.activate()
+@pytest.mark.slow  # This is already tested in test_ratelimiter.py
 def test_pauses_at_hidden_rate_limit(
     comic: Comic, rss: aioresponses, measure_sleep: list[float]
 ) -> None:
@@ -882,6 +884,7 @@ def test_pauses_at_hidden_rate_limit(
 
 @responses.activate()
 @pytest.mark.usefixtures("_no_sleep")
+@pytest.mark.slow  # This is already tested in test_ratelimiter.py
 def test_fails_on_429(comic: Comic, rss: aioresponses) -> None:
     """The script fails with an exception when it exceeds the rate limit.
 
