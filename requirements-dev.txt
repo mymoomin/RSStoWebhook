@@ -50,7 +50,7 @@ coverage[toml]==7.3.2
     #   pytest-cov
 distlib==0.3.7
     # via virtualenv
-dnspython==2.4.2
+dnspython==2.6.1
     # via pymongo
 feedparser==6.0.10
     # via

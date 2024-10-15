@@ -22,7 +22,7 @@ click==8.1.7
     # via typer
 colorama==0.4.6
     # via click
-dnspython==2.4.2
+dnspython==2.6.1
     # via pymongo
 feedparser==6.0.10
     # via rss-to-webhook (setup.py)
