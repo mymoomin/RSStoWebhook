@@ -296,6 +296,7 @@ def test_post_one_entry(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert webhook.calls[0].request.body
     assert json.loads(webhook.calls[0].request.body) == {
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
         "content": "<@&581531863127031868>",
@@ -319,6 +320,7 @@ def test_minimal_one_entry(
     minimal_comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(minimal_comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert webhook.calls[0].request.body
     assert json.loads(webhook.calls[0].request.body) == {
         "avatar_url": None,
         "content": "<@&581531863127031868>",
@@ -344,6 +346,7 @@ def test_post_two_entries(
     del comic["last_entries"][-num_new_entries:]
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert webhook.calls[0].request.body
     embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert embeds
     assert len(embeds) == num_new_entries
@@ -410,6 +413,7 @@ def test_daily_two_entries(
     comic["last_entries"].pop()  # Two "new" entries
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert webhook.calls[0].request.body
     regular_embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert (
         regular_embeds[0]["url"]
@@ -420,6 +424,7 @@ def test_daily_two_entries(
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
     daily_checks(comics, DAILY_WEBHOOK_URL)
+    assert webhook.calls[1].request.body
     daily_embeds = json.loads(webhook.calls[1].request.body)["embeds"]
     assert (
         daily_embeds[0]["url"]
@@ -472,10 +477,12 @@ def test_daily_two_feeds(
     num_comics = 2
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == num_comics
+    assert webhook.calls[0].request.body
     assert (
         json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
+    assert webhook.calls[1].request.body
     assert (
         json.loads(webhook.calls[1].request.body)["embeds"][0]["url"]
         == "https://xkcd.com/2834/"

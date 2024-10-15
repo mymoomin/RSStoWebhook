@@ -1,4 +1,4 @@
-"""Tools for modifiying and querying the database."""
+"""Tools for modifying and querying the database."""
 
 import json
 import os

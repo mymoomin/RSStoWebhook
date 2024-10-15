@@ -250,6 +250,7 @@ def test_post_one_update(
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert webhook.calls[0].request.body
     assert json.loads(webhook.calls[0].request.body) == {
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
         "content": "<@&581531863127031868>",
@@ -298,12 +299,12 @@ def test_post_two_updates(
     del comic["last_entries"][-num_new_entries:]
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert webhook.calls[0].request.body
     embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert embeds
     assert len(embeds) == num_new_entries
     assert embeds[0]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
     assert embeds[1]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
-
 
 @pytest.mark.usefixtures("_no_sleep")
 def test_store_two_updates(
@@ -356,6 +357,7 @@ def test_suddenly_pubdates(
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1  # One post
+    assert webhook.calls[0].request.body
     assert len(json.loads(webhook.calls[0].request.body)["embeds"]) == 1
     comics.update_one({"_id": comic["_id"]}, {"$set": {"feed_hash": b"hi!"}})
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
@@ -600,6 +602,7 @@ def test_thread_comic_body(comic: Comic, rss: aioresponses) -> None:
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     # The second `post` was to the thread
+    assert responses.calls[1].request.body
     assert json.loads(responses.calls[1].request.body) == {
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
         "embeds": [{
@@ -625,6 +628,7 @@ def test_daily_two_updates(
     comic["last_entries"].pop()  # Two "new" entries
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert webhook.calls[0].request.body
     regular_embeds = json.loads(webhook.calls[0].request.body)["embeds"]
     assert (
         regular_embeds[0]["url"]
@@ -635,6 +639,7 @@ def test_daily_two_updates(
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
     daily_checks(comics, WEBHOOK_URL)
+    assert webhook.calls[1].request.body
     daily_embeds = json.loads(webhook.calls[1].request.body)["embeds"]
     assert (
         daily_embeds[0]["url"]
@@ -686,10 +691,12 @@ def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     num_comics = 2
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == num_comics
+    assert webhook.calls[0].request.body
     assert (
         json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
+    assert webhook.calls[1].request.body
     assert (
         json.loads(webhook.calls[1].request.body)["embeds"][0]["url"]
         == "https://xkcd.com/2834/"
@@ -716,6 +723,7 @@ def test_daily_idempotent(
     comic["dailies"].append(comic["last_entries"][-1])  # One "new" entry
     comics.insert_one(comic)
     daily_checks(comics, WEBHOOK_URL)
+    assert webhook.calls[0].request.body
     assert (
         json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
@@ -1012,7 +1020,7 @@ def test_performance(
     daily_duration = end - start
     print(daily_duration)
     assert len(measure_sleep) == 2 * ((len(webhook.calls) - 1) // 30)
-    daily.call_count = 0
+    daily.calls.reset()
     daily_checks(comics, DAILY_WEBHOOK_URL)
     assert daily.call_count == 0
 
