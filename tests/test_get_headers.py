@@ -5,7 +5,7 @@ from rss_to_webhook.check_feeds_and_update import _get_headers
 from rss_to_webhook.db_types import Comic
 
 
-@pytest.fixture()
+@pytest.fixture
 def comic() -> Comic:
     return Comic(
         _id=ObjectId("111111111111111111111111"),

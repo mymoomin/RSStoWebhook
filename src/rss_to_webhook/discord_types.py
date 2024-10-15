@@ -1,6 +1,5 @@
 """TypedDicts for working with the Discord API."""
 
-
 from typing import Required, TypedDict
 
 

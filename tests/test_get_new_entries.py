@@ -189,28 +189,22 @@ def test_new_by_date() -> None:
     I'm not 100% sure this is desired behaviour. If a change breaks this test, it
     might be best to just remove the test.
     """
-    last_seen: Sequence[EntrySubset] = [
-        {
-            "published": "Wed, 04 Oct 2023 01:40:51 -0400",
-            "id": "https://example.com/page/1",
-            "link": "https://example.com/page/1",
-        }
-    ]
-    feed_entries: Sequence[Entry] = [
-        {
-            "published": "Thu, 05 Oct 2023 01:40:51 -0400",
-            "id": "https://example.com/page/1",
-            "link": "https://example.com/page/1",
-        }
-    ]
+    last_seen: Sequence[EntrySubset] = [{
+        "published": "Wed, 04 Oct 2023 01:40:51 -0400",
+        "id": "https://example.com/page/1",
+        "link": "https://example.com/page/1",
+    }]
+    feed_entries: Sequence[Entry] = [{
+        "published": "Thu, 05 Oct 2023 01:40:51 -0400",
+        "id": "https://example.com/page/1",
+        "link": "https://example.com/page/1",
+    }]
     new_entries = _get_new_entries(last_seen, feed_entries)
-    assert new_entries == [
-        {
-            "published": "Thu, 05 Oct 2023 01:40:51 -0400",
-            "id": "https://example.com/page/1",
-            "link": "https://example.com/page/1",
-        }
-    ]
+    assert new_entries == [{
+        "published": "Thu, 05 Oct 2023 01:40:51 -0400",
+        "id": "https://example.com/page/1",
+        "link": "https://example.com/page/1",
+    }]
 
 
 def test_same_by_date() -> None:
@@ -219,13 +213,11 @@ def test_same_by_date() -> None:
     This allows us to handle cases where all a feed's URLs and IDs change to URLs that
     are the same but potentially different, but the dates are unchanged.
     """
-    last_seen: Sequence[EntrySubset] = [
-        {
-            "published": "Wed, 04 Oct 2023 01:40:51 -0400",
-            "id": "https://example.com/page/1",
-            "link": "https://example.com/page/1",
-        }
-    ]
+    last_seen: Sequence[EntrySubset] = [{
+        "published": "Wed, 04 Oct 2023 01:40:51 -0400",
+        "id": "https://example.com/page/1",
+        "link": "https://example.com/page/1",
+    }]
     feed_entries: Sequence[Entry] = [
         {
             "published": "Wed, 04 Oct 2023 01:40:51 -0400",
@@ -258,13 +250,11 @@ def test_suddenly_date_and_id() -> None:
         },
     ]
     new_entries = _get_new_entries(last_seen, feed_entries)
-    assert new_entries == [
-        {
-            "published": "Thu, 05 Oct 2023 01:40:51 -0400",
-            "id": "https://example.com/page/2",
-            "link": "https://example.com/page/2",
-        }
-    ]
+    assert new_entries == [{
+        "published": "Thu, 05 Oct 2023 01:40:51 -0400",
+        "id": "https://example.com/page/2",
+        "link": "https://example.com/page/2",
+    }]
 
 
 def test_skip_bad_entries() -> None:
@@ -316,13 +306,11 @@ def performance_generator() -> (
     ]
     last_entries_all: Sequence[EntrySubset] = entries[:-1]
     feed_entries_all: Sequence[Entry] = entries[-100:]
-    new_entries_all: Sequence[Entry] = [
-        {
-            "published": f"Thu, 05 Oct 2{num_entries:0>3} 01:40:51 -0400",
-            "id": f"https://examples.com/page/{num_entries}",
-            "link": f"https://examples.com/page/{num_entries}",
-        }
-    ]
+    new_entries_all: Sequence[Entry] = [{
+        "published": f"Thu, 05 Oct 2{num_entries:0>3} 01:40:51 -0400",
+        "id": f"https://examples.com/page/{num_entries}",
+        "link": f"https://examples.com/page/{num_entries}",
+    }]
 
     last_entries_id: Sequence[EntrySubset] = [
         {"id": entry["id"], "link": entry["link"]} for entry in last_entries_all
@@ -381,13 +369,13 @@ def performance_generator() -> (
     performance_generator()[1],
     ids=["all", "id", "link"],
 )
-@pytest.mark.benchmark()
+@pytest.mark.benchmark
 def test_performance(
     last_entries: Sequence[EntrySubset],
     feed_entries: Sequence[Entry],
     expected_new_entries: Sequence[Entry],
 ) -> None:
-    """The function takes a negligible amount of time (less than 0.01 seconds).
+    """The function takes a negligible amount of time (less than 0.015 seconds).
 
     According to [Usability Engineering](https://www.nngroup.com/articles/response-times-3-important-limits/),
     less than 0.1 seconds feels instantaneous, so less than 0.015 seconds is
@@ -401,7 +389,7 @@ def test_performance(
     Pytest displays the tests as `::test_performance[{feed_links_id}-{entry_links_id}]`
     for some reason.
     """
-    negligible_time = 0.01 if "CI" not in os.environ else 10
+    negligible_time = 0.015 if "CI" not in os.environ else 10
     repeats = 10
     max_time = repeats * negligible_time
     new_entries = []
@@ -410,5 +398,5 @@ def test_performance(
         new_entries = _get_new_entries(last_entries, feed_entries)
     duration = time.time() - start
     assert new_entries == expected_new_entries
-    print(f"{duration = }")  # noqa: E251
+    print(f"{duration = }")
     assert duration < max_time

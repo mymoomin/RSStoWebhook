@@ -14,9 +14,9 @@ posts every update that has been marked for it to post, then clears that list.
 from __future__ import annotations
 
 import asyncio
+import enum
 import json
 import os
-import sys
 import time
 from dataclasses import astuple, dataclass
 from http import HTTPStatus
@@ -27,6 +27,7 @@ import aiohttp
 import feedparser
 import mmh3
 import requests
+import typer
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import Response
@@ -35,6 +36,8 @@ from rss_to_webhook.constants import (
     DEFAULT_AIOHTTP_TIMEOUT,
     DEFAULT_COLOR,
     DEFAULT_GET_HEADERS,
+    HASH_SEED,
+    LOOKBACK_LIMIT,
     MAX_CACHED_ENTRIES,
 )
 from rss_to_webhook.utils import batched
@@ -49,7 +52,52 @@ if TYPE_CHECKING:  # pragma no cover
     from rss_to_webhook.discord_types import Embed, Extras, Message
 
 
+class CheckType(enum.StrEnum):
+    """Types for `check_feeds_and_update`."""
+
+    regular = "regular"
+    daily = "daily"
+    test = "test"
+
+
+# We can't use the `Annotate[CheckType, typer.Argument()]` form here because we
+# use `from future import __annotations__`, which delays annotation evaluation
+# and so breaks meaningful `Annotate` types.
 def main(
+    check_type: CheckType = typer.Argument(
+        CheckType.regular,
+        help=(
+            "Use `regular` for normal checks, `daily` for daily, and `test` to run"
+            " in testing mode."
+        ),
+    ),
+) -> None:
+    """Checks feeds for updates and posts them to Discord."""
+    print("Running checks")
+    load_dotenv()
+    mongodb_uri = os.environ["MONGODB_URI"]
+    db_name = os.environ["DB_NAME"]
+    client: MongoClient[Comic] = MongoClient(mongodb_uri)
+    if check_type == CheckType.daily:
+        print("Running daily checks")
+        webhook_url = os.environ["DAILY_WEBHOOK_URL"]
+        comics = client[db_name]["comics"]
+        daily_checks(comics, webhook_url)
+    else:
+        if check_type == CheckType.test:
+            print("testing testing")
+            webhook_url = os.environ["TEST_WEBHOOK_URL"]
+            thread_webhook_url = os.environ["TEST_WEBHOOK_URL"]
+            comics = client[db_name]["test-comics"]
+        else:
+            print("Running regular checks")
+            webhook_url = os.environ["WEBHOOK_URL"]
+            thread_webhook_url = os.environ["SD_WEBHOOK_URL"]
+            comics = client[db_name]["comics"]
+        regular_checks(comics, HASH_SEED, webhook_url, thread_webhook_url)
+
+
+def regular_checks(
     comics: Collection[Comic],
     hash_seed: int,
     webhook_url: str,
@@ -98,7 +146,8 @@ def main(
                     f" {response.reason}"
                 )
                 if thread_id := comic.get("thread_id"):
-                    del message["content"]
+                    if message.get("content"):
+                        del message["content"]
                     response = rate_limiter.post(
                         f"{thread_webhook_url}?wait=true&thread_id={thread_id}", message
                     )
@@ -178,7 +227,7 @@ async def _get_feed_changes(
         new_entries = _get_new_entries(comic["last_entries"], feed["entries"])
         print(f"{comic['title']}: {len(new_entries)} new entries")
         return (comic, new_entries, caching_info)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"{comic['title']}: Problem connecting. {type(e).__name__}: {e} ")
         comics.update_one(
             {"_id": comic["_id"]},
@@ -219,10 +268,10 @@ def _get_new_entries(
     format in any case other than one from several years ago. We use this as our
     highest-precedence identity check, giving a hierarchy of <pubDate>, <id>, <link>.
 
-    This function does a loop over the last 100 entries in the RSS feed, checking if
-    each has been seen before by looping over each of the last-seen entries and seeing
-    if any match, using the highest-precedence key that exists. This is somehow pretty
-    fast. Small n really does just mean you can do whatever.
+    This function does a loop over the last `LOOKBACK_LIMIT` entries in the RSS feed,
+    checking if each has been seen before by looping over each of the last-seen
+    entries and seeing if any match, using the highest-precedence key that exists.
+    This is somehow pretty fast. Small n really does just mean you can do whatever.
 
     The `if _normalise(entry["link"]) in last_paths` check is a performance optimisation
     over the expected check, comparing against `_normalise(old_entry["link"])`. I think
@@ -231,7 +280,7 @@ def _get_new_entries(
     becomes an issue I'll rework this for a faster approach.
     """
     new_entries: list[Entry] = []
-    capped_entries = list(reversed(current_entries[:100]))
+    capped_entries = list(reversed(current_entries[:LOOKBACK_LIMIT]))
     max_entries = len(capped_entries)
     last_paths = {_normalise(entry["link"]) for entry in last_entries}
     last_pubdates = {entry.get("published") for entry in last_entries}
@@ -252,14 +301,14 @@ def _get_new_entries(
                     break
                 continue
             # This can't be reached in normal execution, but real-world RSS feeds
-            # are malformatted sometimes, so this is a sanity check. In the future,
+            # are malformed sometimes, so this is a sanity check. In the future,
             # this should probably be logged with log level warning.
             print(f"entry missing link: {entry}")  # type: ignore [unreachable]
             break
         else:
             new_entries.append(entry)
     if len(new_entries) == max_entries:
-        print("No last entry. Returning up to 100 most recent entries")
+        print(f"No last entry. Returning up to {LOOKBACK_LIMIT} most recent entries")
     else:
         print("Found last entry")
     return new_entries
@@ -274,25 +323,29 @@ def _make_messages(comic: Comic, entries: Sequence[EntrySubset]) -> list[Message
         "username": comic.get("username"),
         "avatar_url": comic.get("avatar_url"),
     }
-    extras["content"] = f"<@&{comic['role_id']}>"
     embeds: list[Embed] = []
     for entry in entries:
-        if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
+        if urlsplit(link := entry["link"]).scheme not in {"http", "https"}:
             print(f"{comic['title']}: bad url {entry['link']}")
             parts = urlsplit(link)
             link = urlunsplit(parts._replace(scheme="https"))
-        embeds.append(
-            {
-                "color": comic.get("color", DEFAULT_COLOR),
-                "title": f"**{entry.get('title', comic['title'])}**",
-                "url": link,
-                "description": f"New {comic['title']}!",
-            }
-        )
-    return [
+        embeds.append({
+            "color": comic.get("color", DEFAULT_COLOR),
+            "title": _process_title(entry.get("title", comic["title"])),
+            "url": link,
+            "description": f"New {comic['title']}!",
+        })
+    # No typechecker can understand this assignment, but it is valid
+    messages: list[Message] = [
         {"embeds": list(embed_chunk)} | extras for embed_chunk in batched(embeds, 10)  # type: ignore[misc]
     ]
-    # No typechecker can understand this assignment, but it is valid
+    messages[0]["content"] = f"<@&{comic['role_id']}>"
+    return messages
+
+
+def _process_title(title: str) -> str:
+    cropped_title = title[:252]
+    return f"**{cropped_title}**"
 
 
 @dataclass(slots=True)
@@ -313,7 +366,7 @@ class RateLimitState:
 class RateLimiter:
     """Limit rates to match Discord's API.
 
-    This class stores the information necesary to obey Discord's hidden
+    This class stores the information necessary to obey Discord's hidden
     30 message/minute rate-limit on posts to webhooks in a channel, which
     is documented in [this tweet](https://twitter.com/lolpython/status/967621046277820416).
 
@@ -473,27 +526,4 @@ def daily_checks(comics: Collection[Comic], webhook_url: str) -> None:
 
 
 if __name__ == "__main__":  # pragma no cover
-    load_dotenv()
-    HASH_SEED = int(os.environ["HASH_SEED"], 16)
-    MONGODB_URI = os.environ["MONGODB_URI"]
-    DB_NAME = os.environ["DB_NAME"]
-    client: MongoClient[Comic] = MongoClient(MONGODB_URI)
-    opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
-    args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
-    if "--daily" in opts:
-        print("Running daily checks")
-        WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
-        comics = client[DB_NAME]["comics"]
-        daily_checks(comics, WEBHOOK_URL)
-    else:
-        if "--test" in opts:
-            print("testing testing")
-            WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
-            THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
-            comics = client[DB_NAME]["test-comics"]
-        else:
-            print("Running regular checks")
-            WEBHOOK_URL = os.environ["WEBHOOK_URL"]
-            THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
-            comics = client[DB_NAME]["comics"]
-        main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    typer.run(main)

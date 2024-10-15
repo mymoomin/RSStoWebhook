@@ -1,6 +1,6 @@
 [project]
 name = "rss-to-webhook"
-version = "0.0.2"
+version = "0.0.4"
 authors = [
     {name = "mymoomin"}
 ]
@@ -18,12 +18,16 @@ dependencies = [
     "requests>=2.31.0",
     "python-dotenv>=1.0.0",
     "pymongo>=4.5.0",
+    "typer>=0.9.0",
 ]
+
+[project.scripts]
+rss-to-webhook = "rss_to_webhook.main:app"
 
 [project.optional-dependencies]
 lint = [
-    "ruff>=0.0.292",
-    "black>=23.9.1",
+    "ruff>=0.6.9",
+    "black>=24.10.0",
 ]
 test = [
     "pytest>=7.3.2",
@@ -31,13 +35,13 @@ test = [
     "pytest-codspeed>=2.2.0",
     "mongomock>=4.1.2",
     "aioresponses>=0.7.4",
-    "responses>=0.23.3",
+    "responses>=0.25.3",
 ]
 type = [
     "rss_to_webhook[test]",
-    "mypy>=1.5.1",
-    "pyright>=1.1.329",
-    "types-requests>=2.31.0.6",
+    "mypy>=1.12.0",
+    "pyright>=1.1.384",
+    "types-requests>=2.32.0.20240914",
     "types-urllib3>=1.26.25.14",
 ]
 dev = [
@@ -66,7 +70,10 @@ testpaths = [
 
 [tool.coverage.run]
 source = ["rss-to-webhook"]
-omit = ["*/scripts/*"]
+omit = [
+    "*/scripts/*",
+    "__main__.py"
+]
 branch = true
 
 [tool.coverage.report]
@@ -96,35 +103,15 @@ exclude = ["src/rss_to_webhook/scripts"]
 [tool.ruff]
 line-length = 88
 preview = true
-select = [
-    "E", "F", "W",  # default flake-8
-    "I",            # isort
-    "PGH",          # pygrep-hooks
-    "UP",           # pyupgrade
-    "RUF",          # Ruff-specific rules 
-    "C90",          # mccabe # no new errors
-    "N",            # naming # no new errors
-
-    # Some extra flake-8 plugins
-    "ANN",          # flake8-annotations # checks everything has type annotations
-    "D",            # pydocstyle # a million errors because I don't have any docstrings
-    "A",            # flake8-builtins # caught shadowing `hash()` with a variable called `hash`
-    "DTZ",          # flake8-datetimez # found that I was using datetime in the first place (mistake)
-    "PYI",          # flake8-pyi
-    "PT",           # flake8-pytest-style
-    "TCH",          # flake8-type-checking # checks typechecking-only stuff is in the right place
-    # "T20",        # Detects use of `print` rather than logging. One day I'll add it
-    # Let's just add everything that works
-    "ASYNC", "C4", "T10", "EM", "FA", "ISC", "ICN", "G", "INP", "PIE",  "PYI",
-    "Q", "RSE", "RET", "SLF", "SIM", "TID", "PTH", "ERA", "PL",
-    "TRY", "FLY", "PERF", "FURB", "LOG","FBT", "S", "ARG", "B",
-    # "TD", "FIX" # These disallow "# Todo" comments unless you jump through hoops, so I'm disabling
-    # them for now
-]
 exclude = [
     "__init__.py"
 ]
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["ALL"]
 ignore = [
+    "T20", # Detects use of `print` rather than logging. One day I'll add it
     "PLW0120", "RET505", # Forbid else after return in if/loop, which I often feel is more readable
     "TRY300", # Forbids returning at the end of a try statement, but I think that looks better
     "S101", # Forbids use of `assert`, necessary both for tests and certain type system featuress
@@ -132,13 +119,16 @@ ignore = [
     "EM101", # Forbids putting short string literals in exception constructors, but this is normal.
     "TRY003", # Forbids putting medium string literals in exception constructors, which gives errors on some code from the Python docs.
     "E203", # Forbids spaces around the colon in array slicing, which conflicts with Black
+    "B008", # Forbids function calls in default arguments, which are a feature in Typer
+    "COM", # Has trailing comma rules that conflict with black
+    "CPY", # Requires copyright notices. I simply do not care
+    "TD", "FIX", # These disallow "# Todo" comments unless you jump through hoops, so I'm disabling them for now
+    "DOC402", "DOC201", "DOC501" # Requires every function to document its return value, yield value, and exceptions raised. I don't think this is necessary
 ]
 per-file-ignores = {"tests/*" = [
     "ARG001", # Forbids unused function arguments, which pytest can use as fixtures
     "FBT001", # Forbids boolean positional arguments, which come up when using parameterised tests
-    "D1", # Forbids public functions without docstrings, but also thinks that tests are part of the public api for some reason
+    "D1",     # Forbids public functions without docstrings, but also thinks that tests are part of the public api for some reason
+    "PLC2701", # Forbids importing private functions, but I want to do that in my tests bc I hate best practices
 ]}
-src = ["src"]
-
-[tool.ruff.pydocstyle]
-convention = "google"
+pydocstyle = {convention = "google"}

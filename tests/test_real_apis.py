@@ -11,23 +11,22 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from requests import PreparedRequest
 
-from rss_to_webhook.check_feeds_and_update import RateLimiter, main
+from rss_to_webhook.check_feeds_and_update import regular_checks
+from rss_to_webhook.constants import HASH_SEED
 
 if TYPE_CHECKING:
     from requests.structures import CaseInsensitiveDict
 
     from rss_to_webhook.db_types import Comic
-    from rss_to_webhook.discord_types import Message
 
 
 # This file tries to use the real environment variables, so it can't be
 # called in GitHub Actions.
-load_dotenv()
+load_dotenv(override=True)
 WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 MONGODB_URI = os.environ["MONGODB_URI"]
 DB_NAME = os.environ["DB_NAME"]
-HASH_SEED = int(os.environ["HASH_SEED"], 16)
 
 
 def relay_request(
@@ -40,8 +39,8 @@ def relay_request(
     return (r.status_code, r.headers, r.text)
 
 
-@pytest.mark.slow()
-@pytest.mark.side_effects()
+@pytest.mark.slow
+@pytest.mark.side_effects
 @responses.activate()
 def test_fully() -> None:
     """When called in a production environment, everything behaves as expected."""
@@ -50,7 +49,7 @@ def test_fully() -> None:
     # Not the actual comics
     comics = client[DB_NAME]["test-comics"]
     # Get everything up to date
-    main(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     # Place every comic one entry behind present
     res = comics.update_many({}, {"$pop": {"last_entries": 1}})
     num_comics = res.modified_count
@@ -64,13 +63,13 @@ def test_fully() -> None:
     fake_url = "https://discord.com/api/v8/webhooks/837330400841826375/testing"
     responses.add_callback(responses.POST, fake_url, callback=relay_request)
     print("added callback")
-    main(comics, HASH_SEED, fake_url, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, fake_url, THREAD_WEBHOOK_URL)
     print("redone checks")
     # One update posted per comic
     assert len(responses.calls) == num_comics
     # All posted correctly
-    assert all(call.response.status_code == HTTPStatus.OK for call in responses.calls)
-    main(comics, HASH_SEED, fake_url, THREAD_WEBHOOK_URL)
+    assert all(call.response.status_code == HTTPStatus.OK for call in responses.calls)  # type: ignore[reportAttributeAccessIssue, union-attr]
+    regular_checks(comics, HASH_SEED, fake_url, THREAD_WEBHOOK_URL)
     assert len(responses.calls) == num_comics  # Nothing changed, so no new updates
     # All our fake values have been changed
     assert (
@@ -79,25 +78,3 @@ def test_fully() -> None:
     )
     # The rss feeds with a Last-Modified header have had that saved
     assert comics.find_one({"last_modified": {"$exists": True}})
-
-
-@pytest.mark.slow()
-@pytest.mark.side_effects()
-def test_real_rate_limit() -> None:
-    """When the script makes many posts at once, it respects the rate limits.
-
-    Regression test for [01fd62b](https://github.com/mymoomin/RSStoWebhook/commit/01fd62be50918775b68bedbb71c1f4b5ec148acf)
-    """
-    rate_limiter = RateLimiter()
-    for i in range(60):
-        body: Message = {
-            "embeds": [
-                {
-                    "color": 0x5C64F4,
-                    "title": f"**Page {i}**",
-                    "url": "https://example.com/page/1",
-                    "description": "New Test Webcomic!",
-                },
-            ],
-        }
-        rate_limiter.post(WEBHOOK_URL, body)

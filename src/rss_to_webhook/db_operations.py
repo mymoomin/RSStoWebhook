@@ -1,4 +1,4 @@
-"""Tools for modifiying and querying the database."""
+"""Tools for modifying and querying the database."""
 
 import json
 import os
@@ -13,7 +13,7 @@ from pymongo.collection import Collection
 from pymongo.results import InsertOneResult, UpdateResult
 
 from rss_to_webhook.check_feeds_and_update import strip_extra_data
-from rss_to_webhook.constants import DEFAULT_GET_HEADERS
+from rss_to_webhook.constants import DEFAULT_GET_HEADERS, HASH_SEED
 from rss_to_webhook.db_types import CachingInfo, Comic, DiscordComic
 
 
@@ -65,7 +65,7 @@ def add_to_collection(
     last_entries = strip_extra_data(list(reversed(feed["entries"])))
     new_comic = Comic(
         **comic_data, **caching_info, last_entries=last_entries, dailies=[]
-    )  # type: ignore [reportGeneralTypeIssuess, typeddict-item]
+    )  # type: ignore [reportGeneralTypeIssues, typeddict-item]
     insert_result = collection.insert_one(new_comic)
     print(f"Added {comic_data['title']}")
     return insert_result
@@ -73,13 +73,12 @@ def add_to_collection(
 
 if __name__ == "__main__":  # pragma: no cover
     load_dotenv()
-    HASH_SEED = int(os.environ["HASH_SEED"], 16)
     MONGODB_URI = os.environ["MONGODB_URI"]
     DB_NAME = os.environ["DB_NAME"]
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)
     collection = client[DB_NAME]["comics"]
     comic_list: list[DiscordComic] = json.loads(
-        Path("./src/rss_to_webhook/scripts/new_comics.json").read_text()
+        Path("./src/rss_to_webhook/scripts/new_comics.json").read_text(encoding="utf-8")
     )
     for comic in comic_list:
         add_to_collection(comic, collection, HASH_SEED)

@@ -1,32 +1,53 @@
+"""Runs relevant end-to-end tests against the real Discord API."""
+
 import json
 import os
+import re
 import time
 from collections.abc import Generator
+from http import HTTPStatus
+from time import sleep
+from typing import TYPE_CHECKING
 
-import mmh3
 import pytest
+import requests
 import responses
 from aioresponses import aioresponses
 from bson import Int64, ObjectId
 from dotenv import load_dotenv
-from mongomock import Collection, MongoClient
-from requests import HTTPError
-from responses import CallList, RequestsMock, matchers
-from yarl import URL
+from mongomock import MongoClient
+from requests import PreparedRequest
+from requests.structures import CaseInsensitiveDict
+from responses import CallList, RequestsMock
 
-from rss_to_webhook import constants
 from rss_to_webhook.check_feeds_and_update import (
     RateLimiter,
     daily_checks,
     regular_checks,
 )
-from rss_to_webhook.constants import HASH_SEED
+from rss_to_webhook.constants import DEFAULT_COLOR, HASH_SEED
 from rss_to_webhook.db_types import Comic
 
+if TYPE_CHECKING:
+    from rss_to_webhook.discord_types import Message
+
+# This file tries to use the real environment variables, so it can't be
+# called in GitHub Actions.
+
+# Loads the test environment variables
 load_dotenv(".env.example")
 WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
 DAILY_WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
+
+# Loads the real environment variables
+load_dotenv(override=True)
+PASSTHROUGH_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
+PASSTHROUGH_DAILY_URL = os.environ["TEST2_WEBHOOK_URL"]
+PASSTHROUGH_THREAD_ID = int(os.environ["TEST2_WEBHOOK_THREAD_ID"], base=10)
+
+
+pytestmark = pytest.mark.side_effects
 
 
 @pytest.fixture
@@ -127,16 +148,118 @@ def comic() -> Comic:
 
 
 @pytest.fixture
-def webhook() -> Generator[RequestsMock, None, None]:
-    with RequestsMock(assert_all_requests_are_fired=False) as responses:
-        responses.post(
-            WEBHOOK_URL,
-            status=200,
-            headers={
-                "x-ratelimit-limit": "5",
-                "x-ratelimit-remaining": "4",
-                "x-ratelimit-reset-after": "0.399",
+def minimal_comic() -> Comic:
+    return {
+        "_id": ObjectId("612819b293b99b5809e18ab3"),
+        "title": "Sleepless Domain",
+        "feed_url": "http://www.sleeplessdomain.com/comic/rss",
+        "role_id": Int64("581531863127031868"),
+        "feed_hash": b"*\xc5\x10O\xf3\xa1\x9f\xca5\x017\xdd\xf3\x8e\xe84",
+        "last_entries": [
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-16",
             },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-17",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-18",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-19",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-20",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-21",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-22",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-23",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-24",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-25",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-25-2",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-27",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-28",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-29",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-30",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-31",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-32",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-21-page-33",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-22-page-1",
+            },
+            {
+                "link": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+            },
+        ],
+        "dailies": [],
+    }
+
+
+@pytest.fixture
+def webhook() -> Generator[RequestsMock, None, None]:
+    real_regular = f"{PASSTHROUGH_WEBHOOK_URL}?wait=true"
+    real_daily = f"{PASSTHROUGH_DAILY_URL}?wait=true"
+    real_thread = real_daily
+
+    def relay_regular(
+        request: PreparedRequest,
+    ) -> tuple[int, CaseInsensitiveDict[str], str]:
+        request.url = real_regular
+        s = requests.Session()
+        r = s.send(request)
+        return (r.status_code, r.headers, r.text)
+
+    def relay_daily(
+        request: PreparedRequest,
+    ) -> tuple[int, CaseInsensitiveDict[str], str]:
+        request.url = real_daily
+        s = requests.Session()
+        r = s.send(request)
+        return (r.status_code, r.headers, r.text)
+
+    def relay_thread(
+        request: PreparedRequest,
+    ) -> tuple[int, CaseInsensitiveDict[str], str]:
+        assert request.url
+        request.url = re.sub(r"http.*?=true", real_thread, request.url)
+        print(request.url)
+        s = requests.Session()
+        r = s.send(request)
+        return (r.status_code, r.headers, r.text)
+
+    with RequestsMock(assert_all_requests_are_fired=False) as responses:
+        responses.add_passthru(real_regular)
+        responses.add_passthru(real_daily)
+        responses.add_callback(responses.POST, WEBHOOK_URL, callback=relay_regular)
+        responses.add_callback(responses.POST, DAILY_WEBHOOK_URL, callback=relay_daily)
+        responses.add_callback(
+            responses.POST, THREAD_WEBHOOK_URL, callback=relay_thread
         )
         yield responses
 
@@ -154,99 +277,22 @@ def rss() -> Generator[aioresponses, None, None]:
 
 
 @pytest.fixture
-def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
-    def nothing(_time: float) -> None:
-        pass
-
-    monkeypatch.setattr(time, "sleep", nothing)
-
-
-@pytest.fixture
 def measure_sleep(monkeypatch: pytest.MonkeyPatch) -> list[float]:
     sleeps = []
 
-    def log_sleep(time: float) -> None:
-        sleeps.append(time)
+    def log_sleep(delay: float) -> None:
+        sleep(delay)
+        sleeps.append(delay)
 
     monkeypatch.setattr(time, "sleep", log_sleep)
     return sleeps
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_no_sleep() -> None:
-    start = time.time()
-    time.sleep(10)
-    end = time.time()
-    assert end - start < 1
-
-
-@pytest.mark.usefixtures("_no_sleep")
-def test_mongo_mock(comic: Comic) -> None:
-    comics: Collection[Comic] = MongoClient().db.collection  # type: ignore [assignment]
-    comics.insert_one(comic)
-    assert comic == comics.find_one({"_id": ObjectId("612819b293b99b5809e18ab3")})
-
-
-@pytest.mark.usefixtures("_no_sleep")
-def test_post_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
-    """The script doesn't post to the webhook when no new updates are found."""
+def test_post_one_entry(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+    """A comic with all attributes is posted."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
-    comics.insert_one(comic)
-    regular_checks(comics, constants.HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert len(webhook.calls) == 0
-
-
-@pytest.mark.usefixtures("_no_sleep")
-def test_store_no_update(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
-    """Only caching information is updated when no new updates are found."""
-    rss.get(
-        "http://www.sleeplessdomain.com/comic/rss_with_headers",
-        status=200,
-        body=example_feed,
-        headers={
-            "ETag": '"f56-6062f676a7367-gzip"',
-            "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
-        },
-    )
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["feed_url"] = "http://www.sleeplessdomain.com/comic/rss_with_headers"
-    caching_info = {
-        "feed_hash": mmh3.hash_bytes(example_feed, HASH_SEED),
-        "etag": '"f56-6062f676a7367-gzip"',
-        "last_modified": "Wed, 27 Sep 2023 20:10:14 GMT",
-    }
-    comics.insert_one(comic)
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    updated_comic = comics.find_one({"_id": comic["_id"]})
-    assert updated_comic
-    assert comic | caching_info == updated_comic
-
-
-@pytest.mark.usefixtures("_no_sleep")
-def test_hash_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
-    """The script does nothing when the feed's hash matches the previous hash."""
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["last_entries"].pop()  # One new entry
-    comic["feed_hash"] = mmh3.hash_bytes(
-        example_feed, HASH_SEED
-    )  # But the hash is the same
-    comics.insert_one(comic)
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert len(webhook.calls) == 0
-
-
-@pytest.mark.usefixtures("_no_sleep")
-def test_post_one_update(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
-    """The script posts the correct information when one new update is found."""
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
+    comic["title"] = "test_post_one_update"
     comic["last_entries"].pop()  # One "new" entry
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
@@ -256,7 +302,7 @@ def test_post_one_update(
         "content": "<@&581531863127031868>",
         "embeds": [{
             "color": 11240119,
-            "description": "New Sleepless Domain!",
+            "description": "New test_post_one_update!",
             "title": "**Sleepless Domain - Chapter 22 - Page 2**",
             "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
         }],
@@ -264,37 +310,38 @@ def test_post_one_update(
     }
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_store_one_update(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
+def test_minimal_one_entry(
+    minimal_comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
-    """When one new update is found, it is stored in the database."""
+    """A comic with no optional attributes is still posted."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
-    comic["last_entries"].pop()  # One "new" entry
-    comics.insert_one(comic)
+    minimal_comic["title"] = "test_minimal_one_update"
+    minimal_comic["last_entries"].pop()  # One "new" entry
+    comics.insert_one(minimal_comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    updated_comic = comics.find_one({"_id": comic["_id"]})
-    assert updated_comic
-    assert updated_comic["last_entries"][-1] == {
-        "title": "Sleepless Domain - Chapter 22 - Page 2",
-        "link": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
-        "published": "Tue, 26 Sep 2023 01:39:48 -0400",
-        "id": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+    assert webhook.calls[0].request.body
+    assert json.loads(webhook.calls[0].request.body) == {
+        "avatar_url": None,
+        "content": "<@&581531863127031868>",
+        "embeds": [{
+            "color": DEFAULT_COLOR,
+            "description": "New test_minimal_one_update!",
+            "title": "**Sleepless Domain - Chapter 22 - Page 2**",
+            "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+        }],
+        "username": None,
     }
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_post_two_updates(
+def test_post_two_entries(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
-    """When two new updates are found, they are both posted, from oldest to newest.
-
-    Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
-    """
+    """When two new entries are found, they are both posted, from oldest to newest."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     num_new_entries = 2
+    comic["title"] = "test_post_two_updates"
     # Remove the last two entries from the list
     del comic["last_entries"][-num_new_entries:]
     comics.insert_one(comic)
@@ -307,64 +354,6 @@ def test_post_two_updates(
     assert embeds[1]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_store_two_updates(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
-    """When there are two new updates, they are stored in the database."""
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    num_new_entries = 2
-    # Remove the last two entries from the list
-    del comic["last_entries"][-num_new_entries:]
-    comics.insert_one(comic)
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    updated_comic = comics.find_one({"_id": comic["_id"]})
-    assert updated_comic
-    assert [entry["link"] for entry in updated_comic["last_entries"][-2:]] == [
-        "https://www.sleeplessdomain.com/comic/chapter-22-page-1",
-        "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
-    ]
-
-
-@pytest.mark.usefixtures("_no_sleep")
-def test_idempotence(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
-    """The script will not post the same update twice."""
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["last_entries"].pop()  # One "new" entry
-    comics.insert_one(comic)
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert len(webhook.calls) == 1  # One post
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert len(webhook.calls) == 1  # Still one post
-
-
-@pytest.mark.usefixtures("_no_sleep")
-@pytest.mark.benchmark
-def test_suddenly_pubdates(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
-    """When an RSS feed adds <pubDate>s to all entries, old entries are not reposted.
-
-    There is a logic error where this currently appears to work until the check
-    one after a new entry is found and posted, at which point every old entry
-    is posted.
-    """
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["last_entries"].pop()  # One "new" entry
-    comic["last_entries"] = [{"link": entry["link"]} for entry in comic["last_entries"]]
-    comics.insert_one(comic)
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert len(webhook.calls) == 1  # One post
-    assert webhook.calls[0].request.body
-    assert len(json.loads(webhook.calls[0].request.body)["embeds"]) == 1
-    comics.update_one({"_id": comic["_id"]}, {"$set": {"feed_hash": b"hi!"}})
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert len(webhook.calls) == 1  # Still one post
-
-
 def get_embeds_by_message(calls: CallList) -> list[list[dict[str, str]]]:
     embeds = []
     for call in calls:
@@ -373,16 +362,13 @@ def get_embeds_by_message(calls: CallList) -> list[list[dict[str, str]]]:
     return embeds
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_post_all_new_updates(
+def test_post_many_entries(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
-    """The script works when all updates are new and there are many of them.
-
-    Regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
-    """
+    """When many new entries are found, they are posted in chunks of 10 per message."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
+    comic["title"] = "test_post_all_new_updates"
     # No seen entries in feed
     comic["last_entries"] = [{"link": "https://comic.com/not-a-page"}]
     # The number of entries in the RSS feed
@@ -409,266 +395,26 @@ def test_post_all_new_updates(
     )
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_store_all_new_updates(
+def test_thread_comic_new_entry(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
-    """When there are many new updates, they are all stored in the database.
-
-    Regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
-    """
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    # No seen entries in feed
-    comic["last_entries"] = []
-    comics.insert_one(comic)
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    updated_comic = comics.find_one({"_id": comic["_id"]})
-    assert updated_comic
-    last_entries = updated_comic["last_entries"]
-    assert (
-        last_entries[0]["link"]
-        == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
-    )
-    # Check that all 20 items in the RSS feed were posted
-    assert len(last_entries) == 20  # noqa: PLR2004
-    assert (
-        last_entries[-1]["link"]
-        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
-    )
-
-
-@pytest.mark.usefixtures("_no_sleep")
-def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
-    """Caching headers in responses are stored, and are used in the next run."""
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["title"] = "xkcd"
-    comic["last_entries"] = [{"link": "https://xkcd.com/2834/"}]
-    comic["feed_url"] = "https://xkcd.com/atom.xml"
-    comics.insert_one(comic)
-    rss.get(
-        "https://xkcd.com/atom.xml",
-        status=200,
-        headers={
-            "ETag": '"f56-6062f676a7367-gzip"',
-            "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
-        },
-        body="""
-        <feed xml:lang="en">
-            <title>xkcd.com</title>
-            <link href="https://xkcd.com/" rel="alternate"/>
-            <id>https://xkcd.com/</id>
-            <updated>2023-09-27T00:00:00Z</updated>
-                <entry>
-                <title>Book Podcasts</title>
-                <link href="https://xkcd.com/2834/" rel="alternate"/>
-                <updated>2023-09-27T00:00:00Z</updated>
-                <id>https://xkcd.com/2834/</id>
-            </entry>
-        </feed>
-        """,
-    )
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    new_comic = comics.find_one({"title": "xkcd"})
-    assert new_comic
-    assert "etag" in new_comic
-    assert "last_modified" in new_comic
-    rss.get(
-        "https://xkcd.com/atom.xml",
-        status=304,
-        headers={
-            "ETag": '"f56-6062f676a7367-gzip"',
-            "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
-        },
-    )
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    print(list(rss.requests.keys()))
-    req = rss.requests["GET", URL("https://xkcd.com/atom.xml")][-1]
-    h = req.kwargs["headers"]
-    assert h == h | {
-        "If-None-Match": '"f56-6062f676a7367-gzip"',
-        "If-Modified-Since": "Wed, 27 Sep 2023 20:10:14 GMT",
-    }  # Tests headers includes these values
-
-
-@pytest.mark.usefixtures("_no_sleep")
-def test_handles_rss_errors(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
-    """If one feed has a connection error, other feeds work as normal."""
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["last_entries"].pop()  # One new entry
-    bad_comic = Comic(
-        comic,
-        _id=ObjectId("6129798080ead12f9ac5dbbc"),
-        feed_url="http://does.not.exist/nowhere",
-    )  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
-    rss.get("http://does.not.exist/nowhere", status=404)
-    comics.insert_many([bad_comic, comic])
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert len(webhook.calls) == 1
-
-
-def test_updates_error_count(comic: Comic, rss: aioresponses) -> None:
-    """If there is an error connecting to an RSS feed, it is tracked."""
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    bad_comic = Comic(
-        comic,
-        _id=ObjectId("6129798080ead12f9ac5dbbc"),
-        feed_url="http://does.not.exist/nowhere",
-    )  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
-    rss.get("http://does.not.exist/nowhere", status=404)
-    comics.insert_many([bad_comic, comic])
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    updated_good_comic = comics.find_one({"_id": comic["_id"]})
-    assert updated_good_comic
-    assert updated_good_comic.get("error_count") in {0, None}
-    updated_bad_comic = comics.find_one({"_id": bad_comic["_id"]})
-    assert updated_bad_comic
-    assert "error_count" in updated_bad_comic
-    assert updated_bad_comic["error_count"] == 1
-    errors = updated_bad_comic.get("errors")
-    assert errors
-    assert len(errors) == 1
-    assert "ClientResponseError: 404" in errors[0]
-
-
-@responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
-def test_thread_comic_new_entry(comic: Comic, rss: aioresponses) -> None:
     """Comics with a thread_id are posted in the appropriate thread."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
+    comic["title"] = "test_thread_comic_new_entry"
     comic["last_entries"].pop()  # One new entry
-    comic["thread_id"] = 932666606000164965
-    normal_webhook = responses.post(
-        WEBHOOK_URL,
-        status=204,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "4",
-            "x-ratelimit-reset-after": "0.399",
-        },
-    )
-    thread_webhook = responses.post(
-        THREAD_WEBHOOK_URL,
-        status=204,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "4",
-            "x-ratelimit-reset-after": "0.399",
-        },
-        match=[
-            matchers.query_param_matcher(
-                {"thread_id": 932666606000164965},
-                strict_match=False,
-            )
-        ],
-    )
+    comic["thread_id"] = PASSTHROUGH_THREAD_ID
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert normal_webhook.call_count == 1
-    assert thread_webhook.call_count == 1
+    assert len(webhook.calls) == 2  # noqa: PLR2004
 
 
-@responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
-def test_thread_comic_many_entries(comic: Comic, rss: aioresponses) -> None:
-    """Comics with a thread_id are posted in the appropriate thread."""
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["last_entries"] = comic["last_entries"][:-15]  # 15 new entries
-    comic["thread_id"] = 932666606000164965
-    normal_webhook = responses.post(
-        WEBHOOK_URL,
-        status=204,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "4",
-            "x-ratelimit-reset-after": "0.399",
-        },
-    )
-    thread_webhook = responses.post(
-        THREAD_WEBHOOK_URL,
-        status=204,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "4",
-            "x-ratelimit-reset-after": "0.399",
-        },
-        match=[
-            matchers.query_param_matcher(
-                {"thread_id": 932666606000164965},
-                strict_match=False,
-            )
-        ],
-    )
-    comics.insert_one(comic)
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert normal_webhook.call_count == 2  # noqa: PLR2004
-    assert thread_webhook.call_count == 2  # noqa: PLR2004
-
-
-@responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
-def test_thread_comic_body(comic: Comic, rss: aioresponses) -> None:
-    """Comics with a thread_id have the correct body. In particular, no content."""
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["last_entries"].pop()  # One new entry
-    comic["thread_id"] = 932666606000164965
-    responses.post(
-        WEBHOOK_URL,
-        status=204,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "4",
-            "x-ratelimit-reset-after": "0.399",
-        },
-    )
-    responses.post(
-        THREAD_WEBHOOK_URL,
-        status=204,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "4",
-            "x-ratelimit-reset-after": "0.399",
-        },
-        match=[
-            matchers.query_param_matcher(
-                {"thread_id": 932666606000164965},
-                strict_match=False,
-            )
-        ],
-    )
-    comics.insert_one(comic)
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    # The second `post` was to the thread
-    assert responses.calls[1].request.body
-    assert json.loads(responses.calls[1].request.body) == {
-        "avatar_url": "https://i.imgur.com/XYbqy7f.png",
-        "embeds": [{
-            "color": 11240119,
-            "description": "New Sleepless Domain!",
-            "title": "**Sleepless Domain - Chapter 22 - Page 2**",
-            "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
-        }],
-        "username": "KiwiFlea",
-    }
-
-
-def test_daily_two_updates(
+def test_daily_two_entries(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
-    """The script maintains order when posting daily updates.
-
-    Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
-    """
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
+    comic["title"] = "test_daily_two_updates"
     comic["last_entries"].pop()  # One "new" entry
     comic["last_entries"].pop()  # Two "new" entries
     comics.insert_one(comic)
@@ -683,7 +429,7 @@ def test_daily_two_updates(
         regular_embeds[1]["url"]
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
-    daily_checks(comics, WEBHOOK_URL)
+    daily_checks(comics, DAILY_WEBHOOK_URL)
     assert webhook.calls[1].request.body
     daily_embeds = json.loads(webhook.calls[1].request.body)["embeds"]
     assert (
@@ -697,8 +443,9 @@ def test_daily_two_updates(
 
 
 @pytest.mark.benchmark
-def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
-    """Comics are checking in alphabetical order."""
+def test_daily_two_feeds(
+    comic: Comic, rss: aioresponses, webhook: RequestsMock
+) -> None:
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comic2 = Comic(
@@ -747,7 +494,7 @@ def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
         == "https://xkcd.com/2834/"
     )
     webhook.calls.reset()
-    daily_checks(comics, WEBHOOK_URL)
+    daily_checks(comics, DAILY_WEBHOOK_URL)
     assert len(webhook.calls) == num_comics
     assert (
         json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
@@ -759,69 +506,9 @@ def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     )
 
 
-def test_daily_idempotent(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
-    """The script posts daily updates exactly once."""
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["dailies"].append(comic["last_entries"][-1])  # One "new" entry
-    comics.insert_one(comic)
-    daily_checks(comics, WEBHOOK_URL)
-    assert webhook.calls[0].request.body
-    assert (
-        json.loads(webhook.calls[0].request.body)["embeds"][0]["url"]
-        == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
-    )
-    assert len(webhook.calls) == 1
-    daily_checks(comics, WEBHOOK_URL)
-    assert len(webhook.calls) == 1
-
-
-@responses.activate()
-def test_pauses_only_at_rate_limit(
-    comic: Comic, rss: aioresponses, measure_sleep: list[float]
-) -> None:
-    """The script sleeps until the rate-limiting window is over when it is exhausted.
-
-    Also tests that the script doesn't sleep when the rate-limiting window has space.
-
-    Regression test for [99880a0](https://github.com/mymoomin/RSStoWebhook/commit/99880a040f5a3f365951836298555c06ea65a034)
-    """
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["last_entries"].pop()  # One "new" entry
-    # We need to post twice in order to sleep
-    comic2 = Comic(comic, _id=ObjectId("222222222222222222222222"))  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
-    # The third time shouldn't sleep at all
-    comic3 = Comic(comic, _id=ObjectId("333333333333333333333333"))  # type: ignore [misc]
-    comics.insert_many([comic, comic2, comic3])
-    responses.post(
-        WEBHOOK_URL,
-        status=200,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "0",
-            "x-ratelimit-reset-after": "1",
-        },
-    )
-    responses.post(
-        WEBHOOK_URL,
-        status=200,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "1",
-            "x-ratelimit-reset-after": "1",
-        },
-    )
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert len(measure_sleep) == 1
-    assert measure_sleep[0] == 1
-
-
-@responses.activate()
+@pytest.mark.slow
 def test_pauses_at_hidden_rate_limit(
-    comic: Comic, rss: aioresponses, measure_sleep: list[float]
+    comic: Comic, rss: aioresponses, webhook: RequestsMock, measure_sleep: list[float]
 ) -> None:
     """The script avoids Discord's hidden webhook rate limit.
 
@@ -855,20 +542,15 @@ def test_pauses_at_hidden_rate_limit(
     )
     # We need to post 30 times to hit the hidden ratelimit, and one more time to sleep
     duplicate_comics: list[Comic] = []
-    for i in range(31):
+    for i in range(1, 32):
         # `ObjectId`s are 24 characters
-        new_comic = Comic(comic, _id=ObjectId(f"{i:0>24}"))  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
+        new_comic = Comic(
+            comic,
+            _id=ObjectId(f"{i:0>24}"),
+            title=f"test_pauses_at_hidden_rate_limit {i:0>2}",
+        )  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
         duplicate_comics.append(new_comic)
     comics.insert_many(duplicate_comics)
-    responses.post(
-        WEBHOOK_URL,
-        status=200,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "1",
-            "x-ratelimit-reset-after": "1",
-        },
-    )
     print(responses.registered())
     start = time.time()
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
@@ -876,198 +558,250 @@ def test_pauses_at_hidden_rate_limit(
     main_duration = end - start
     assert len(measure_sleep) == 1
     assert measure_sleep[0] <= RateLimiter.fuzzed_window
-    assert main_duration + measure_sleep[0] >= RateLimiter.fuzzed_window
-    assert main_duration + measure_sleep[0] < RateLimiter.fuzzed_window + 1
+    assert main_duration >= RateLimiter.fuzzed_window
+    assert main_duration < 1.05 * RateLimiter.fuzzed_window
 
 
-@responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
-def test_fails_on_429(comic: Comic, rss: aioresponses) -> None:
-    """The script fails with an exception when it exceeds the rate limit.
-
-    In the future this should be set to email me
-    """
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["last_entries"].pop()  # One "new" entry
-    comics.insert_one(comic)
-    responses.post(
+def test_max_embeds(webhook: RequestsMock) -> None:
+    """A message can have at most 10 embeds."""
+    too_long = {"embeds": [{"description": f"embed {i}"} for i in range(1, 11 + 1)]}
+    bad_response = requests.post(
         WEBHOOK_URL,
-        status=429,
-        headers={
-            "retry-after": "1",
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "4",
-            "x-ratelimit-reset-after": "0.399",
-            "x-ratelimit-scope": "shared",
-        },
-        json={
-            "message": "The resource is being rate limited.",
-            "retry_after": 0.529,
-            "global": False,
-        },
+        json=too_long,
+        timeout=10,
+        headers={"Accept-Encoding": "Identity"},
     )
-    with pytest.raises(HTTPError) as e:
-        regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert "429" in str(e.value)
-
-
-@responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
-def test_no_update_on_failure(comic: Comic, rss: aioresponses) -> None:
-    """The script does not update caching headers when the webhook gives errors.
-
-    Regression test for [No Commit]
-    """
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    entry_url = comic["last_entries"].pop()  # One "new" entry
-    comic["feed_url"] = "https://www.questionablecontent.net/QCRSS.xml"
-    comics.insert_one(comic)
-    rss.get(
-        "https://www.questionablecontent.net/QCRSS.xml",
-        status=200,
-        body=example_feed,
-        headers={
-            "ETag": '"f56-6062f676a7367-gzip"',
-            "Last-Modified": "Wed, 27 Sep 2023 20:10:14 GMT",
+    assert bad_response.status_code == HTTPStatus.BAD_REQUEST
+    assert bad_response.json() == {
+        "code": 50035,
+        "errors": {
+            "embeds": {
+                "_errors": [{
+                    "code": "BASE_TYPE_MAX_LENGTH",
+                    "message": "Must be 10 or fewer in length.",
+                }]
+            }
         },
-    )
-    responses.post(
+        "message": "Invalid Form Body",
+    }
+    at_limit = {"embeds": [{"description": f"embed {i}"} for i in range(1, 10 + 1)]}
+    good_response = requests.post(
         WEBHOOK_URL,
-        status=429,
-        headers={
-            "retry-after": "1",
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "4",
-            "x-ratelimit-reset-after": "0.399",
-            "x-ratelimit-scope": "shared",
-        },
-        json={
-            "message": "The resource is being rate limited.",
-            "retry_after": 0.529,
-            "global": False,
-        },
+        json=at_limit,
+        timeout=10,
+        headers={"Accept-Encoding": "Identity"},
     )
-    with pytest.raises(HTTPError):
-        regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    new_comic = comics.find_one({"_id": comic["_id"]})
-    assert new_comic
-    assert "last_modified" not in new_comic
-    assert "etag" not in new_comic
-    assert comic["feed_hash"] != mmh3.hash_bytes(example_feed, HASH_SEED)
-    assert entry_url not in comic["last_entries"]
+    assert good_response.status_code == HTTPStatus.OK
 
 
-@responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
-def test_no_crash_on_missing_headers(comic: Comic, rss: aioresponses) -> None:
-    """The script does not crash when webhook response headers are missing.
-
-    Regression test for [b0939df](https://github.com/mymoomin/RSStoWebhook/commit/b0939df99bd28ed17d69e814cf51bb725fc97883)
-    """
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comic["last_entries"].pop()  # One "new" entry
-    comics.insert_one(comic)
-    responses.post(WEBHOOK_URL, status=200, headers={})
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-
-
-@pytest.mark.usefixtures("_no_sleep")
-def test_user_agent(comic: Comic, rss: aioresponses) -> None:
-    """The user agent is set from `constants.CUSTOM_USER_AGENT`.
-
-    Regression test for [192de2b](https://github.com/mymoomin/RSStoWebhook/commit/192de2b456810174aa09b6feac6a7b05f695a001)
-    and [c45d8b7](https://github.com/mymoomin/RSStoWebhook/commit/c45d8b7a8cdb3507f0a407f2e453e1ebde284e14)
-    """
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    comics.insert_one(comic)
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    request = rss.requests["GET", URL(comic["feed_url"])][0]
-    assert request
-    headers = request.kwargs["headers"]
-    assert headers["User-Agent"] == constants.CUSTOM_USER_AGENT
-
-
-@pytest.mark.benchmark
-@pytest.mark.slow
-def test_performance(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock, measure_sleep: list[float]
-) -> None:
-    client: MongoClient[Comic] = MongoClient()
-    comics = client.db.collection
-    last_entries = comic["last_entries"]
-    num_entries = len(last_entries)  # Currently 20
-    duplicate_comics: list[Comic] = []
-    for i in range(num_entries):
-        pop_new = Comic(
-            comic,
-            _id=ObjectId(f"a{i:0>23}"),  # `ObjectId`s are 24 characters
-            last_entries=last_entries[:i],
-            title=f"pop_new {i:0>2}",
-        )  # type: ignore [misc]  # (mypy issue)[https://github.com/python/mypy/issues/8890]
-        duplicate_comics.append(pop_new)
-        pop_old = Comic(
-            comic,
-            _id=ObjectId(f"b{i:0>23}"),
-            last_entries=last_entries[i + 1 :],
-            title=f"pop_old {i:0>2}",
-        )  # type: ignore [misc]
-        duplicate_comics.append(pop_old)
-        pop_one = Comic(
-            comic,
-            _id=ObjectId(f"c{i:0>23}"),
-            title=f"pop_one {i:0>2}",
-            last_entries=last_entries[:i] + last_entries[i + 1 :],
-        )  # type: ignore [misc]
-        duplicate_comics.append(pop_one)
-        keep_one = Comic(
-            comic,
-            _id=ObjectId(f"d{i:0>23}"),
-            last_entries=[last_entries[i]],
-            title=f"keep_one {i:0>2}",
-        )  # type: ignore [misc]
-        duplicate_comics.append(keep_one)
-    comics.insert_many(duplicate_comics)
-    webhook.post(
-        THREAD_WEBHOOK_URL,
-        status=200,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "2",
-            "x-ratelimit-reset-after": "1",
-        },
+def test_boundaries(webhook: RequestsMock) -> None:
+    too_long: Message = {
+        "content": 2001 * "c",
+        "avatar_url": f"https://{'i' * 64}.{'i' * 64}.{'i' * 64}/",
+        "username": "n" * 81,
+        "embeds": [{
+            "color": 0xFFFFFF + 1,
+            "description": 4097 * "d",
+            "title": 257 * "t",
+            "url": f"https://a.com?{(2048 - 12) * 'u'}",
+        }],
+    }
+    longest: Message = {
+        "content": 2000 * "c",
+        "avatar_url": f"https://{'i' * 63}.{'i' * 63}.{'i' * 63}/",
+        "username": "n" * 80,
+        "embeds": [{
+            "color": 0xFFFFFF,
+            "description": 4096 * "d",
+            "title": 256 * "t",
+            "url": f"https://a.com?{(2048 - 15) * 'u'}",
+        }],
+    }
+    shortest: Message = {
+        "content": "",
+        "avatar_url": "",
+        "username": "u",
+        "embeds": [{
+            "color": 0,
+            "description": "d",
+            "title": "",
+            "url": "",
+        }],
+    }
+    too_short: Message = {
+        "content": "",
+        "avatar_url": "",
+        "username": "",
+        "embeds": [{
+            "color": -1,
+            "description": "",
+            "title": "",
+            "url": "",
+        }],
+    }
+    all_nones = {
+        "content": None,
+        "avatar_url": None,
+        "username": None,
+        "embeds": [{
+            "color": None,
+            "description": None,
+            "title": None,
+            "url": None,
+        }],
+    }
+    max_nones = {
+        "content": None,
+        "avatar_url": None,
+        "username": None,
+        "embeds": [{
+            "color": None,
+            "description": "d",
+            "title": None,
+            "url": None,
+        }],
+    }
+    too_long_response = requests.post(
+        WEBHOOK_URL,
+        json=too_long,
+        timeout=10,
+        headers={"Accept-Encoding": "Identity"},
     )
-    daily = webhook.post(
-        DAILY_WEBHOOK_URL,
-        status=200,
-        headers={
-            "x-ratelimit-limit": "5",
-            "x-ratelimit-remaining": "2",
-            "x-ratelimit-reset-after": "1",
+    assert too_long_response.status_code == HTTPStatus.BAD_REQUEST
+    assert too_long_response.json() == {
+        "message": "Invalid Form Body",
+        "code": 50035,
+        "errors": {
+            "content": {
+                "_errors": [{
+                    "code": "BASE_TYPE_MAX_LENGTH",
+                    "message": "Must be 2000 or fewer in length.",
+                }]
+            },
+            "embeds": {
+                "0": {
+                    "url": {
+                        "_errors": [
+                            {
+                                "code": "BASE_TYPE_MAX_LENGTH",
+                                "message": "Must be 2048 or fewer in length.",
+                            },
+                        ]
+                    },
+                    "title": {
+                        "_errors": [{
+                            "code": "BASE_TYPE_MAX_LENGTH",
+                            "message": "Must be 256 or fewer in length.",
+                        }]
+                    },
+                    "color": {
+                        "_errors": [{
+                            "code": "NUMBER_TYPE_MAX",
+                            "message": (
+                                "int value should be less than or equal to 16777215."
+                            ),
+                        }]
+                    },
+                    "description": {
+                        "_errors": [{
+                            "code": "BASE_TYPE_MAX_LENGTH",
+                            "message": "Must be 4096 or fewer in length.",
+                        }]
+                    },
+                }
+            },
+            "username": {
+                "_errors": [{
+                    "code": "BASE_TYPE_BAD_LENGTH",
+                    "message": "Must be between 1 and 80 in length.",
+                }]
+            },
+            "avatar_url": {
+                "_errors": [{
+                    "code": "URL_TYPE_INVALID_URL",
+                    "message": "Not a well formed URL.",
+                }]
+            },
         },
+    }
+    longest_response = requests.post(
+        WEBHOOK_URL,
+        json=longest,
+        timeout=10,
+        headers={"Accept-Encoding": "Identity"},
     )
-    print(responses.registered())
-    start = time.time()
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    end = time.time()
-    main_duration = end - start
-    print(main_duration)
-    assert len(measure_sleep) == (len(webhook.calls) - 1) // 30
-    webhook.calls.reset()
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    assert len(webhook.calls) == 0
-    start = time.time()
-    daily_checks(comics, DAILY_WEBHOOK_URL)
-    end = time.time()
-    daily_duration = end - start
-    print(daily_duration)
-    assert len(measure_sleep) == 2 * ((len(webhook.calls) - 1) // 30)
-    daily.calls.reset()
-    daily_checks(comics, DAILY_WEBHOOK_URL)
-    assert daily.call_count == 0
+    assert longest_response.status_code == HTTPStatus.OK
+    shortest_response = requests.post(
+        WEBHOOK_URL,
+        json=shortest,
+        timeout=10,
+        headers={"Accept-Encoding": "Identity"},
+    )
+    assert shortest_response.status_code == HTTPStatus.OK
+    too_short_response = requests.post(
+        WEBHOOK_URL,
+        json=too_short,
+        timeout=10,
+        headers={"Accept-Encoding": "Identity"},
+    )
+    assert too_short_response.status_code == HTTPStatus.BAD_REQUEST
+    assert too_short_response.json() == {
+        "message": "Invalid Form Body",
+        "code": 50035,
+        "errors": {
+            "embeds": {
+                "0": {
+                    "color": {
+                        "_errors": [{
+                            "code": "NUMBER_TYPE_MIN",
+                            "message": (
+                                "int value should be greater than or equal to 0."
+                            ),
+                        }]
+                    }
+                }
+            },
+            "username": {
+                "_errors": [
+                    {
+                        "code": "BASE_TYPE_BAD_LENGTH",
+                        "message": "Must be between 1 and 80 in length.",
+                    },
+                    {"code": "USERNAME_INVALID", "message": 'Username cannot be ""'},
+                ]
+            },
+        },
+    }
+    all_nones_response = requests.post(
+        WEBHOOK_URL,
+        json=all_nones,
+        timeout=10,
+        headers={"Accept-Encoding": "Identity"},
+    )
+    assert all_nones_response.status_code == HTTPStatus.BAD_REQUEST
+    assert all_nones_response.json() == {
+        "message": "Invalid Form Body",
+        "code": 50035,
+        "errors": {
+            "embeds": {
+                "0": {
+                    "description": {
+                        "_errors": [{
+                            "code": "BASE_TYPE_REQUIRED",
+                            "message": "This field is required",
+                        }]
+                    }
+                }
+            }
+        },
+    }
+    max_nones_response = requests.post(
+        WEBHOOK_URL,
+        json=max_nones,
+        timeout=10,
+        headers={"Accept-Encoding": "Identity"},
+    )
+    assert max_nones_response.status_code == HTTPStatus.OK
 
 
 example_feed = """

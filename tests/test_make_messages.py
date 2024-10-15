@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from feedparser.util import Entry
 
 
-@pytest.fixture()
+@pytest.fixture
 def comic() -> Comic:
     return Comic(
         _id=ObjectId("111111111111111111111111"),
@@ -33,6 +33,9 @@ def filter_nones(message: Message) -> Message:
     Discord treats message values that are `None` as though they weren't in the
     dictionary at all, so `None` and missing are equivalent. Pytest doesn't.
     This normalises all `None` values to just be missing, to hide the difference.
+
+    Returns:
+        A `Message` object where no keys are `None`
     """
     return {key: value for key, value in message.items() if value is not None}  # type: ignore [reportGeneralTypeIssues, return-value]
     # This is correctly-typed because every key in `Message` is optional,
@@ -47,19 +50,17 @@ def test_happy_path(comic: Comic) -> None:
     entry: Entry = {"link": "https://example.com/page/1", "title": "Page 1!"}
     body = _make_messages(comic, [entry])[0]
     # The Message() is just for show (underhanded cheats to increase our code coverage)
-    assert filter_nones(body) == Message(
-        {
-            "embeds": [
-                {
-                    "color": 0x5C64F4,
-                    "title": "**Page 1!**",
-                    "url": "https://example.com/page/1",
-                    "description": "New Test Webcomic!",
-                },
-            ],
-            "content": "<@&1>",
-        }
-    )
+    assert filter_nones(body) == Message({
+        "embeds": [
+            {
+                "color": 0x5C64F4,
+                "title": "**Page 1!**",
+                "url": "https://example.com/page/1",
+                "description": "New Test Webcomic!",
+            },
+        ],
+        "content": "<@&1>",
+    })
 
 
 def test_bad_url_scheme(comic: Comic) -> None:
@@ -149,3 +150,28 @@ def test_splits_big_updates(comic: Comic) -> None:
             len(embeds) == max_embeds_per_message for embeds in embeds_by_message[:-1]
         )
     assert len(all_embeds) == num_entries
+
+
+def test_first_has_ping(comic: Comic) -> None:
+    """When a group of entries is split, only the first message should ping."""
+    max_embeds_per_message = 10
+    num_entries = 11
+    entries: list[Entry] = [
+        {"link": f"hps://example.com/page/{i}"} for i in range(num_entries)
+    ]
+    messages = _make_messages(comic, entries)
+    assert len(messages) == math.ceil(num_entries / max_embeds_per_message)
+    assert messages[0].get("content") == f"<@&{comic['role_id']}>"
+    assert "content" not in messages[1]
+
+
+def test_limit_title(comic: Comic) -> None:
+    """When a title is too long, it is shortened."""
+    entry: Entry = {"link": "https://example.com/page/1", "title": "a" * 300}
+    body = _make_messages(comic, [entry])[0]
+    assert len(body["embeds"][0]["title"]) == 256  # noqa: PLR2004
+
+
+# You could argue that other fields should also have tests like this,
+# but embed title and url are the only fields that come from the RSS feed
+# rather than the database, so I think this is fair for now

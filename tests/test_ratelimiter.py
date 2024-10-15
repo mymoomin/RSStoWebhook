@@ -16,24 +16,22 @@ WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 SD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
 
 
-@pytest.fixture()
+@pytest.fixture
 def message() -> Message:
     return {
-        "embeds": [
-            {
-                "color": 0,
-                "title": "**Test Page**",
-                "url": "https://example.com",
-                "description": "New Test Comic!",
-            }
-        ],
+        "embeds": [{
+            "color": 0,
+            "title": "**Test Page**",
+            "url": "https://example.com",
+            "description": "New Test Comic!",
+        }],
         "username": "Tester",
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
         "content": "<@everyone>",
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def webhook() -> Generator[RequestsMock, None, None]:
     with RequestsMock(assert_all_requests_are_fired=False) as responses:
         responses.post(
@@ -48,7 +46,7 @@ def webhook() -> Generator[RequestsMock, None, None]:
         yield responses
 
 
-@pytest.fixture()
+@pytest.fixture
 def measure_sleep(monkeypatch: pytest.MonkeyPatch) -> list[float]:
     sleeps = []
 
