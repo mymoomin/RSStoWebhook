@@ -112,7 +112,7 @@ pluggy==1.3.0
     #   tox
 pycparser==2.21
     # via cffi
-pymongo==4.5.0
+pymongo==4.6.3
     # via
     #   rss-to-webhook
     #   rss-to-webhook (setup.py)

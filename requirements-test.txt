@@ -66,7 +66,7 @@ pluggy==1.3.0
     # via pytest
 pycparser==2.21
     # via cffi
-pymongo==4.5.0
+pymongo==4.6.3
     # via rss-to-webhook (setup.py)
 pytest==7.4.2
     # via
