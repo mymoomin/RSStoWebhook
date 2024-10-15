@@ -14,11 +14,11 @@ posts every update that has been marked for it to post, then clears that list.
 from __future__ import annotations
 
 import asyncio
+import enum
 import json
 import os
 import time
 from dataclasses import astuple, dataclass
-from enum import Enum
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
@@ -52,7 +52,7 @@ if TYPE_CHECKING:  # pragma no cover
     from rss_to_webhook.discord_types import Embed, Extras, Message
 
 
-class CheckType(str, Enum):
+class CheckType(enum.StrEnum):
     """Types for `check_feeds_and_update`."""
 
     regular = "regular"
@@ -300,7 +300,7 @@ def _get_new_entries(
                     break
                 continue
             # This can't be reached in normal execution, but real-world RSS feeds
-            # are malformatted sometimes, so this is a sanity check. In the future,
+            # are malformed sometimes, so this is a sanity check. In the future,
             # this should probably be logged with log level warning.
             print(f"entry missing link: {entry}")  # type: ignore [unreachable]
             break
@@ -324,7 +324,7 @@ def _make_messages(comic: Comic, entries: Sequence[EntrySubset]) -> list[Message
     }
     embeds: list[Embed] = []
     for entry in entries:
-        if urlsplit(link := entry["link"]).scheme not in ["http", "https"]:
+        if urlsplit(link := entry["link"]).scheme not in {"http", "https"}:
             print(f"{comic['title']}: bad url {entry['link']}")
             parts = urlsplit(link)
             link = urlunsplit(parts._replace(scheme="https"))
@@ -362,7 +362,7 @@ class RateLimitState:
 class RateLimiter:
     """Limit rates to match Discord's API.
 
-    This class stores the information necesary to obey Discord's hidden
+    This class stores the information necessary to obey Discord's hidden
     30 message/minute rate-limit on posts to webhooks in a channel, which
     is documented in [this tweet](https://twitter.com/lolpython/status/967621046277820416).
 
