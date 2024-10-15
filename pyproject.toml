@@ -103,6 +103,12 @@ exclude = ["src/rss_to_webhook/scripts"]
 [tool.ruff]
 line-length = 88
 preview = true
+exclude = [
+    "__init__.py"
+]
+src = ["src"]
+
+[tool.ruff.lint]
 select = [
     "E", "F", "W",  # default flake-8
     "I",            # isort
@@ -125,11 +131,9 @@ select = [
     "ASYNC", "C4", "T10", "EM", "FA", "ISC", "ICN", "G", "INP", "PIE",  "PYI",
     "Q", "RSE", "RET", "SLF", "SIM", "TID", "PTH", "ERA", "PL",
     "TRY", "FLY", "PERF", "FURB", "LOG","FBT", "S", "ARG", "B",
+    "PLW"
     # "TD", "FIX" # These disallow "# Todo" comments unless you jump through hoops, so I'm disabling
     # them for now
-]
-exclude = [
-    "__init__.py"
 ]
 ignore = [
     "PLW0120", "RET505", # Forbid else after return in if/loop, which I often feel is more readable
@@ -146,7 +150,4 @@ per-file-ignores = {"tests/*" = [
     "FBT001", # Forbids boolean positional arguments, which come up when using parameterised tests
     "D1", # Forbids public functions without docstrings, but also thinks that tests are part of the public api for some reason
 ]}
-src = ["src"]
-
-[tool.ruff.pydocstyle]
-convention = "google"
+pydocstyle = {convention = "google"}
