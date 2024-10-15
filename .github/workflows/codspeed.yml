@@ -17,9 +17,7 @@ jobs:
         uses: astral-sh/setup-uv@v3
 
       - name: Install dependencies
-        run: |
-          uv tool install pytest --with pytest-codspeed
-          uv sync --extra test
+        run: uv sync --extra test
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v1
