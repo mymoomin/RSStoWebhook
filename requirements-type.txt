@@ -17,7 +17,7 @@ async-timeout==4.0.3
     # via aiohttp
 attrs==23.1.0
     # via aiohttp
-certifi==2023.7.22
+certifi==2024.7.4
     # via requests
 cffi==1.15.1
     # via pytest-codspeed

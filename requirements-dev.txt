@@ -23,7 +23,7 @@ build==1.0.3
     # via pip-tools
 cachetools==5.3.1
     # via tox
-certifi==2023.7.22
+certifi==2024.7.4
     # via requests
 cffi==1.15.1
     # via pytest-codspeed
