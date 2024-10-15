@@ -44,7 +44,7 @@ pymongo==4.6.3
     # via rss-to-webhook (setup.py)
 python-dotenv==1.0.0
     # via rss-to-webhook (setup.py)
-requests==2.31.0
+requests==2.32.2
     # via rss-to-webhook (setup.py)
 sgmllib3k==1.0.0
     # via feedparser
