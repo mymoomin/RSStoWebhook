@@ -1,7 +1,6 @@
 name: codspeed-benchmarks
 
 on:
-  - push
   - pull_request
   - workflow_dispatch
 
@@ -14,11 +13,16 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
       - name: Install dependencies
-        run: pip install -r requirements-test.txt
+        run: uv sync --extra test
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v1
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
-          run: pytest --codspeed --slow
+          run: uv run pytest --codspeed --slow
