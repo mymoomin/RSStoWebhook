@@ -1,6 +1,5 @@
 """TypedDicts representing types of values stored in the database."""
 
-
 from typing import NotRequired, Required, TypedDict
 
 from bson import ObjectId

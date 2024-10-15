@@ -1,6 +1,5 @@
 """Calls other modules from the command line."""
 
-
 import typer
 from dotenv import load_dotenv
 
