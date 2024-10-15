@@ -39,8 +39,8 @@ def relay_request(
     return (r.status_code, r.headers, r.text)
 
 
-@pytest.mark.slow()
-@pytest.mark.side_effects()
+@pytest.mark.slow
+@pytest.mark.side_effects
 @responses.activate()
 def test_fully() -> None:
     """When called in a production environment, everything behaves as expected."""

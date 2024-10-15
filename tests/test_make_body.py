@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from feedparser.util import Entry
 
 
-@pytest.fixture()
+@pytest.fixture
 def comic() -> Comic:
     return Comic(
         _id=ObjectId("111111111111111111111111"),
@@ -47,19 +47,17 @@ def test_happy_path(comic: Comic) -> None:
     entry: Entry = {"link": "https://example.com/page/1", "title": "Page 1!"}
     body = _make_messages(comic, [entry])[0]
     # The Message() is just for show (underhanded cheats to increase our code coverage)
-    assert filter_nones(body) == Message(
-        {
-            "embeds": [
-                {
-                    "color": 0x5C64F4,
-                    "title": "**Page 1!**",
-                    "url": "https://example.com/page/1",
-                    "description": "New Test Webcomic!",
-                },
-            ],
-            "content": "<@&1>",
-        }
-    )
+    assert filter_nones(body) == Message({
+        "embeds": [
+            {
+                "color": 0x5C64F4,
+                "title": "**Page 1!**",
+                "url": "https://example.com/page/1",
+                "description": "New Test Webcomic!",
+            },
+        ],
+        "content": "<@&1>",
+    })
 
 
 def test_bad_url_scheme(comic: Comic) -> None:

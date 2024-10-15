@@ -29,7 +29,7 @@ THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
 DAILY_WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
 
 
-@pytest.fixture()
+@pytest.fixture
 def comic() -> Comic:
     return {
         "_id": ObjectId("612819b293b99b5809e18ab3"),
@@ -126,7 +126,7 @@ def comic() -> Comic:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def webhook() -> Generator[RequestsMock, None, None]:
     with RequestsMock(assert_all_requests_are_fired=False) as responses:
         responses.post(
@@ -141,7 +141,7 @@ def webhook() -> Generator[RequestsMock, None, None]:
         yield responses
 
 
-@pytest.fixture()
+@pytest.fixture
 def rss() -> Generator[aioresponses, None, None]:
     with aioresponses() as mocked:
         mocked.get(
@@ -153,7 +153,7 @@ def rss() -> Generator[aioresponses, None, None]:
         yield mocked
 
 
-@pytest.fixture()
+@pytest.fixture
 def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
     def nothing(_time: float) -> None:
         pass
@@ -161,7 +161,7 @@ def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(time, "sleep", nothing)
 
 
-@pytest.fixture()
+@pytest.fixture
 def measure_sleep(monkeypatch: pytest.MonkeyPatch) -> list[float]:
     sleeps = []
 
@@ -253,14 +253,12 @@ def test_post_one_update(
     assert json.loads(webhook.calls[0].request.body) == {
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
         "content": "<@&581531863127031868>",
-        "embeds": [
-            {
-                "color": 11240119,
-                "description": "New Sleepless Domain!",
-                "title": "**Sleepless Domain - Chapter 22 - Page 2**",
-                "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
-            }
-        ],
+        "embeds": [{
+            "color": 11240119,
+            "description": "New Sleepless Domain!",
+            "title": "**Sleepless Domain - Chapter 22 - Page 2**",
+            "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+        }],
         "username": "KiwiFlea",
     }
 
@@ -341,7 +339,7 @@ def test_idempotency(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
 
 
 @pytest.mark.usefixtures("_no_sleep")
-@pytest.mark.benchmark()
+@pytest.mark.benchmark
 def test_suddenly_pubdates(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
@@ -477,7 +475,7 @@ def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -
     )
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     print(list(rss.requests.keys()))
-    req = rss.requests[("GET", URL("https://xkcd.com/atom.xml"))][-1]
+    req = rss.requests["GET", URL("https://xkcd.com/atom.xml")][-1]
     h = req.kwargs["headers"]
     assert h == h | {
         "If-None-Match": '"f56-6062f676a7367-gzip"',
@@ -604,14 +602,12 @@ def test_thread_comic_body(comic: Comic, rss: aioresponses) -> None:
     # The second `post` was to the thread
     assert json.loads(responses.calls[1].request.body) == {
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
-        "embeds": [
-            {
-                "color": 11240119,
-                "description": "New Sleepless Domain!",
-                "title": "**Sleepless Domain - Chapter 22 - Page 2**",
-                "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
-            }
-        ],
+        "embeds": [{
+            "color": 11240119,
+            "description": "New Sleepless Domain!",
+            "title": "**Sleepless Domain - Chapter 22 - Page 2**",
+            "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+        }],
         "username": "KiwiFlea",
     }
 
@@ -650,7 +646,7 @@ def test_daily_two_updates(
     )
 
 
-@pytest.mark.benchmark()
+@pytest.mark.benchmark
 def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """Comics are checking in alphabetical order."""
     client: MongoClient[Comic] = MongoClient()
@@ -936,14 +932,14 @@ def test_user_agent(comic: Comic, rss: aioresponses) -> None:
     comics = client.db.collection
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    request = rss.requests[("GET", URL(comic["feed_url"]))][0]
+    request = rss.requests["GET", URL(comic["feed_url"])][0]
     assert request
     headers = request.kwargs["headers"]
     assert headers["User-Agent"] == constants.CUSTOM_USER_AGENT
 
 
-@pytest.mark.benchmark()
-@pytest.mark.slow()
+@pytest.mark.benchmark
+@pytest.mark.slow
 def test_performance(
     comic: Comic, rss: aioresponses, webhook: RequestsMock, measure_sleep: list[float]
 ) -> None:

@@ -25,7 +25,7 @@ WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 
 
-@pytest.fixture()
+@pytest.fixture
 def comic() -> DiscordComic:
     return {
         "title": "Sleepless Domain",
@@ -37,7 +37,7 @@ def comic() -> DiscordComic:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def rss() -> Generator[RequestsMock, None, None]:
     with RequestsMock(assert_all_requests_are_fired=False) as responses:
         responses.get(
@@ -48,7 +48,7 @@ def rss() -> Generator[RequestsMock, None, None]:
         yield responses
 
 
-@pytest.fixture()
+@pytest.fixture
 def collection_with_sd() -> Collection[Comic]:
     client: MongoClient[Comic] = MongoClient()
     collection = client.db.collection

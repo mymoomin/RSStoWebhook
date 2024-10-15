@@ -29,7 +29,7 @@ DB_NAME = os.environ["DB_NAME"]
 runner = CliRunner()
 
 
-@pytest.fixture()
+@pytest.fixture
 def _fake_env(monkeypatch: pytest.MonkeyPatch) -> None:
     real_load = load_dotenv
 
@@ -39,7 +39,7 @@ def _fake_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(check_feeds_and_update, "load_dotenv", load_example_env)
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_db(monkeypatch: pytest.MonkeyPatch) -> mongomock.MongoClient[Comic]:
     client: mongomock.MongoClient[Comic] = mongomock.MongoClient()
 
@@ -50,7 +50,7 @@ def fake_db(monkeypatch: pytest.MonkeyPatch) -> mongomock.MongoClient[Comic]:
     return client
 
 
-@pytest.fixture()
+@pytest.fixture
 def report_regular_checks(monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
     args: dict[str, object] = {}
 
@@ -72,7 +72,7 @@ def report_regular_checks(monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
     return args
 
 
-@pytest.fixture()
+@pytest.fixture
 def report_daily_checks(monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
     args: dict[str, object] = {}
 

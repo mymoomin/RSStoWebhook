@@ -78,7 +78,7 @@ if __name__ == "__main__":  # pragma: no cover
     client: MongoClient[Comic] = MongoClient(MONGODB_URI)
     collection = client[DB_NAME]["comics"]
     comic_list: list[DiscordComic] = json.loads(
-        Path("./src/rss_to_webhook/scripts/new_comics.json").read_text()
+        Path("./src/rss_to_webhook/scripts/new_comics.json").read_text(encoding="utf-8")
     )
     for comic in comic_list:
         add_to_collection(comic, collection, HASH_SEED)

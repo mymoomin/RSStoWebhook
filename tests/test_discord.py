@@ -47,10 +47,10 @@ PASSTHROUGH_DAILY_URL = os.environ["TEST2_WEBHOOK_URL"]
 PASSTHROUGH_THREAD_ID = int(os.environ["TEST2_WEBHOOK_THREAD_ID"], base=10)
 
 
-pytestmark = pytest.mark.side_effects()
+pytestmark = pytest.mark.side_effects
 
 
-@pytest.fixture()
+@pytest.fixture
 def comic() -> Comic:
     return {
         "_id": ObjectId("612819b293b99b5809e18ab3"),
@@ -147,7 +147,7 @@ def comic() -> Comic:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def minimal_comic() -> Comic:
     return {
         "_id": ObjectId("612819b293b99b5809e18ab3"),
@@ -221,7 +221,7 @@ def minimal_comic() -> Comic:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def webhook() -> Generator[RequestsMock, None, None]:
     real_regular = f"{PASSTHROUGH_WEBHOOK_URL}?wait=true"
     real_daily = f"{PASSTHROUGH_DAILY_URL}?wait=true"
@@ -264,7 +264,7 @@ def webhook() -> Generator[RequestsMock, None, None]:
         yield responses
 
 
-@pytest.fixture()
+@pytest.fixture
 def rss() -> Generator[aioresponses, None, None]:
     with aioresponses() as mocked:
         mocked.get(
@@ -276,7 +276,7 @@ def rss() -> Generator[aioresponses, None, None]:
         yield mocked
 
 
-@pytest.fixture()
+@pytest.fixture
 def measure_sleep(monkeypatch: pytest.MonkeyPatch) -> list[float]:
     sleeps = []
 
@@ -299,14 +299,12 @@ def test_post_one_entry(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     assert json.loads(webhook.calls[0].request.body) == {
         "avatar_url": "https://i.imgur.com/XYbqy7f.png",
         "content": "<@&581531863127031868>",
-        "embeds": [
-            {
-                "color": 11240119,
-                "description": "New test_post_one_update!",
-                "title": "**Sleepless Domain - Chapter 22 - Page 2**",
-                "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
-            }
-        ],
+        "embeds": [{
+            "color": 11240119,
+            "description": "New test_post_one_update!",
+            "title": "**Sleepless Domain - Chapter 22 - Page 2**",
+            "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+        }],
         "username": "KiwiFlea",
     }
 
@@ -324,14 +322,12 @@ def test_minimal_one_entry(
     assert json.loads(webhook.calls[0].request.body) == {
         "avatar_url": None,
         "content": "<@&581531863127031868>",
-        "embeds": [
-            {
-                "color": DEFAULT_COLOR,
-                "description": "New test_minimal_one_update!",
-                "title": "**Sleepless Domain - Chapter 22 - Page 2**",
-                "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
-            }
-        ],
+        "embeds": [{
+            "color": DEFAULT_COLOR,
+            "description": "New test_minimal_one_update!",
+            "title": "**Sleepless Domain - Chapter 22 - Page 2**",
+            "url": "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
+        }],
         "username": None,
     }
 
@@ -435,7 +431,7 @@ def test_daily_two_entries(
     )
 
 
-@pytest.mark.benchmark()
+@pytest.mark.benchmark
 def test_daily_two_feeds(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
@@ -497,7 +493,7 @@ def test_daily_two_feeds(
     )
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_pauses_at_hidden_rate_limit(
     comic: Comic, rss: aioresponses, webhook: RequestsMock, measure_sleep: list[float]
 ) -> None:
@@ -567,12 +563,10 @@ def test_max_embeds(webhook: RequestsMock) -> None:
         "code": 50035,
         "errors": {
             "embeds": {
-                "_errors": [
-                    {
-                        "code": "BASE_TYPE_MAX_LENGTH",
-                        "message": "Must be 10 or fewer in length.",
-                    }
-                ]
+                "_errors": [{
+                    "code": "BASE_TYPE_MAX_LENGTH",
+                    "message": "Must be 10 or fewer in length.",
+                }]
             }
         },
         "message": "Invalid Form Body",
@@ -592,79 +586,67 @@ def test_boundaries(webhook: RequestsMock) -> None:
         "content": 2001 * "c",
         "avatar_url": f"https://{'i' * 64}.{'i' * 64}.{'i' * 64}/",
         "username": "n" * 81,
-        "embeds": [
-            {
-                "color": 0xFFFFFF + 1,
-                "description": 4097 * "d",
-                "title": 257 * "t",
-                "url": f"https://a.com?{(2048 - 12) * 'u'}",
-            }
-        ],
+        "embeds": [{
+            "color": 0xFFFFFF + 1,
+            "description": 4097 * "d",
+            "title": 257 * "t",
+            "url": f"https://a.com?{(2048 - 12) * 'u'}",
+        }],
     }
     longest: Message = {
         "content": 2000 * "c",
         "avatar_url": f"https://{'i' * 63}.{'i' * 63}.{'i' * 63}/",
         "username": "n" * 80,
-        "embeds": [
-            {
-                "color": 0xFFFFFF,
-                "description": 4096 * "d",
-                "title": 256 * "t",
-                "url": f"https://a.com?{(2048 - 15) * 'u'}",
-            }
-        ],
+        "embeds": [{
+            "color": 0xFFFFFF,
+            "description": 4096 * "d",
+            "title": 256 * "t",
+            "url": f"https://a.com?{(2048 - 15) * 'u'}",
+        }],
     }
     shortest: Message = {
         "content": "",
         "avatar_url": "",
         "username": "u",
-        "embeds": [
-            {
-                "color": 0,
-                "description": "d",
-                "title": "",
-                "url": "",
-            }
-        ],
+        "embeds": [{
+            "color": 0,
+            "description": "d",
+            "title": "",
+            "url": "",
+        }],
     }
     too_short: Message = {
         "content": "",
         "avatar_url": "",
         "username": "",
-        "embeds": [
-            {
-                "color": -1,
-                "description": "",
-                "title": "",
-                "url": "",
-            }
-        ],
+        "embeds": [{
+            "color": -1,
+            "description": "",
+            "title": "",
+            "url": "",
+        }],
     }
     all_nones = {
         "content": None,
         "avatar_url": None,
         "username": None,
-        "embeds": [
-            {
-                "color": None,
-                "description": None,
-                "title": None,
-                "url": None,
-            }
-        ],
+        "embeds": [{
+            "color": None,
+            "description": None,
+            "title": None,
+            "url": None,
+        }],
     }
     max_nones = {
         "content": None,
         "avatar_url": None,
         "username": None,
-        "embeds": [
-            {
-                "color": None,
-                "description": "d",
-                "title": None,
-                "url": None,
-            }
-        ],
+        "embeds": [{
+            "color": None,
+            "description": "d",
+            "title": None,
+            "url": None,
+        }],
     }
     too_long_response = requests.post(
         WEBHOOK_URL,
@@ -678,12 +660,10 @@ def test_boundaries(webhook: RequestsMock) -> None:
         "code": 50035,
         "errors": {
             "content": {
-                "_errors": [
-                    {
-                        "code": "BASE_TYPE_MAX_LENGTH",
-                        "message": "Must be 2000 or fewer in length.",
-                    }
-                ]
+                "_errors": [{
+                    "code": "BASE_TYPE_MAX_LENGTH",
+                    "message": "Must be 2000 or fewer in length.",
+                }]
             },
             "embeds": {
                 "0": {
@@ -696,49 +676,38 @@ def test_boundaries(webhook: RequestsMock) -> None:
                         ]
                     },
                     "title": {
-                        "_errors": [
-                            {
-                                "code": "BASE_TYPE_MAX_LENGTH",
-                                "message": "Must be 256 or fewer in length.",
-                            }
-                        ]
+                        "_errors": [{
+                            "code": "BASE_TYPE_MAX_LENGTH",
+                            "message": "Must be 256 or fewer in length.",
+                        }]
                     },
                     "color": {
-                        "_errors": [
-                            {
-                                "code": "NUMBER_TYPE_MAX",
-                                "message": (
-                                    "int value should be less than or equal to"
-                                    " 16777215."
-                                ),
-                            }
-                        ]
+                        "_errors": [{
+                            "code": "NUMBER_TYPE_MAX",
+                            "message": (
+                                "int value should be less than or equal to 16777215."
+                            ),
+                        }]
                     },
                     "description": {
-                        "_errors": [
-                            {
-                                "code": "BASE_TYPE_MAX_LENGTH",
-                                "message": "Must be 4096 or fewer in length.",
-                            }
-                        ]
+                        "_errors": [{
+                            "code": "BASE_TYPE_MAX_LENGTH",
+                            "message": "Must be 4096 or fewer in length.",
+                        }]
                     },
                 }
             },
             "username": {
-                "_errors": [
-                    {
-                        "code": "BASE_TYPE_BAD_LENGTH",
-                        "message": "Must be between 1 and 80 in length.",
-                    }
-                ]
+                "_errors": [{
+                    "code": "BASE_TYPE_BAD_LENGTH",
+                    "message": "Must be between 1 and 80 in length.",
+                }]
             },
             "avatar_url": {
-                "_errors": [
-                    {
-                        "code": "URL_TYPE_INVALID_URL",
-                        "message": "Not a well formed URL.",
-                    }
-                ]
+                "_errors": [{
+                    "code": "URL_TYPE_INVALID_URL",
+                    "message": "Not a well formed URL.",
+                }]
             },
         },
     }
@@ -770,14 +739,12 @@ def test_boundaries(webhook: RequestsMock) -> None:
             "embeds": {
                 "0": {
                     "color": {
-                        "_errors": [
-                            {
-                                "code": "NUMBER_TYPE_MIN",
-                                "message": (
-                                    "int value should be greater than or equal to 0."
-                                ),
-                            }
-                        ]
+                        "_errors": [{
+                            "code": "NUMBER_TYPE_MIN",
+                            "message": (
+                                "int value should be greater than or equal to 0."
+                            ),
+                        }]
                     }
                 }
             },
@@ -806,12 +773,10 @@ def test_boundaries(webhook: RequestsMock) -> None:
             "embeds": {
                 "0": {
                     "description": {
-                        "_errors": [
-                            {
-                                "code": "BASE_TYPE_REQUIRED",
-                                "message": "This field is required",
-                            }
-                        ]
+                        "_errors": [{
+                            "code": "BASE_TYPE_REQUIRED",
+                            "message": "This field is required",
+                        }]
                     }
                 }
             }
