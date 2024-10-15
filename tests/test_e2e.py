@@ -306,6 +306,7 @@ def test_post_two_updates(
     assert embeds[0]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-1"
     assert embeds[1]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
 
+
 @pytest.mark.usefixtures("_no_sleep")
 def test_store_two_updates(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
@@ -565,6 +566,44 @@ def test_thread_comic_new_entry(comic: Comic, rss: aioresponses) -> None:
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert normal_webhook.call_count == 1
     assert thread_webhook.call_count == 1
+
+
+@responses.activate()
+@pytest.mark.usefixtures("_no_sleep")
+def test_thread_comic_many_entries(comic: Comic, rss: aioresponses) -> None:
+    """Comics with a thread_id are posted in the appropriate thread."""
+    client: MongoClient[Comic] = MongoClient()
+    comics = client.db.collection
+    comic["last_entries"] = comic["last_entries"][:-15]  # 15 new entries
+    comic["thread_id"] = 932666606000164965
+    normal_webhook = responses.post(
+        WEBHOOK_URL,
+        status=204,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "4",
+            "x-ratelimit-reset-after": "0.399",
+        },
+    )
+    thread_webhook = responses.post(
+        THREAD_WEBHOOK_URL,
+        status=204,
+        headers={
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "4",
+            "x-ratelimit-reset-after": "0.399",
+        },
+        match=[
+            matchers.query_param_matcher(
+                {"thread_id": 932666606000164965},
+                strict_match=False,
+            )
+        ],
+    )
+    comics.insert_one(comic)
+    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    assert normal_webhook.call_count == 2  # noqa: PLR2004
+    assert thread_webhook.call_count == 2  # noqa: PLR2004
 
 
 @responses.activate()

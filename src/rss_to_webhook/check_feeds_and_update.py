@@ -146,7 +146,8 @@ def regular_checks(
                     f" {response.reason}"
                 )
                 if thread_id := comic.get("thread_id"):
-                    del message["content"]
+                    if message.get("content"):
+                        del message["content"]
                     response = rate_limiter.post(
                         f"{thread_webhook_url}?wait=true&thread_id={thread_id}", message
                     )
