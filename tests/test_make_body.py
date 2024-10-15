@@ -33,6 +33,9 @@ def filter_nones(message: Message) -> Message:
     Discord treats message values that are `None` as though they weren't in the
     dictionary at all, so `None` and missing are equivalent. Pytest doesn't.
     This normalises all `None` values to just be missing, to hide the difference.
+
+    Returns:
+        A `Message` object where no keys are `None`
     """
     return {key: value for key, value in message.items() if value is not None}  # type: ignore [reportGeneralTypeIssues, return-value]
     # This is correctly-typed because every key in `Message` is optional,

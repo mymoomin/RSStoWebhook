@@ -109,33 +109,9 @@ exclude = [
 src = ["src"]
 
 [tool.ruff.lint]
-select = [
-    "E", "F", "W",  # default flake-8
-    "I",            # isort
-    "PGH",          # pygrep-hooks
-    "UP",           # pyupgrade
-    "RUF",          # Ruff-specific rules 
-    "C90",          # mccabe # no new errors
-    "N",            # naming # no new errors
-
-    # Some extra flake-8 plugins
-    "ANN",          # flake8-annotations # checks everything has type annotations
-    "D",            # pydocstyle # a million errors because I don't have any docstrings
-    "A",            # flake8-builtins # caught shadowing `hash()` with a variable called `hash`
-    "DTZ",          # flake8-datetimez # found that I was using datetime in the first place (mistake)
-    "PYI",          # flake8-pyi
-    "PT",           # flake8-pytest-style
-    "TCH",          # flake8-type-checking # checks typechecking-only stuff is in the right place
-    # "T20",        # Detects use of `print` rather than logging. One day I'll add it
-    # Let's just add everything that works
-    "ASYNC", "C4", "T10", "EM", "FA", "ISC", "ICN", "G", "INP", "PIE",  "PYI",
-    "Q", "RSE", "RET", "SLF", "SIM", "TID", "PTH", "ERA", "PL",
-    "TRY", "FLY", "PERF", "FURB", "LOG","FBT", "S", "ARG", "B",
-    "PLW"
-    # "TD", "FIX" # These disallow "# Todo" comments unless you jump through hoops, so I'm disabling
-    # them for now
-]
+select = ["ALL"]
 ignore = [
+    "T20", # Detects use of `print` rather than logging. One day I'll add it
     "PLW0120", "RET505", # Forbid else after return in if/loop, which I often feel is more readable
     "TRY300", # Forbids returning at the end of a try statement, but I think that looks better
     "S101", # Forbids use of `assert`, necessary both for tests and certain type system featuress
@@ -144,10 +120,15 @@ ignore = [
     "TRY003", # Forbids putting medium string literals in exception constructors, which gives errors on some code from the Python docs.
     "E203", # Forbids spaces around the colon in array slicing, which conflicts with Black
     "B008", # Forbids function calls in default arguments, which are a feature in Typer
+    "COM", # Has trailing comma rules that conflict with black
+    "CPY", # Requires copyright notices. I simply do not care
+    "TD", "FIX", # These disallow "# Todo" comments unless you jump through hoops, so I'm disabling them for now
+    "DOC402", "DOC201", "DOC501" # Requires every function to document its return value, yield value, and exceptions raised. I don't think this is necessary
 ]
 per-file-ignores = {"tests/*" = [
     "ARG001", # Forbids unused function arguments, which pytest can use as fixtures
     "FBT001", # Forbids boolean positional arguments, which come up when using parameterised tests
-    "D1", # Forbids public functions without docstrings, but also thinks that tests are part of the public api for some reason
+    "D1",     # Forbids public functions without docstrings, but also thinks that tests are part of the public api for some reason
+    "PLC2701", # Forbids importing private functions, but I want to do that in my tests bc I hate best practices
 ]}
 pydocstyle = {convention = "google"}

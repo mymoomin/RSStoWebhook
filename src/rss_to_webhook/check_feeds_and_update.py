@@ -226,7 +226,7 @@ async def _get_feed_changes(
         new_entries = _get_new_entries(comic["last_entries"], feed["entries"])
         print(f"{comic['title']}: {len(new_entries)} new entries")
         return (comic, new_entries, caching_info)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"{comic['title']}: Problem connecting. {type(e).__name__}: {e} ")
         comics.update_one(
             {"_id": comic["_id"]},
@@ -328,14 +328,12 @@ def _make_messages(comic: Comic, entries: Sequence[EntrySubset]) -> list[Message
             print(f"{comic['title']}: bad url {entry['link']}")
             parts = urlsplit(link)
             link = urlunsplit(parts._replace(scheme="https"))
-        embeds.append(
-            {
-                "color": comic.get("color", DEFAULT_COLOR),
-                "title": f"**{entry.get('title', comic['title'])}**",
-                "url": link,
-                "description": f"New {comic['title']}!",
-            }
-        )
+        embeds.append({
+            "color": comic.get("color", DEFAULT_COLOR),
+            "title": f"**{entry.get('title', comic['title'])}**",
+            "url": link,
+            "description": f"New {comic['title']}!",
+        })
     # No typechecker can understand this assignment, but it is valid
     messages: list[Message] = [
         {"embeds": list(embed_chunk)} | extras for embed_chunk in batched(embeds, 10)  # type: ignore[misc]
