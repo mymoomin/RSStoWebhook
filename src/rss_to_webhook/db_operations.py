@@ -65,7 +65,7 @@ def add_to_collection(
     last_entries = strip_extra_data(list(reversed(feed["entries"])))
     new_comic = Comic(
         **comic_data, **caching_info, last_entries=last_entries, dailies=[]
-    )  # type: ignore [reportGeneralTypeIssuess, typeddict-item]
+    )  # type: ignore [reportGeneralTypeIssues, typeddict-item]
     insert_result = collection.insert_one(new_comic)
     print(f"Added {comic_data['title']}")
     return insert_result

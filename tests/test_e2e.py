@@ -328,7 +328,7 @@ def test_store_two_updates(
 
 
 @pytest.mark.usefixtures("_no_sleep")
-def test_idempotency(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+def test_idempotence(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
     """The script will not post the same update twice."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection

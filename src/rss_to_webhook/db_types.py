@@ -12,7 +12,7 @@ class CachingInfo(TypedDict):
         feed_hash: A hash of the RSS feed.
         last_modified: The value of the "Last-Modified" HTTP header. Most
             RSS feeds don't use this header, so it's optional. We use it only
-            as an opague string, so we don't store it as a datetime.
+            as an opaque string, so we don't store it as a datetime.
         etag: The value of the "ETag" HTTP header. Again, sadly usually not
             used, so it's optional. It is represented as a sequence of bytes
             cast to a string (e.g. '"f56-6062f676a7367-gzip"', so we type it)
@@ -101,14 +101,14 @@ class Comic(TypedDict):
         etag: A caching header RSS feeds can use to say when they haven't changed,
             and return a 304 with no content rather than the full feed, saving
             both us and them bandwidth and time. Sadly very rarely used.
-        last_modifed: Similar to the above, the date at which the RSS feed was
+        last_modified: Similar to the above, the date at which the RSS feed was
             last changed. While the header is intended to always be a date in a
             specific format, it sometimes isn't, and in any case we only use it
             as an opaque string, so it's treated as a string here.
 
-        error_count: The number of errors that have occured connecting to this RSS feed.
+        error_count: Number of errors that have occurred connecting to this RSS feed.
             Missing if there have never been any.
-        errors: A list of the errors that have occured, from oldest to newest.
+        errors: A list of the errors that have occurred, from oldest to newest.
             Missing if there have never been any.
     """
 
