@@ -4,7 +4,7 @@
 #
 #    pip-compile --extra=dev --output-file=requirements-dev.txt
 #
-aiohttp==3.8.5
+aiohttp==3.10.2
     # via
     #   aioresponses
     #   rss-to-webhook
