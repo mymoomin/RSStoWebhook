@@ -1,7 +1,6 @@
 name: Tests
 
 on:
-  - push
   - pull_request
   - workflow_dispatch
 
@@ -27,6 +26,6 @@ jobs:
     - name: Install dependencies
       run: |
         uv tool install tox --with tox-uv 
-        
+
     - name: Test with tox
       run: tox
