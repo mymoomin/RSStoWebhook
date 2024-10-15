@@ -11,7 +11,7 @@ from bson import Int64, ObjectId
 from dotenv import load_dotenv
 from mongomock import Collection, MongoClient
 from requests import HTTPError
-from responses import RequestsMock, matchers
+from responses import CallList, RequestsMock, matchers
 from yarl import URL
 
 from rss_to_webhook import constants
@@ -365,6 +365,14 @@ def test_suddenly_pubdates(
     assert len(webhook.calls) == 1  # Still one post
 
 
+def get_embeds_by_message(calls: CallList) -> list[list[dict[str, str]]]:
+    embeds = []
+    for call in calls:
+        assert call.request.body
+        embeds.append(json.loads(call.request.body)["embeds"])
+    return embeds
+
+
 @pytest.mark.usefixtures("_no_sleep")
 def test_post_all_new_updates(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
@@ -382,9 +390,7 @@ def test_post_all_new_updates(
     max_embeds_per_message = 10
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    embeds_by_message = [
-        json.loads(call.request.body)["embeds"] for call in webhook.calls
-    ]
+    embeds_by_message = get_embeds_by_message(webhook.calls)
     if len(embeds_by_message) > 1:
         assert all(
             len(embeds) == max_embeds_per_message for embeds in embeds_by_message[:-1]

@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 from mongomock import MongoClient
 from requests import PreparedRequest
 from requests.structures import CaseInsensitiveDict
-from responses import RequestsMock
+from responses import CallList, RequestsMock
 
 from rss_to_webhook.check_feeds_and_update import (
     RateLimiter,
@@ -354,6 +354,14 @@ def test_post_two_entries(
     assert embeds[1]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
 
 
+def get_embeds_by_message(calls: CallList) -> list[list[dict[str, str]]]:
+    embeds = []
+    for call in calls:
+        assert call.request.body
+        embeds.append(json.loads(call.request.body)["embeds"])
+    return embeds
+
+
 def test_post_many_entries(
     comic: Comic, rss: aioresponses, webhook: RequestsMock
 ) -> None:
@@ -368,9 +376,7 @@ def test_post_many_entries(
     max_embeds_per_message = 10
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
-    embeds_by_message = [
-        json.loads(call.request.body)["embeds"] for call in webhook.calls
-    ]
+    embeds_by_message = get_embeds_by_message(webhook.calls)
     if len(embeds_by_message) > 1:
         assert all(
             len(embeds) == max_embeds_per_message for embeds in embeds_by_message[:-1]
