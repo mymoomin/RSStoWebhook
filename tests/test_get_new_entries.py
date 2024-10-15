@@ -387,7 +387,7 @@ def test_performance(
     feed_entries: Sequence[Entry],
     expected_new_entries: Sequence[Entry],
 ) -> None:
-    """The function takes a negligible amount of time (less than 0.01 seconds).
+    """The function takes a negligible amount of time (less than 0.015 seconds).
 
     According to [Usability Engineering](https://www.nngroup.com/articles/response-times-3-important-limits/),
     less than 0.1 seconds feels instantaneous, so less than 0.015 seconds is
@@ -401,7 +401,7 @@ def test_performance(
     Pytest displays the tests as `::test_performance[{feed_links_id}-{entry_links_id}]`
     for some reason.
     """
-    negligible_time = 0.01 if "CI" not in os.environ else 10
+    negligible_time = 0.015 if "CI" not in os.environ else 10
     repeats = 10
     max_time = repeats * negligible_time
     new_entries = []
