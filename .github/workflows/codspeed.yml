@@ -18,7 +18,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv tool install pytest
+          uv tool install pytest --with pytest-codspeed
           uv sync --extra test
 
       - name: Run benchmarks
