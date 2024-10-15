@@ -48,7 +48,6 @@ dev = [
     "rss_to_webhook[lint,test,type]",
     "tox>=4.21.2",
     "tox-gh-actions>=3.2.0",
-    "pip-tools>=7.4.1",
 ]
 
 [project.urls]
