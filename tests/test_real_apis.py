@@ -68,7 +68,7 @@ def test_fully() -> None:
     # One update posted per comic
     assert len(responses.calls) == num_comics
     # All posted correctly
-    assert all(call.response.status_code == HTTPStatus.OK for call in responses.calls)
+    assert all(call.response.status_code == HTTPStatus.OK for call in responses.calls)  # type: ignore[reportAttributeAccessIssue]
     regular_checks(comics, HASH_SEED, fake_url, THREAD_WEBHOOK_URL)
     assert len(responses.calls) == num_comics  # Nothing changed, so no new updates
     # All our fake values have been changed
