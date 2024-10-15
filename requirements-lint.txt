@@ -4,7 +4,7 @@
 #
 #    pip-compile --extra=lint --output-file=requirements-lint.txt
 #
-black==23.9.1
+black==24.10.0
     # via rss-to-webhook (setup.py)
 click==8.1.7
     # via black
@@ -18,5 +18,5 @@ pathspec==0.11.2
     # via black
 platformdirs==3.11.0
     # via black
-ruff==0.0.292
+ruff==0.6.9
     # via rss-to-webhook (setup.py)

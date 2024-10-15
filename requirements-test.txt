@@ -85,7 +85,7 @@ requests==2.31.0
     # via
     #   responses
     #   rss-to-webhook (setup.py)
-responses==0.23.3
+responses==0.25.3
     # via rss-to-webhook (setup.py)
 sentinels==1.0.0
     # via mongomock

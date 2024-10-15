@@ -26,8 +26,8 @@ rss-to-webhook = "rss_to_webhook.main:app"
 
 [project.optional-dependencies]
 lint = [
-    "ruff>=0.0.292",
-    "black>=23.9.1",
+    "ruff>=0.6.9",
+    "black>=24.10.0",
 ]
 test = [
     "pytest>=7.3.2",
@@ -35,13 +35,13 @@ test = [
     "pytest-codspeed>=2.2.0",
     "mongomock>=4.1.2",
     "aioresponses>=0.7.4",
-    "responses>=0.23.3",
+    "responses>=0.25.3",
 ]
 type = [
     "rss_to_webhook[test]",
-    "mypy>=1.5.1",
-    "pyright>=1.1.329",
-    "types-requests>=2.31.0.6",
+    "mypy>=1.12.0",
+    "pyright>=1.1.384",
+    "types-requests>=2.32.0.20240914",
     "types-urllib3>=1.26.25.14",
 ]
 dev = [
