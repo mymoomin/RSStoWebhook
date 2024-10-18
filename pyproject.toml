@@ -39,7 +39,12 @@ type = [
     "types-requests>=2.32.0.20240914",
     "types-urllib3>=1.26.25.14",
 ]
-dev = ["rss_to_webhook[lint,test,type]", "tox>=4.21.2", "tox-gh-actions>=3.2.0"]
+dev = [
+    "rss_to_webhook[lint,test,type]",
+    "tox>=4.21.2",
+    "tox-gh-actions>=3.2.0",
+    "tox-uv>=1.15.0",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/mymoomin/RSStoWebhook/"
