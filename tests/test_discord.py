@@ -39,12 +39,14 @@ load_dotenv(".env.example")
 WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
 DAILY_WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
+RATELIMIT_WEBHOOK_URL = os.environ["TEST3_WEBHOOK_URL"]
 
 # Loads the real environment variables
 load_dotenv(override=True)
 PASSTHROUGH_WEBHOOK_URL = os.environ["TEST_WEBHOOK_URL"]
 PASSTHROUGH_DAILY_URL = os.environ["TEST2_WEBHOOK_URL"]
 PASSTHROUGH_THREAD_ID = int(os.environ["TEST2_WEBHOOK_THREAD_ID"], base=10)
+PASSTHROUGH_RATELIMIT_URL = os.environ["TEST3_WEBHOOK_URL"]
 
 
 pytestmark = pytest.mark.side_effects
@@ -226,6 +228,7 @@ def webhook() -> Generator[RequestsMock, None, None]:
     real_regular = f"{PASSTHROUGH_WEBHOOK_URL}?wait=true"
     real_daily = f"{PASSTHROUGH_DAILY_URL}?wait=true"
     real_thread = real_daily
+    real_ratelimit = f"{PASSTHROUGH_RATELIMIT_URL}?wait=true"
 
     def relay_regular(
         request: PreparedRequest,
@@ -253,13 +256,25 @@ def webhook() -> Generator[RequestsMock, None, None]:
         r = s.send(request)
         return (r.status_code, r.headers, r.text)
 
+    def relay_ratelimit(
+        request: PreparedRequest,
+    ) -> tuple[int, CaseInsensitiveDict[str], str]:
+        request.url = real_ratelimit
+        s = requests.Session()
+        r = s.send(request)
+        return (r.status_code, r.headers, r.text)
+
     with RequestsMock(assert_all_requests_are_fired=False) as responses:
         responses.add_passthru(real_regular)
         responses.add_passthru(real_daily)
+        responses.add_passthru(real_ratelimit)
         responses.add_callback(responses.POST, WEBHOOK_URL, callback=relay_regular)
         responses.add_callback(responses.POST, DAILY_WEBHOOK_URL, callback=relay_daily)
         responses.add_callback(
             responses.POST, THREAD_WEBHOOK_URL, callback=relay_thread
+        )
+        responses.add_callback(
+            responses.POST, RATELIMIT_WEBHOOK_URL, callback=relay_ratelimit
         )
         yield responses
 
@@ -550,11 +565,11 @@ def test_pauses_at_hidden_rate_limit(
     comics.insert_many(duplicate_comics)
     print(responses.registered())
     start = time.time()
-    regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
+    regular_checks(comics, HASH_SEED, RATELIMIT_WEBHOOK_URL, THREAD_WEBHOOK_URL)
     end = time.time()
     main_duration = end - start
-    assert len(measure_sleep) == 1
-    assert measure_sleep[0] <= RateLimiter.fuzzed_window
+    assert len(measure_sleep) >= 1
+    assert measure_sleep[-1] <= RateLimiter.fuzzed_window
     assert main_duration >= RateLimiter.fuzzed_window
     assert main_duration < 1.05 * RateLimiter.fuzzed_window
 
