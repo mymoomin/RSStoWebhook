@@ -187,8 +187,8 @@ def test_mongo_mock(comic: Comic) -> None:
     assert comic == comics.find_one({"_id": ObjectId("612819b293b99b5809e18ab3")})
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_post_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss")
+def test_post_no_update(comic: Comic, webhook: RequestsMock) -> None:
     """The script doesn't post to the webhook when no new updates are found."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -197,10 +197,8 @@ def test_post_no_update(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     assert len(webhook.calls) == 0
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_store_no_update(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("_no_sleep", "webhook")
+def test_store_no_update(comic: Comic, rss: aioresponses) -> None:
     """Only caching information is updated when no new updates are found."""
     rss.get(
         "http://www.sleeplessdomain.com/comic/rss_with_headers",
@@ -226,8 +224,8 @@ def test_store_no_update(
     assert comic | caching_info == updated_comic
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_hash_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss")
+def test_hash_match(comic: Comic, webhook: RequestsMock) -> None:
     """The script does nothing when the feed's hash matches the previous hash."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -240,10 +238,8 @@ def test_hash_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> N
     assert len(webhook.calls) == 0
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_post_one_update(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss")
+def test_post_one_update(comic: Comic, webhook: RequestsMock) -> None:
     """The script posts the correct information when one new update is found."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -264,10 +260,8 @@ def test_post_one_update(
     }
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_store_one_update(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss", "webhook")
+def test_store_one_update(comic: Comic) -> None:
     """When one new update is found, it is stored in the database."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -284,10 +278,8 @@ def test_store_one_update(
     }
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_post_two_updates(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss")
+def test_post_two_updates(comic: Comic, webhook: RequestsMock) -> None:
     """When two new updates are found, they are both posted, from oldest to newest.
 
     Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
@@ -307,10 +299,8 @@ def test_post_two_updates(
     assert embeds[1]["url"] == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_store_two_updates(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss", "webhook")
+def test_store_two_updates(comic: Comic) -> None:
     """When there are two new updates, they are stored in the database."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -327,8 +317,8 @@ def test_store_two_updates(
     ]
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_idempotence(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss")
+def test_idempotence(comic: Comic, webhook: RequestsMock) -> None:
     """The script will not post the same update twice."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -340,11 +330,9 @@ def test_idempotence(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> 
     assert len(webhook.calls) == 1  # Still one post
 
 
-@pytest.mark.usefixtures("_no_sleep")
+@pytest.mark.usefixtures("_no_sleep", "rss")
 @pytest.mark.benchmark
-def test_suddenly_pubdates(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+def test_suddenly_pubdates(comic: Comic, webhook: RequestsMock) -> None:
     """When an RSS feed adds <pubDate>s to all entries, old entries are not reposted.
 
     There is a logic error where this currently appears to work until the check
@@ -373,10 +361,8 @@ def get_embeds_by_message(calls: CallList) -> list[list[dict[str, str]]]:
     return embeds
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_post_all_new_updates(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss")
+def test_post_all_new_updates(comic: Comic, webhook: RequestsMock) -> None:
     """The script works when all updates are new and there are many of them.
 
     Regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
@@ -409,10 +395,8 @@ def test_post_all_new_updates(
     )
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_store_all_new_updates(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss", "webhook")
+def test_store_all_new_updates(comic: Comic) -> None:
     """When there are many new updates, they are all stored in the database.
 
     Regression test for [e33e902](https://github.com/mymoomin/RSStoWebhook/commit/e33e902cbf8d7a1ce4e5bb096386ca6e70469921)
@@ -438,8 +422,8 @@ def test_store_all_new_updates(
     )
 
 
-@pytest.mark.usefixtures("_no_sleep")
-def test_caching_match(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+@pytest.mark.usefixtures("_no_sleep", "webhook")
+def test_caching_match(comic: Comic, rss: aioresponses) -> None:
     """Caching headers in responses are stored, and are used in the next run."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -537,8 +521,8 @@ def test_updates_error_count(comic: Comic, rss: aioresponses) -> None:
 
 
 @responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
-def test_thread_comic_new_entry(comic: Comic, rss: aioresponses) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss")
+def test_thread_comic_new_entry(comic: Comic) -> None:
     """Comics with a thread_id are posted in the appropriate thread."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -575,8 +559,8 @@ def test_thread_comic_new_entry(comic: Comic, rss: aioresponses) -> None:
 
 
 @responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
-def test_thread_comic_many_entries(comic: Comic, rss: aioresponses) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss")
+def test_thread_comic_many_entries(comic: Comic) -> None:
     """Comics with a thread_id are posted in the appropriate thread."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -613,8 +597,8 @@ def test_thread_comic_many_entries(comic: Comic, rss: aioresponses) -> None:
 
 
 @responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
-def test_thread_comic_body(comic: Comic, rss: aioresponses) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss")
+def test_thread_comic_body(comic: Comic) -> None:
     """Comics with a thread_id have the correct body. In particular, no content."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -660,9 +644,8 @@ def test_thread_comic_body(comic: Comic, rss: aioresponses) -> None:
     }
 
 
-def test_daily_two_updates(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("rss")
+def test_daily_two_updates(comic: Comic, webhook: RequestsMock) -> None:
     """The script maintains order when posting daily updates.
 
     Regression test for [#2](https://github.com/mymoomin/RSStoWebhook/issues/2)
@@ -759,9 +742,8 @@ def test_daily_ordering(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     )
 
 
-def test_daily_idempotent(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("rss")
+def test_daily_idempotent(comic: Comic, webhook: RequestsMock) -> None:
     """The script posts daily updates exactly once."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -780,9 +762,8 @@ def test_daily_idempotent(
 
 @responses.activate()
 @pytest.mark.slow  # This is already tested in test_ratelimiter.py
-def test_pauses_only_at_rate_limit(
-    comic: Comic, rss: aioresponses, measure_sleep: list[float]
-) -> None:
+@pytest.mark.usefixtures("rss")
+def test_pauses_only_at_rate_limit(comic: Comic, measure_sleep: list[float]) -> None:
     """The script sleeps until the rate-limiting window is over when it is exhausted.
 
     Also tests that the script doesn't sleep when the rate-limiting window has space.
@@ -883,9 +864,9 @@ def test_pauses_at_hidden_rate_limit(
 
 
 @responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
+@pytest.mark.usefixtures("_no_sleep", "rss")
 @pytest.mark.slow  # This is already tested in test_ratelimiter.py
-def test_fails_on_429(comic: Comic, rss: aioresponses) -> None:
+def test_fails_on_429(comic: Comic) -> None:
     """The script fails with an exception when it exceeds the rate limit.
 
     In the future this should be set to email me
@@ -963,8 +944,8 @@ def test_no_update_on_failure(comic: Comic, rss: aioresponses) -> None:
 
 
 @responses.activate()
-@pytest.mark.usefixtures("_no_sleep")
-def test_no_crash_on_missing_headers(comic: Comic, rss: aioresponses) -> None:
+@pytest.mark.usefixtures("_no_sleep", "rss")
+def test_no_crash_on_missing_headers(comic: Comic) -> None:
     """The script does not crash when webhook response headers are missing.
 
     Regression test for [b0939df](https://github.com/mymoomin/RSStoWebhook/commit/b0939df99bd28ed17d69e814cf51bb725fc97883)
@@ -996,8 +977,9 @@ def test_user_agent(comic: Comic, rss: aioresponses) -> None:
 
 @pytest.mark.benchmark
 @pytest.mark.slow
+@pytest.mark.usefixtures("rss")
 def test_performance(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock, measure_sleep: list[float]
+    comic: Comic, webhook: RequestsMock, measure_sleep: list[float]
 ) -> None:
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection

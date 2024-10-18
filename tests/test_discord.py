@@ -288,7 +288,8 @@ def measure_sleep(monkeypatch: pytest.MonkeyPatch) -> list[float]:
     return sleeps
 
 
-def test_post_one_entry(comic: Comic, rss: aioresponses, webhook: RequestsMock) -> None:
+@pytest.mark.usefixtures("rss")
+def test_post_one_entry(comic: Comic, webhook: RequestsMock) -> None:
     """A comic with all attributes is posted."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -310,9 +311,8 @@ def test_post_one_entry(comic: Comic, rss: aioresponses, webhook: RequestsMock) 
     }
 
 
-def test_minimal_one_entry(
-    minimal_comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("rss")
+def test_minimal_one_entry(minimal_comic: Comic, webhook: RequestsMock) -> None:
     """A comic with no optional attributes is still posted."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -334,9 +334,8 @@ def test_minimal_one_entry(
     }
 
 
-def test_post_two_entries(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("rss")
+def test_post_two_entries(comic: Comic, webhook: RequestsMock) -> None:
     """When two new entries are found, they are both posted, from oldest to newest."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -362,9 +361,8 @@ def get_embeds_by_message(calls: CallList) -> list[list[dict[str, str]]]:
     return embeds
 
 
-def test_post_many_entries(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("rss")
+def test_post_many_entries(comic: Comic, webhook: RequestsMock) -> None:
     """When many new entries are found, they are posted in chunks of 10 per message."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -395,9 +393,8 @@ def test_post_many_entries(
     )
 
 
-def test_thread_comic_new_entry(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("rss")
+def test_thread_comic_new_entry(comic: Comic, webhook: RequestsMock) -> None:
     """Comics with a thread_id are posted in the appropriate thread."""
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
@@ -409,9 +406,8 @@ def test_thread_comic_new_entry(
     assert len(webhook.calls) == 2  # noqa: PLR2004
 
 
-def test_daily_two_entries(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock
-) -> None:
+@pytest.mark.usefixtures("rss")
+def test_daily_two_entries(comic: Comic, webhook: RequestsMock) -> None:
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comic["title"] = "test_daily_two_updates"
@@ -507,8 +503,9 @@ def test_daily_two_feeds(
 
 
 @pytest.mark.slow
+@pytest.mark.usefixtures("webhook")
 def test_pauses_at_hidden_rate_limit(
-    comic: Comic, rss: aioresponses, webhook: RequestsMock, measure_sleep: list[float]
+    comic: Comic, rss: aioresponses, measure_sleep: list[float]
 ) -> None:
     """The script avoids Discord's hidden webhook rate limit.
 
@@ -562,7 +559,8 @@ def test_pauses_at_hidden_rate_limit(
     assert main_duration < 1.05 * RateLimiter.fuzzed_window
 
 
-def test_max_embeds(webhook: RequestsMock) -> None:
+@pytest.mark.usefixtures("webhook")
+def test_max_embeds() -> None:
     """A message can have at most 10 embeds."""
     too_long = {"embeds": [{"description": f"embed {i}"} for i in range(1, 11 + 1)]}
     bad_response = requests.post(
@@ -594,7 +592,8 @@ def test_max_embeds(webhook: RequestsMock) -> None:
     assert good_response.status_code == HTTPStatus.OK
 
 
-def test_boundaries(webhook: RequestsMock) -> None:
+@pytest.mark.usefixtures("webhook")
+def test_boundaries() -> None:
     too_long: Message = {
         "content": 2001 * "c",
         "avatar_url": f"https://{'i' * 64}.{'i' * 64}.{'i' * 64}/",

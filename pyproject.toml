@@ -1,9 +1,7 @@
 [project]
 name = "rss-to-webhook"
 version = "0.0.4"
-authors = [
-    {name = "mymoomin"}
-]
+authors = [{ name = "mymoomin" }]
 description = "Posts RSS updates to Discord webhooks"
 requires-python = ">=3.11"
 classifiers = [
@@ -25,10 +23,7 @@ dependencies = [
 rss-to-webhook = "rss_to_webhook.main:app"
 
 [project.optional-dependencies]
-lint = [
-    "ruff>=0.6.9",
-    "black>=24.10.0",
-]
+lint = ["ruff>=0.6.9", "black>=24.10.0"]
 test = [
     "pytest>=8.3.3",
     "pytest-cov>=5.0.0",
@@ -44,11 +39,7 @@ type = [
     "types-requests>=2.32.0.20240914",
     "types-urllib3>=1.26.25.14",
 ]
-dev = [
-    "rss_to_webhook[lint,test,type]",
-    "tox>=4.21.2",
-    "tox-gh-actions>=3.2.0",
-]
+dev = ["rss_to_webhook[lint,test,type]", "tox>=4.21.2", "tox-gh-actions>=3.2.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/mymoomin/RSStoWebhook/"
@@ -63,16 +54,11 @@ addopts = [
     "--import-mode=importlib",
     # "--cov=rss_to_webhook", disabled because it breaks CodSpeed CI
 ]
-testpaths = [
-    "tests",
-]
+testpaths = ["tests"]
 
 [tool.coverage.run]
 source = ["rss-to-webhook"]
-omit = [
-    "*/scripts/*",
-    "__main__.py"
-]
+omit = ["*/scripts/*", "__main__.py"]
 branch = true
 
 [tool.coverage.report]
@@ -82,7 +68,7 @@ skip_covered = true
 
 [tool.mypy]
 exclude = ["src/rss_to_webhook/scripts"]
-mypy_path="$MYPY_CONFIG_FILE_DIR/typings"
+mypy_path = "$MYPY_CONFIG_FILE_DIR/typings"
 check_untyped_defs = true
 disallow_any_generics = true
 ignore_missing_imports = false
@@ -102,32 +88,28 @@ exclude = ["src/rss_to_webhook/scripts"]
 [tool.ruff]
 line-length = 88
 preview = true
-exclude = [
-    "__init__.py"
-]
+exclude = ["__init__.py"]
 src = ["src"]
 
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "T20", # Detects use of `print` rather than logging. One day I'll add it
-    "PLW0120", "RET505", # Forbid else after return in if/loop, which I often feel is more readable
+    "T20",    # Detects use of `print` rather than logging. One day I'll add it
     "TRY300", # Forbids returning at the end of a try statement, but I think that looks better
-    "S101", # Forbids use of `assert`, necessary both for tests and certain type system featuress
-    "ANN101", # Forbids inferring type of `self`, which both mypy and pyright do automatically
-    "EM101", # Forbids putting short string literals in exception constructors, but this is normal.
+    "EM101",  # Forbids putting short string literals in exception constructors, but this is normal.
     "TRY003", # Forbids putting medium string literals in exception constructors, which gives errors on some code from the Python docs.
-    "E203", # Forbids spaces around the colon in array slicing, which conflicts with Black
-    "B008", # Forbids function calls in default arguments, which are a feature in Typer
-    "COM", # Has trailing comma rules that conflict with black
-    "CPY", # Requires copyright notices. I simply do not care
-    "TD", "FIX", # These disallow "# Todo" comments unless you jump through hoops, so I'm disabling them for now
-    "DOC402", "DOC201", "DOC501" # Requires every function to document its return value, yield value, and exceptions raised. I don't think this is necessary
+    "COM",    # Has trailing comma rules that conflict with black
+    "CPY",    # Requires copyright notices. I simply do not care
+    "TD",
+    "FIX",    # These disallow "# Todo" comments unless you jump through hoops, so I'm disabling them for now
+    "DOC402",
+    "DOC201",
+    "DOC501", # These require every function to document its return value, yield value, and exceptions raised. I don't think this is necessary
 ]
-per-file-ignores = {"tests/*" = [
-    "ARG001", # Forbids unused function arguments, which pytest can use as fixtures
-    "FBT001", # Forbids boolean positional arguments, which come up when using parameterised tests
-    "D1",     # Forbids public functions without docstrings, but also thinks that tests are part of the public api for some reason
+per-file-ignores = { "tests/*" = [
+    "D1",      # Forbids public functions without docstrings, but also thinks that tests are part of the public api for some reason
     "PLC2701", # Forbids importing private functions, but I want to do that in my tests bc I hate best practices
-]}
-pydocstyle = {convention = "google"}
+    "S101",    # Forbids use of `assert`, which pytest uses constantly
+] }
+pydocstyle = { convention = "google" }
+flake8-bugbear = { extend-immutable-calls = ["typer.Argument"] }

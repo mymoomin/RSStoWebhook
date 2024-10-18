@@ -65,6 +65,7 @@ def report_regular_checks(monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
         args["hash_seed"] = hash_seed
         args["webhook_url"] = webhook_url
         args["thread_webhook_url"] = thread_webhook_url
+        args["timeout"] = timeout
 
     monkeypatch.setattr(
         "rss_to_webhook.check_feeds_and_update.regular_checks", report_args
@@ -100,6 +101,7 @@ def test_runs_regular_checks(
         "comics": fake_db[DB_NAME]["comics"],
         "thread_webhook_url": THREAD_WEBHOOK_URL,
         "webhook_url": WEBHOOK_URL,
+        "timeout": DEFAULT_AIOHTTP_TIMEOUT,
     }
 
     regular_result = runner.invoke(app, ["post-updates", "regular"])
@@ -109,6 +111,7 @@ def test_runs_regular_checks(
         "comics": fake_db[DB_NAME]["comics"],
         "thread_webhook_url": THREAD_WEBHOOK_URL,
         "webhook_url": WEBHOOK_URL,
+        "timeout": DEFAULT_AIOHTTP_TIMEOUT,
     }
 
 
@@ -123,6 +126,7 @@ def test_runs_test_checks(
         "comics": fake_db[DB_NAME]["test-comics"],
         "thread_webhook_url": TEST_WEBHOOK_URL,
         "webhook_url": TEST_WEBHOOK_URL,
+        "timeout": DEFAULT_AIOHTTP_TIMEOUT,
     }
 
 

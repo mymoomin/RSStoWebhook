@@ -87,7 +87,8 @@ def collection_with_sd() -> Collection[Comic]:
     return collection
 
 
-def test_add_valid_comic(rss: RequestsMock) -> None:
+@pytest.mark.usefixtures("rss")
+def test_add_valid_comic() -> None:
     client: MongoClient[Comic] = MongoClient()
     collection = client.db.collection
     comic_data: DiscordComic = {

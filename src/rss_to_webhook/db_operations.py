@@ -23,15 +23,14 @@ def add_to_collection(
     """Adds a comic to the given collection, setting RSS info as well."""
     result = collection.update_one({"title": comic_data["title"]}, {"$set": comic_data})
     if result.matched_count == 1:
-        # The comic is already in the database
+        # The comic is already in the database...
         if result.modified_count == 0:
-            # and nothing has changed
+            # ...and nothing has changed.
             print(f"Left {comic_data['title']} as-is")
             return result
-        else:
-            # and we've just updated something about it
-            print(f"Updated {comic_data['title']}")
-            return result
+        # ...and we've just updated something about it.
+        print(f"Updated {comic_data['title']}")
+        return result
     # The comic is not in the database
     print(f"Adding {comic_data['title']}")
 

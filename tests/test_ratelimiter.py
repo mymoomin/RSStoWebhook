@@ -57,8 +57,17 @@ def measure_sleep(monkeypatch: pytest.MonkeyPatch) -> list[float]:
     return sleeps
 
 
+@pytest.fixture
+def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
+    def nothing(_time: float) -> None:
+        pass
+
+    monkeypatch.setattr(time, "sleep", nothing)
+
+
+@pytest.mark.usefixtures("webhook")
 def test_pauses_at_hidden_rate_limit(
-    message: Message, webhook: RequestsMock, measure_sleep: list[float]
+    message: Message, measure_sleep: list[float]
 ) -> None:
     rate_limiter = RateLimiter()
     start = time.time()
@@ -75,8 +84,9 @@ def test_pauses_at_hidden_rate_limit(
     assert duration + measure_sleep[0] < RateLimiter.fuzzed_window + 1
 
 
+@pytest.mark.usefixtures("webhook")
 def test_pauses_repeatedly_at_hidden_rate_limit(
-    message: Message, webhook: RequestsMock, measure_sleep: list[float]
+    message: Message, measure_sleep: list[float]
 ) -> None:
     runs = 61
     rate_limiter = RateLimiter()
@@ -150,9 +160,8 @@ def test_buckets_rate_limits_by_url(
     assert len(measure_sleep) == 2  # noqa: PLR2004
 
 
-def test_raises_exception_on_error(
-    message: Message, webhook: RequestsMock, measure_sleep: list[float]
-) -> None:
+@pytest.mark.usefixtures("_no_sleep")
+def test_raises_exception_on_error(message: Message, webhook: RequestsMock) -> None:
     rate_limiter = RateLimiter()
     error_message = (
         '{"message": "Invalid Form Body", "code": 50035, "errors": {"embeds": {"0":'
@@ -184,9 +193,8 @@ def test_raises_exception_on_error(
         rate_limiter.post(SD_WEBHOOK_URL, message)
 
 
-def test_raises_exception_on_429(
-    message: Message, webhook: RequestsMock, measure_sleep: list[float]
-) -> None:
+@pytest.mark.usefixtures("_no_sleep")
+def test_raises_exception_on_429(message: Message, webhook: RequestsMock) -> None:
     rate_limiter = RateLimiter()
     error_message = (
         '{"message": "Invalid Form Body", "code": 50035, "errors": {"embeds": {"0":'
