@@ -3,4 +3,4 @@
 from rss_to_webhook.main import app
 
 if __name__ == "__main__":
-    app(prog_name="rick-portal-gun")
+    app(prog_name="rss-to-webhook")
