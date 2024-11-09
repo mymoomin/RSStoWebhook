@@ -760,8 +760,9 @@ def test_daily_idempotent(comic: Comic, webhook: RequestsMock) -> None:
     assert len(webhook.calls) == 1
 
 
+# This is already tested in test_ratelimiter.py
+@pytest.mark.slow
 @responses.activate()
-@pytest.mark.slow  # This is already tested in test_ratelimiter.py
 @pytest.mark.usefixtures("rss")
 def test_pauses_only_at_rate_limit(comic: Comic, measure_sleep: list[float]) -> None:
     """The script sleeps until the rate-limiting window is over when it is exhausted.
@@ -801,8 +802,9 @@ def test_pauses_only_at_rate_limit(comic: Comic, measure_sleep: list[float]) -> 
     assert measure_sleep[0] == 1
 
 
+# This is already tested in test_ratelimiter.py
+@pytest.mark.slow
 @responses.activate()
-@pytest.mark.slow  # This is already tested in test_ratelimiter.py
 def test_pauses_at_hidden_rate_limit(
     comic: Comic, rss: aioresponses, measure_sleep: list[float]
 ) -> None:
@@ -863,9 +865,10 @@ def test_pauses_at_hidden_rate_limit(
     assert main_duration + measure_sleep[0] < RateLimiter.fuzzed_window + 1
 
 
+# This is already tested in test_ratelimiter.py#
+@pytest.mark.slow
 @responses.activate()
 @pytest.mark.usefixtures("_no_sleep", "rss")
-@pytest.mark.slow  # This is already tested in test_ratelimiter.py
 def test_fails_on_429(comic: Comic) -> None:
     """The script fails with an exception when it exceeds the rate limit.
 
