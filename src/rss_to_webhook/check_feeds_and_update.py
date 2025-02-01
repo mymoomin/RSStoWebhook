@@ -417,7 +417,7 @@ class RateLimiter:
         # "connection closed" errors in tests. It might be unnecessary, but on
         # the other hand removing it might look fine for months until the error
         # pops up again, so I'm leaving it for now.
-        response = requests.post(url, json=body, timeout=10, stream=True)
+        response = requests.post(url, json=body, timeout=20, stream=True)
         headers = response.headers
         remaining = headers.get("x-ratelimit-remaining")
         reset_after = headers.get("x-ratelimit-reset-after")

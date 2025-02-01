@@ -43,7 +43,7 @@ dev = [
     "rss_to_webhook[lint,test,type]",
     "tox>=4.21.2",
     "tox-gh-actions>=3.2.0",
-    "tox-uv>=1.15.0",
+    "tox-uv>=1.16.0",
 ]
 
 [project.urls]
