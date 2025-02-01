@@ -325,8 +325,11 @@ def _make_messages(comic: Comic, entries: Sequence[EntrySubset]) -> list[Message
     }
     embeds: list[Embed] = []
     for entry in entries:
-        if urlsplit(link := entry["link"]).scheme not in {"http", "https"}:
-            print(f"{comic['title']}: bad url {entry['link']}")
+        if not (link := entry.get("link")):
+            print(f"{comic['title']}: missing link {link}")
+            continue
+        if urlsplit(link).scheme not in {"http", "https"}:
+            print(f"{comic['title']}: bad url {link}")
             parts = urlsplit(link)
             link = urlunsplit(parts._replace(scheme="https"))
         embeds.append({
