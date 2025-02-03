@@ -1,6 +1,6 @@
 """TypedDicts representing types of values stored in the database."""
 
-from typing import NotRequired, Required, TypedDict
+from typing import NotRequired, TypedDict
 
 from bson import ObjectId
 
@@ -32,10 +32,10 @@ class EntrySubset(TypedDict, total=False):
     to store an RSS feed entry if necessary.
     """
 
-    link: Required[str]
-    id: NotRequired[str]
-    title: NotRequired[str]
-    published: NotRequired[str]
+    link: str
+    id: str
+    title: str
+    published: str
 
 
 class BasicComic(TypedDict):

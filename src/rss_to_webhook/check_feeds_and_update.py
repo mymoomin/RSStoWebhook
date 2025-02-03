@@ -282,7 +282,7 @@ def _get_new_entries(
     new_entries: list[Entry] = []
     capped_entries = list(reversed(current_entries[:LOOKBACK_LIMIT]))
     max_entries = len(capped_entries)
-    last_paths = {_normalise(entry["link"]) for entry in last_entries}
+    last_paths = {_normalise(entry.get("link", "")) for entry in last_entries}
     last_pubdates = {entry.get("published") for entry in last_entries}
     last_ids = {entry.get("id") for entry in last_entries}
 

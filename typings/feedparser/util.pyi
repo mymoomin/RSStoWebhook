@@ -8,7 +8,7 @@ class Feed(TypedDict, total=False):
 
 @type_check_only
 class Entry(TypedDict, total=False):
-    link: Required[str]
+    link: str
     id: str
     title: str
     published: str
