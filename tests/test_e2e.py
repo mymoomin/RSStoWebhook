@@ -311,7 +311,7 @@ def test_store_two_updates(comic: Comic) -> None:
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     updated_comic = comics.find_one({"_id": comic["_id"]})
     assert updated_comic
-    assert [entry["link"] for entry in updated_comic["last_entries"][-2:]] == [
+    assert [entry.get("link") for entry in updated_comic["last_entries"][-2:]] == [
         "https://www.sleeplessdomain.com/comic/chapter-22-page-1",
         "https://www.sleeplessdomain.com/comic/chapter-22-page-2",
     ]
@@ -342,7 +342,9 @@ def test_suddenly_pubdates(comic: Comic, webhook: RequestsMock) -> None:
     client: MongoClient[Comic] = MongoClient()
     comics = client.db.collection
     comic["last_entries"].pop()  # One "new" entry
-    comic["last_entries"] = [{"link": entry["link"]} for entry in comic["last_entries"]]
+    comic["last_entries"] = [
+        {"link": entry.get("link", "")} for entry in comic["last_entries"]
+    ]
     comics.insert_one(comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert len(webhook.calls) == 1  # One post
@@ -411,13 +413,13 @@ def test_store_all_new_updates(comic: Comic) -> None:
     assert updated_comic
     last_entries = updated_comic["last_entries"]
     assert (
-        last_entries[0]["link"]
+        last_entries[0].get("link")
         == "https://www.sleeplessdomain.com/comic/chapter-21-page-16"
     )
     # Check that all 20 items in the RSS feed were posted
     assert len(last_entries) == 20  # noqa: PLR2004
     assert (
-        last_entries[-1]["link"]
+        last_entries[-1].get("link")
         == "https://www.sleeplessdomain.com/comic/chapter-22-page-2"
     )
 

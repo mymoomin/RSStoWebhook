@@ -175,3 +175,29 @@ def test_limit_title(comic: Comic) -> None:
 # You could argue that other fields should also have tests like this,
 # but embed title and url are the only fields that come from the RSS feed
 # rather than the database, so I think this is fair for now
+
+
+# @TODO Post the entry without a link? Impossible for now without reworking the
+# check for duplicates.
+def test_filter_missing_links(comic: Comic) -> None:
+    """Given an entry with no link, it's skipped.
+
+    This means it doesn't
+    """
+    entries: list[Entry] = [
+        {"link": "https://example.com/page/1", "title": "Page 1!"},
+        {"title": "Page 2!"},
+    ]
+    body = _make_messages(comic, entries)[0]
+    # The Message() is just for show (underhanded cheats to increase our code coverage)
+    assert filter_nones(body) == Message({
+        "embeds": [
+            {
+                "color": 0x5C64F4,
+                "title": "**Page 1!**",
+                "url": "https://example.com/page/1",
+                "description": "New Test Webcomic!",
+            },
+        ],
+        "content": "<@&1>",
+    })
