@@ -95,6 +95,7 @@ def main(
             thread_webhook_url = os.environ["SD_WEBHOOK_URL"]
             comics = client[db_name]["comics"]
         regular_checks(comics, HASH_SEED, webhook_url, thread_webhook_url)
+    client.close()
 
 
 def regular_checks(
