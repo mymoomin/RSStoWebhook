@@ -120,7 +120,7 @@ class Comic(TypedDict):
     username: NotRequired[str]
     avatar_url: NotRequired[str]  # Must be a valid URL
 
-    role_id: int
+    role_id: NotRequired[int]
     thread_id: NotRequired[int]
 
     dailies: list[EntrySubset]  # Must have valid URLs

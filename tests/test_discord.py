@@ -39,7 +39,7 @@ load_dotenv(".env.example")
 WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 THREAD_WEBHOOK_URL = os.environ["SD_WEBHOOK_URL"]
 DAILY_WEBHOOK_URL = os.environ["DAILY_WEBHOOK_URL"]
-RATELIMIT_WEBHOOK_URL = os.environ["TEST3_WEBHOOK_URL"]
+RATELIMIT_WEBHOOK_URL = os.environ["TEST4_WEBHOOK_URL"]
 
 # Loads the real environment variables
 load_dotenv(override=True)
@@ -155,7 +155,6 @@ def minimal_comic() -> Comic:
         "_id": ObjectId("612819b293b99b5809e18ab3"),
         "title": "Sleepless Domain",
         "feed_url": "http://www.sleeplessdomain.com/comic/rss",
-        "role_id": Int64("581531863127031868"),
         "feed_hash": b"*\xc5\x10O\xf3\xa1\x9f\xca5\x017\xdd\xf3\x8e\xe84",
         "last_entries": [
             {
@@ -336,9 +335,9 @@ def test_minimal_one_entry(minimal_comic: Comic, webhook: RequestsMock) -> None:
     comics.insert_one(minimal_comic)
     regular_checks(comics, HASH_SEED, WEBHOOK_URL, THREAD_WEBHOOK_URL)
     assert webhook.calls[0].request.body
+    print(json.loads(webhook.calls[0].request.body))
     assert json.loads(webhook.calls[0].request.body) == {
         "avatar_url": None,
-        "content": "<@&581531863127031868>",
         "embeds": [{
             "color": DEFAULT_COLOR,
             "description": "New test_minimal_one_update!",

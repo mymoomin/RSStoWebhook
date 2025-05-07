@@ -342,7 +342,8 @@ def _make_messages(comic: Comic, entries: Sequence[EntrySubset]) -> list[Message
     messages: list[Message] = [
         {"embeds": list(embed_chunk)} | extras for embed_chunk in batched(embeds, 10)  # type: ignore[misc]
     ]
-    messages[0]["content"] = f"<@&{comic['role_id']}>"
+    if "role_id" in comic:
+        messages[0]["content"] = f"<@&{comic['role_id']}>"
     return messages
 
 
